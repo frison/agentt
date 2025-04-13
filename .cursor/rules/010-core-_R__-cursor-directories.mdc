@@ -1,0 +1,20 @@
+---
+description: Structure and purpose of .cursor subdirectories (for core)
+globs: []
+alwaysApply: true
+---
+
+# .cursor Directory Structure (core)
+
+```
+.cursor/
+├── rules/  # AI assistance rules
+│   └── cookbook/  # Task recipes
+└── tmp/    # Temporary storage
+```
+
+## rules/
+Core rules and cookbook recipes for AI assistants.
+
+## tmp/
+Temporary directory for AI operations. Always clean up after use.

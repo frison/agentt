@@ -4,71 +4,38 @@ globs: []
 alwaysApply: false
 ---
 
-# Cookbook Recipe Guidelines
+# Recipe Guidelines
 
-## Structure and Format
-- Recipes are written in Markdown (.mdc) files with YAML frontmatter
-- Frontmatter requires:
-  - `description`: Concise single-sentence summary of recipe purpose
-  - `globs`: File patterns this recipe applies to (use empty array for general recipes)
-  - `alwaysApply`: Boolean indicating if recipe should always be applied
-- Main content should follow a consistent structure:
-  1. Overview (what this recipe accomplishes)
-  2. Prerequisites (tools/knowledge needed)
-  3. Step-by-step instructions (numbered lists)
-  4. Expected outcomes
-  5. Troubleshooting (common issues and solutions)
-- Use code blocks with appropriate syntax highlighting for commands or code examples
+## Structure
+- Clear title (imperative mood)
+- Numbered steps (not paragraphs)
+- Prerequisites section (required)
+- Minimal explanation
+- Code blocks when needed
+- No redundancy
 
-## Naming Convention
-Follow the established pattern defined in `000-core-_R__-rules.mdc`. For recipes specifically:
-- Use the same [NNN]-[core-][CRUD]-[name].mdc format
-- Choose appropriate CRUD markers for the type of operation the recipe covers
-- Use descriptive, specific names that clearly indicate the recipe's purpose
+## Prerequisites
+- Always include this section
+- List required knowledge/tools/files
+- Link related rules: `[Rule Name](path/to/rule.mdc)`
+- List dependencies on other recipes
+- Keep list brief, only essential items
 
-## Writing Best Practices
-- Use imperative language for instructions ("Create a file" not "A file should be created")
-- Be precise about commands and file paths
-- Include verification steps to confirm success
-- Provide expected output examples where applicable
-- For complex recipes, break into logical sections with clear headings
-- Reference related recipes or documentation when relevant
-- Keep recipes focused on a single task or workflow
-- Explain "why" along with "how" for non-obvious steps
+## Format
+- YAML frontmatter
+  - description: One sentence
+  - globs: Patterns or []
+  - alwaysApply: Boolean
+- Use H1 for title, H2 for sections
 
-## Separation of Concerns
-- Separate technical aspects from stylistic/personality aspects
-- Create general-purpose recipes for widely applicable concepts (e.g., writing style, documentation)
-- Create specific recipes for technical implementations that reference general recipes
-- When a recipe covers multiple concerns:
-  - Consider if it should be split into multiple recipes
-  - Make clear cross-references between related recipes
-  - Use the "Prerequisites" section to reference foundational recipes
-- Technical recipes should focus on implementation details
-- Style/communication recipes should focus on presentation and expression
+## Content
+- Only include critical steps
+- Eliminate all unnecessary text
+- Focus on actions, not theory
+- Use direct commands
+- Include only essential examples
 
-## Hierarchy and References
-- Establish a clear hierarchy from general to specific recipes
-- General recipes should be tool/technology-agnostic when possible
-- Specific recipes should reference general recipes rather than duplicating content
-- Use explicit references like `[Recipe Name](path/to/recipe.mdc)` for cross-references
-- When a specific recipe builds on a general one, mention this relationship in:
-  - The Overview section
-  - The Prerequisites section
-  - Any relevant implementation steps
-
-## Recipe Maintenance
-- Review recipes periodically to ensure they remain current
-- Test recipes to verify they still work as documented
-- Update recipes when dependencies or processes change
-- Add troubleshooting tips based on common user issues
-- Adjust priority numbers to reflect changing importance
-- Remove or archive obsolete recipes
-- Version control all recipe changes
-
-## Organization Tips
-- Group related recipes in thematic subdirectories
-- Create index recipes that provide an overview of a category
-- Use consistent terminology across recipes
-- Consider including tags in frontmatter for improved searchability
-- For complex workflows, create a master recipe that links to component recipes
+## Maintenance
+- Remove outdated content
+- Combine related recipes
+- Split complex recipes

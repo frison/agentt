@@ -6,57 +6,24 @@ alwaysApply: false
 
 # AI Git Commit Annotation
 
-## Overview
-Guidelines for AI to annotate git commits by amending commit messages to document collaborative work and capture implementation decisions. See [Writing for Public Consumption](003-core-C_U_-writing-for-public-consumption.mdc) for general writing guidelines.
-
 ## Prerequisites
-- Git repository with uncommitted changes or recent unpushed commit
-- Commit has not been pushed upstream
-- Familiarity with the [Writing for Public Consumption](003-core-C_U_-writing-for-public-consumption.mdc) recipe
+- Unpushed commit exists
+- [Writing for Public Consumption](003-core-C_U_-writing-for-public-consumption.mdc)
+- [Shell Commands](004-core-C_U_-shell-commands.mdc)
 
-## Steps
+1. Verify: `git log @{u}..HEAD --oneline | cat`
 
-### 1. Verify Commit Status
+2. Annotate:
+   - Keep original message
+   - Add "-- AI annotation" line
+   - Respect 72 char limit
+   - Explain key decisions
+
+3. Apply:
 ```bash
-# Check if commit exists but hasn't been pushed
-git log @{u}..HEAD --oneline | cat
+printf "$(git log -1 --pretty=format:"%s%n%n%b")\n\n-- AI annotation\nText" > .cursor/tmp/commit_msg.txt
+git commit --amend -F .cursor/tmp/commit_msg.txt
+rm .cursor/tmp/commit_msg.txt
 ```
-- If output shows commit(s), they can be amended
-- If empty, commits have been pushed and should not be amended
 
-### 2. Craft Meaningful Annotation
-- Preserve the original message entirely
-- Add AI annotations after the original message, starting with "-- AI"
-- Follow git conventions:
-  - Use imperative mood in subject line ("Add feature" not "Added feature")
-  - Limit subject to 50 characters, capitalize, no period
-  - Separate subject from body with blank line
-  - Wrap body at 72 characters (this is critical - never exceed this limit)
-  - Explain what and why vs. how
-- Ensure the "-- AI annotation" marker is on its own line
-- Each line of the AI annotation must also adhere to the 72-character limit
-
-### 3. Include Implementation Reasoning
-Briefly explain:
-- Why this implementation approach was chosen
-- Alternatives considered (if applicable)
-- Key technical decisions
-- Keep concise but informative
-
-### 4. Amend the Commit
-```bash
-# View current commit details
-git log -1 --pretty=format:"%s%n%n%b" | cat
-
-# Amend commit without temporary files
-git commit --amend -m "$(git log -1 --pretty=format:"%s%n%n%b")
-
--- AI annotation
-Your detailed annotations here"
-```
-## Expected Outcome
-A commit message that:
-- Preserves original message
-- Describes changes from AI perspective
-- Explains implementation decisions
-- Follows git conventions and writing best practices
+Never: Use multiline commands, modify pushed commits.

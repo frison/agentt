@@ -6,51 +6,35 @@ alwaysApply: false
 
 # Cursor Rules Guidelines
 
-## Structure and Format
-- Rules are written in Markdown (.mdc) files with YAML frontmatter
-- Frontmatter requires:
-  - `description`: Concise single-sentence summary of rule purpose
-  - `globs`: File patterns this rule applies to (use empty array for general rules)
-  - `alwaysApply`: Boolean indicating if rule should always be applied
-- Main content should be structured with clear headings and bulleted lists
-- Use code blocks with appropriate syntax highlighting when including code examples
+## Core Principles
+- **Extreme conciseness**: Eliminate all unnecessary words
+- **Actionable**: Focus only on practical guidance
+- **Structured**: Use clear headings and bullet points
+- **Imperative**: Use direct commands
 
-## Naming Convention
-Follow the established pattern defined in `000-core-_R__-rules.mdc`. For cursor rules specifically:
-- Apply the same [NNN]-[core-][CRUD]-[name].mdc format consistently
-- Choose appropriate CRUD markers based on whether the rule provides guidance for creating, reading, updating, or deleting code
-- Use clear, descriptive names that indicate the rule's purpose and scope
+## Format
+- Markdown (.mdc) with YAML frontmatter:
+  - `description`: Single-sentence summary
+  - `globs`: File patterns or [] for general rules
+  - `alwaysApply`: Boolean
+- Follow naming pattern: [NNN]-[core-][CRUD]-[name].mdc
 
-## Writing Best Practices
-- Be concise and specific
-- Focus on actionable guidance over general principles
-- Provide reasoning behind recommendations
-- Include examples for complex concepts
-- Cross-reference related rules when applicable
-- Limit rule scope - create multiple focused rules rather than one massive rule
-- Use imperative voice for instructions
+## Writing Guidelines
+- Delete all unnecessary words and sections
+- Prefer bullets over paragraphs
+- Use active voice, imperative mood
+- Consolidate related points
+- Include only essential examples
+- Simplify complex concepts
+- Eliminate redundancy
 
-## Shell Commands in Rules
-- When including shell commands in rules, follow guidelines in [Shell Commands](004-core-C_U_-shell-commands.mdc)
-- Always use non-interactive commands that can run without user input
-- Add `| cat` to commands that might invoke pagers (git, less, more, etc.)
-- Use `--no-pager` options when available
-- For file editing, use non-interactive approaches instead of text editors
-- Test all commands to ensure they complete without requiring user interaction
-- Include clear comments explaining what each command does
+## Shell Commands
+- Non-interactive only
+- Add `| cat` to prevent paging
+- Test all commands before adding
+- Prefer succinct one-liners when possible
 
-## Rule Maintenance
-- Review rules periodically to ensure they remain current
-- Update `globs` as the codebase structure evolves
-- Adjust priority numbers as needed to reflect changing importance
-- Consolidate overlapping rules
-- Split overly complex rules into multiple focused ones
-- Remove obsolete rules rather than just commenting them out
-- When updating a rule, ensure the description accurately reflects the new content
-- Version control all rule changes as you would code changes
-
-## Organization Tips
+## Organization
+- Split large rules into focused small ones
 - Group related rules in subdirectories
-- Create index rules that provide overview of rule categories
-- Refer to `000-core-_R__-rules.mdc` for priority number ranges and their meanings
 
