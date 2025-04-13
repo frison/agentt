@@ -1,0 +1,24 @@
+---
+description: Describes the structure of the cursor rules
+globs:
+alwaysApply: true
+---
+
+# Cursor Rules Naming Convention
+
+Files are named using this pattern:
+
+```
+[NNN]-[core-][CRUD]-[name].mdc
+```
+
+Where:
+- **NNN**: Priority number (lower = higher priority)
+- **core-**: (Optional) Indicates repository-agnostic rules
+- **CRUD**: Which operations are documented (C=Create, R=Read, U=Update, D=Delete, _=Not applicable)
+- **name**: Brief description of the rule content. If a rules directory, it describes the directory.
+
+## Examples:
+- `000-core-_RU_-structure.mdc`: High-priority core rule about structure (Read/Update)
+- `001-core-C_U_-recipe.mdc`: Recipe creation and updating documentation
+- `020-CRU_-api-endpoints.mdc`: Repository-specific API endpoint documentation

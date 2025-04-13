@@ -1,0 +1,57 @@
+---
+description: Describes creating and modifying cursor rules.
+globs: .cursor/rules/**/*.mdc
+alwaysApply: false
+---
+
+# Cursor Rules Guidelines
+
+## Structure and Format
+- Rules are written in Markdown (.mdc) files with YAML frontmatter
+- Frontmatter requires:
+  - `description`: Concise single-sentence summary of rule purpose
+  - `globs`: File patterns this rule applies to (use empty array for general rules)
+  - `alwaysApply`: Boolean indicating if rule should always be applied
+- Main content should be structured with clear headings and bulleted lists
+- Use code blocks with appropriate syntax highlighting when including code examples
+
+## Naming Convention
+Follow the established pattern: `[NNN]-[core-][CRUD]-[name].mdc`
+- **NNN**: Priority number (000-999, lower = higher priority)
+- **core-**: Include for repository-agnostic rules
+- **CRUD**: Which operations the rule addresses:
+  - C = Create (guidance for new implementations)
+  - R = Read (how to understand existing patterns)
+  - U = Update (how to modify existing code)
+  - D = Delete (when/how to remove components)
+  - _ = Not applicable
+- **name**: Brief, descriptive kebab-case name
+
+## Writing Best Practices
+- Be concise and specific
+- Focus on actionable guidance over general principles
+- Provide reasoning behind recommendations
+- Include examples for complex concepts
+- Cross-reference related rules when applicable
+- Limit rule scope - create multiple focused rules rather than one massive rule
+- Use imperative voice for instructions
+
+## Rule Maintenance
+- Review rules periodically to ensure they remain current
+- Update `globs` as the codebase structure evolves
+- Adjust priority numbers as needed to reflect changing importance
+- Consolidate overlapping rules
+- Split overly complex rules into multiple focused ones
+- Remove obsolete rules rather than just commenting them out
+- When updating a rule, ensure the description accurately reflects the new content
+- Version control all rule changes as you would code changes
+
+## Organization Tips
+- Group related rules in subdirectories
+- Create index rules that provide overview of rule categories
+- Use priority numbers strategically:
+  - 000-099: Foundational principles
+  - 100-499: General patterns and practices
+  - 500-899: Specific domains/components
+  - 900-999: Temporary or transitional guidance
+
