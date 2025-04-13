@@ -1,0 +1,90 @@
+---
+description: Guidelines for creating and maintaining shell commands in cursor rules
+globs: []
+alwaysApply: false
+---
+
+# Shell Commands in Cursor Rules
+
+## Overview
+This recipe provides guidelines for creating and maintaining shell commands in cursor rules and recipes. The purpose is to ensure that shell commands remain non-interactive and reliable when executed by AI assistants in terminal environments.
+
+## Key Principles
+
+### 1. Avoid Interactive Commands
+- Never include commands that require user interaction in the terminal
+- If a command is naturally interactive, modify it to be non-interactive
+- Always pipe potentially interactive outputs to `cat` or use non-interactive flags
+
+### 2. Common Interactive Commands to Avoid or Modify
+
+| Interactive Command | Non-Interactive Alternative |
+|---------------------|----------------------------|
+| `git log` | `git log | cat` or `git log --no-pager` |
+| `git show` | `git show | cat` or `git show --no-pager` |
+| `less file.txt` | `cat file.txt` |
+| `more file.txt` | `cat file.txt` |
+| `top` | `ps aux` |
+| `nano file.txt` | `echo "content" > file.txt` |
+| `vim file.txt` | `echo "content" > file.txt` |
+| `man command` | `man command | cat` |
+| `less`, `head`, `tail` with pagination | Add `| cat` to the command |
+
+### 3. Safe Command Practices
+- Include descriptive comments before each command explaining its purpose
+- For complex commands, explain what each part does
+- Ensure commands are idempotent when possible (can be run multiple times safely)
+- Include error handling or explain expected error cases
+- Specify when a command requires specific user permissions
+
+### 4. Testing Shell Commands
+- Test all shell commands in a similar environment before adding to rules
+- Verify that commands complete without requiring user interaction
+- Confirm command outputs are as expected and properly terminated
+- Test edge cases that might cause interactive prompts to appear
+
+### 5. Documentation Best Practices
+- Use triple backtick blocks with bash language specification:
+  ```bash
+  # Command here
+  ```
+- Include example output when helpful
+- Explain what each command does and what its output means
+- Provide alternative commands for different environments when relevant
+
+## Examples
+
+### ❌ Problematic Commands
+
+```bash
+# DON'T: Opens interactive pager
+git log
+
+# DON'T: Opens vim editor
+git commit -a
+
+# DON'T: Interactive prompt
+ssh user@host
+```
+
+### ✅ Non-Interactive Alternatives
+
+```bash
+# DO: Force non-interactive output
+git log | cat
+# OR
+git log --no-pager
+
+# DO: Use prepared message file instead of editor
+git commit -a -m "Commit message"
+
+# DO: Use non-interactive SSH (when appropriate)
+ssh -n user@host "command"
+```
+
+## Expected Outcome
+Shell commands in cursor rules that:
+- Execute reliably without interactive prompts
+- Complete without requiring user intervention
+- Provide clear outputs that can be processed by AI assistants
+- Work consistently across different terminal environments

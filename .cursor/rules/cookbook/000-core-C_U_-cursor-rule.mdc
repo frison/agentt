@@ -30,6 +30,15 @@ Follow the established pattern defined in `000-core-_R__-rules.mdc`. For cursor 
 - Limit rule scope - create multiple focused rules rather than one massive rule
 - Use imperative voice for instructions
 
+## Shell Commands in Rules
+- When including shell commands in rules, follow guidelines in [Shell Commands](004-core-C_U_-shell-commands.mdc)
+- Always use non-interactive commands that can run without user input
+- Add `| cat` to commands that might invoke pagers (git, less, more, etc.)
+- Use `--no-pager` options when available
+- For file editing, use non-interactive approaches instead of text editors
+- Test all commands to ensure they complete without requiring user interaction
+- Include clear comments explaining what each command does
+
 ## Rule Maintenance
 - Review rules periodically to ensure they remain current
 - Update `globs` as the codebase structure evolves

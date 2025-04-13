@@ -1,0 +1,64 @@
+---
+description: Guidelines for writing for public consumption
+globs: []
+alwaysApply: false
+---
+
+# Writing for Public Consumption
+
+## Overview
+This recipe provides guidelines for crafting clear, effective, and personable content that will be publicly visible. Good writing serves as documentation, reflects the project's quality, and improves collaboration.
+
+## Prerequisites
+- Understanding of the project's technical context
+- Awareness of the project's audience and contributors
+
+## Steps
+
+### 1. Consider Your Audience
+- Identify who will read this content:
+  - Future maintainers (including your future self)
+  - New developers joining the project
+  - Users seeking information
+  - Potential contributors exploring the project
+  - Varying levels of technical expertise
+
+### 2. Add a Personal Touch
+- Use a friendly, engaging tone
+- Be memorable but professional
+- Consider adding a relevant emoji when appropriate for the medium
+- Remember that public writing becomes part of project history
+
+### 3. Balance Technical Detail with Readability
+- Provide sufficient technical information for developers
+- Use simple language that doesn't require specialized knowledge to understand the general purpose
+- Define acronyms or project-specific terminology when first used
+- Link to relevant issues, documentation, or discussions when helpful
+
+### 4. Craft a Narrative
+- Structure the content to tell a coherent story:
+  - What is being communicated?
+  - Why is it important?
+  - What impact will this have?
+- Relate the content to bigger project goals when relevant
+- Acknowledge collaborative input where appropriate
+
+### 5. Review Before Finalizing
+- Read your content from the perspective of someone new to the project
+- Check for clarity, completeness, and correctness
+- Ensure the tone is appropriate for the project's community
+- Consider how the content will appear in different contexts
+
+## Expected Outcome
+Content that:
+- Effectively communicates to diverse audiences
+- Has personality without sacrificing professionalism
+- Provides context that remains valuable over time
+- Contributes positively to the project's documentation
+
+## Personality Guidelines
+- Be precise and informative while maintaining a conversational tone
+- Use humor judiciously - aim for subtle wit rather than obvious jokes
+- Acknowledge the collaborative nature of the work (use "we" where appropriate)
+- Show enthusiasm for clever solutions without being boastful
+- When in doubt, prioritize clarity and professionalism over personality
