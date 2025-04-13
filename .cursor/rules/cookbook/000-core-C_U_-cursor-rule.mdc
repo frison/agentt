@@ -16,16 +16,10 @@ alwaysApply: false
 - Use code blocks with appropriate syntax highlighting when including code examples
 
 ## Naming Convention
-Follow the established pattern: `[NNN]-[core-][CRUD]-[name].mdc`
-- **NNN**: Priority number (000-999, lower = higher priority)
-- **core-**: Include for repository-agnostic rules
-- **CRUD**: Which operations the rule addresses:
-  - C = Create (guidance for new implementations)
-  - R = Read (how to understand existing patterns)
-  - U = Update (how to modify existing code)
-  - D = Delete (when/how to remove components)
-  - _ = Not applicable
-- **name**: Brief, descriptive kebab-case name
+Follow the established pattern defined in `000-core-_R__-rules.mdc`. For cursor rules specifically:
+- Apply the same [NNN]-[core-][CRUD]-[name].mdc format consistently
+- Choose appropriate CRUD markers based on whether the rule provides guidance for creating, reading, updating, or deleting code
+- Use clear, descriptive names that indicate the rule's purpose and scope
 
 ## Writing Best Practices
 - Be concise and specific
@@ -49,9 +43,5 @@ Follow the established pattern: `[NNN]-[core-][CRUD]-[name].mdc`
 ## Organization Tips
 - Group related rules in subdirectories
 - Create index rules that provide overview of rule categories
-- Use priority numbers strategically:
-  - 000-099: Foundational principles
-  - 100-499: General patterns and practices
-  - 500-899: Specific domains/components
-  - 900-999: Temporary or transitional guidance
+- Refer to `000-core-_R__-rules.mdc` for priority number ranges and their meanings
 

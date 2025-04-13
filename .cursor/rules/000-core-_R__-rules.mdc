@@ -13,12 +13,29 @@ Files are named using this pattern:
 ```
 
 Where:
-- **NNN**: Priority number (lower = higher priority)
-- **core-**: (Optional) Indicates repository-agnostic rules
-- **CRUD**: Which operations are documented (C=Create, R=Read, U=Update, D=Delete, _=Not applicable)
-- **name**: Brief description of the rule content. If a rules directory, it describes the directory.
+- **NNN**: Priority number (000-999, lower = higher priority)
+  - 000-099: Foundational/structural rules
+  - 100-499: General patterns and practices
+  - 500-899: Specific domains or components
+  - 900-999: Temporary or transitional guidance
+- **core-**: (Optional) Indicates repository-agnostic rules that apply to any codebase
+- **CRUD**: Which operations are documented:
+  - C = Create (guidance for new implementations)
+  - R = Read (how to understand existing patterns)
+  - U = Update (how to modify existing code)
+  - D = Delete (when/how to remove components)
+  - _ = Not applicable for this category
+- **name**: Brief description of the rule content in kebab-case. If a rules directory, it describes the directory.
 
 ## Examples:
 - `000-core-_RU_-structure.mdc`: High-priority core rule about structure (Read/Update)
 - `001-core-C_U_-recipe.mdc`: Recipe creation and updating documentation
 - `020-CRU_-api-endpoints.mdc`: Repository-specific API endpoint documentation
+
+## Rule Structure
+- Each rule file should include YAML frontmatter with:
+  - `description`: Concise summary of rule purpose
+  - `globs`: File patterns this rule applies to (empty array for general rules)
+  - `alwaysApply`: Boolean indicating if rule should always be attached
+- Main content should use clear headings, bullet points, and code examples when needed
+- Keep rules focused and specific - create multiple rules rather than one complex rule

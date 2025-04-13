@@ -1,0 +1,53 @@
+---
+description: Guidelines for creating and updating cookbook recipes
+globs: []
+alwaysApply: false
+---
+
+# Cookbook Recipe Guidelines
+
+## Structure and Format
+- Recipes are written in Markdown (.mdc) files with YAML frontmatter
+- Frontmatter requires:
+  - `description`: Concise single-sentence summary of recipe purpose
+  - `globs`: File patterns this recipe applies to (use empty array for general recipes)
+  - `alwaysApply`: Boolean indicating if recipe should always be applied
+- Main content should follow a consistent structure:
+  1. Overview (what this recipe accomplishes)
+  2. Prerequisites (tools/knowledge needed)
+  3. Step-by-step instructions (numbered lists)
+  4. Expected outcomes
+  5. Troubleshooting (common issues and solutions)
+- Use code blocks with appropriate syntax highlighting for commands or code examples
+
+## Naming Convention
+Follow the established pattern defined in `000-core-_R__-rules.mdc`. For recipes specifically:
+- Use the same [NNN]-[core-][CRUD]-[name].mdc format
+- Choose appropriate CRUD markers for the type of operation the recipe covers
+- Use descriptive, specific names that clearly indicate the recipe's purpose
+
+## Writing Best Practices
+- Use imperative language for instructions ("Create a file" not "A file should be created")
+- Be precise about commands and file paths
+- Include verification steps to confirm success
+- Provide expected output examples where applicable
+- For complex recipes, break into logical sections with clear headings
+- Reference related recipes or documentation when relevant
+- Keep recipes focused on a single task or workflow
+- Explain "why" along with "how" for non-obvious steps
+
+## Recipe Maintenance
+- Review recipes periodically to ensure they remain current
+- Test recipes to verify they still work as documented
+- Update recipes when dependencies or processes change
+- Add troubleshooting tips based on common user issues
+- Adjust priority numbers to reflect changing importance
+- Remove or archive obsolete recipes
+- Version control all recipe changes
+
+## Organization Tips
+- Group related recipes in thematic subdirectories
+- Create index recipes that provide an overview of a category
+- Use consistent terminology across recipes
+- Consider including tags in frontmatter for improved searchability
+- For complex workflows, create a master recipe that links to component recipes
