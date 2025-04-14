@@ -9,12 +9,14 @@ alwaysApply: true
 ## Core Principle
 - **Always search for relevant recipes before performing operations**
 - Especially critical for Git operations, imports, and file system modifications
+- **Always check shell command guidelines** before running any terminal commands
 
 ## Process
 1. When receiving a request:
    - First check if a relevant recipe exists
    - Search for keywords in the cookbook directory
    - For Git operations, explicitly check `000-core-C_U_-git-history-preservation.mdc`
+   - For terminal commands, explicitly check `004-core-C_U_-shell-commands.mdc`
 
 2. Key recipes to check:
    - Git operations: `000-core-C_U_-git-history-preservation.mdc`
@@ -26,6 +28,7 @@ alwaysApply: true
    - **SOURCE_URL**: Always use the exact URL provided by the human
    - Follow specific sequence of steps outlined in recipes
    - Never skip prerequisite checks
+   - **For terminal commands**: Always append `| cat` to any command that might use a pager
 
 ## Common Mistakes
 - Proceeding without checking recipes
@@ -33,3 +36,5 @@ alwaysApply: true
 - Using incorrect URLs from what human provided
 - Skipping verification steps
 - Not following the exact procedures in recipes
+- **Running commands without `| cat` appended to prevent interactive prompts**
+- **Not checking the shell commands guidelines before executing terminal operations**

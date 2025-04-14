@@ -4,7 +4,73 @@ globs: []
 alwaysApply: false
 ---
 
-# Shell Commands
+# Shell Command Guidelines
+
+## Core Principles
+- **Never run interactive commands** that might pause for user input
+- Always append `| cat` to commands that may launch pagers or interactive tools
+- Use `-y` or equivalent non-interactive flags when available
+- Set environment variables to disable interactive prompts
+
+## Non-Interactive Git Configuration
+For git commands specifically:
+```bash
+# Configure git to never use pagers
+git config --global core.pager cat
+
+# Configure git to always use non-interactive mode for specific commands
+git config --global diff.tool auto
+git config --global merge.tool auto
+git config --global advice.statusHints false
+git config --global color.ui auto
+```
+
+## Shell Environment Variables
+The following environment variables can help ensure non-interactive operation:
+```bash
+# Disable interactive prompts in various tools
+export DEBIAN_FRONTEND=noninteractive
+export GIT_PAGER=cat
+export PAGER=cat
+export SYSTEMD_PAGER=cat
+export LESSCHARSET=utf-8
+```
+
+## Always Append to These Commands
+Always append `| cat` to these commands:
+- `git log`
+- `git diff`
+- `git show`
+- `less`
+- `more`
+- `head`
+- `tail`
+- `man`
+- Any command that might use a pager
+
+## Background Processes
+- For long-running commands, use `&` to run in background or the `is_background: true` parameter
+- Always handle process termination appropriately
+- Capture and log output from background processes
+
+## Input Redirection
+- For commands requiring input, use `echo "response" | command` instead of interactive input
+- Use heredocs for multi-line input: `command << EOF\ninput1\ninput2\nEOF`
+
+## Testing Commands
+- Test commands with `--help` or `--version` first to ensure they exist
+- Use `-n` or `--dry-run` flags when available to test without making changes
+
+## Error Handling
+- Always check exit codes: `if [ $? -ne 0 ]; then echo "Command failed"; fi`
+- Redirect stderr to capture error messages: `command 2>&1`
+
+## Common Pitfalls
+- Forgetting to append `| cat` to pager commands
+- Using commands that expect TTY input
+- Not checking if commands exist before running them
+- Using interactive prompts in installation commands
+- Not setting appropriate environment variables
 
 ## Prerequisites
 - [Recipe Guidelines](001-core-C_U_-recipe.mdc)
