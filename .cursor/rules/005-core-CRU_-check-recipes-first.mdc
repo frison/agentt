@@ -1,0 +1,35 @@
+---
+description: Ensure checking recipes before performing operations
+globs: []
+alwaysApply: true
+---
+
+# Check Recipes First
+
+## Core Principle
+- **Always search for relevant recipes before performing operations**
+- Especially critical for Git operations, imports, and file system modifications
+
+## Process
+1. When receiving a request:
+   - First check if a relevant recipe exists
+   - Search for keywords in the cookbook directory
+   - For Git operations, explicitly check `000-core-C_U_-git-history-preservation.mdc`
+
+2. Key recipes to check:
+   - Git operations: `000-core-C_U_-git-history-preservation.mdc`
+   - Creating rules: `000-core-C_U_-cursor-rule.mdc`
+   - Shell commands: `004-core-C_U_-shell-commands.mdc`
+   - New recipes: `001-core-C_U_-recipe.mdc`
+
+3. Critical elements to preserve:
+   - **SOURCE_URL**: Always use the exact URL provided by the human
+   - Follow specific sequence of steps outlined in recipes
+   - Never skip prerequisite checks
+
+## Common Mistakes
+- Proceeding without checking recipes
+- Using simplified versions of operations
+- Using incorrect URLs from what human provided
+- Skipping verification steps
+- Not following the exact procedures in recipes

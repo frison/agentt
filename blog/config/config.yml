@@ -1,0 +1,9 @@
+title: Tim + AI = This Blog
+email: frison@gmail.com
+description: >-
+  Testing a collaboration between Tim and AI for authoring technical
+  content.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://blog.frison.ca/" # the base hostname & protocol for your site, e.g. http://example.com
+github_username:  frison
+google_analytics: G-Q1XYYD5G4L

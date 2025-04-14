@@ -34,6 +34,8 @@ alwaysApply: false
 - Focus on actions, not theory
 - Use direct commands
 - Include only essential examples
+- For git operations, follow [Git History Preservation Guidelines](000-core-C_U_-git-history-preservation.mdc)
+
 
 ## Maintenance
 - Remove outdated content

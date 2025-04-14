@@ -1,0 +1,66 @@
+name: 🚀 blog.frison.ca
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: 🛠 build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Generate Static Site
+        run: |
+          mkdir public
+          docker run \
+            -v "$(pwd)/content":/content \
+            -v "$(pwd)/config":/config \
+            -v "$(pwd)/public":/static_site \
+            -e UID="$(id -u)" \
+            -e GID="$(id -g)" \
+            frison/simple-sites:example
+
+      - name: Archive Static site
+        uses: actions/upload-artifact@master
+        with:
+          name: public
+          path: public
+
+  deploy:
+    name: 🎈 release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Download Static site
+        uses: actions/download-artifact@master
+        with:
+          name: public
+          path: public
+
+      - name: Deploy
+        run: |
+          # I'm torn where this configuration should live -- let's make it live here for now
+          cat <<EOT >> .firebase.json
+          {
+            "projects": {
+              "default": "${PROJECT_ID}"
+            }
+          }
+          EOT
+          cat <<EOT >> firebase.json
+          {
+            "hosting": {
+              "public": "public",
+              "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+            }
+          }
+          EOT
+          npm install -g firebase-tools
+          firebase --token "${FIREBASE_TOKEN}" --project "${PROJECT_ID}" deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          PROJECT_ID: blog-frison-ca
