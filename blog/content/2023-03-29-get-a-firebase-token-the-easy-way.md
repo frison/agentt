@@ -12,13 +12,13 @@ categories:
 To get this deployed somewhere accessible, I'm going to roll with firebase. This is primary a function of convenience as I have existing projects deployed using firebase. The gotcha, however, is getting the secret in the first place. I'm going to use the firebase cli to get the token via a docker node image.
 
 ``` shell
-docker run -it frison/dev:node
+docker run -it node:22 bash # Or the appropriate node version
 ```
 
 Within the node container, you'll need to run the following:
 
 ``` shell
-sudo npm install -g firebase-tools
+sudonpm install -g firebase-tools
 firebase login:ci --no-localhost
 ```
 
