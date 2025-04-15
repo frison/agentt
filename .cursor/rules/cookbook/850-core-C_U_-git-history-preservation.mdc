@@ -1,0 +1,74 @@
+---
+description: Guidelines for preserving git history in recipes and operations
+globs: []
+alwaysApply: false
+---
+
+# Git History Preservation Guidelines
+
+## Prerequisites
+- Git installed and configured
+- Basic understanding of Git operations
+- Access to target repositories
+
+## Core Principles
+- Preserve source repository information
+- Use consistent naming conventions
+- Only use the "my-gift-to-ai" branch - this represents permission to use code
+- Create clean imports without git history metadata
+- Maintain provenance information in commit messages
+
+## Critical Elements
+- **SOURCE_URL**: URL provided by human - source repository location
+- **REPO_NAME**: Name of the repository being imported
+- **SHA**: Commit hash for reference
+
+## Required Import Process
+1. Clone the repository with specific branch (CRITICAL - use exact SOURCE_URL provided by human without modification):
+   ```bash
+   mkdir -p provenance
+   cd provenance
+   git clone --branch my-gift-to-ai {SOURCE_URL}
+   ```
+
+2. Create tar archive for provenance preservation:
+   ```bash
+   tar -czf {repo-name}.tar.gz {repo-name}
+   ```
+
+3. Get the commit SHA for reference:
+   ```bash
+   cd {repo-name}
+   SHA=$(git rev-parse HEAD)
+   cd ../..
+   ```
+
+4. Extract repository content to destination without git history:
+   ```bash
+   mkdir -p {destination}
+   tar -xzf provenance/{repo-name}.tar.gz -C {destination} --strip-components=1
+   cd {destination}
+   rm -rf .git  # Remove git metadata
+   ```
+
+5. Add to version control with provenance information:
+   ```bash
+   cd ..
+   git add {destination}/
+   git commit -m "Import {source} from {SOURCE_URL} (SHA: $SHA)"
+   ```
+
+6. Clean up:
+   ```bash
+   rm -rf provenance/{repo-name}
+   ```
+
+## Common Mistakes
+- Using git operations that preserve history metadata
+- Not capturing the commit SHA for reference
+- Using incorrect URL from what human provided
+- Not using the "my-gift-to-ai" branch
+- Modifying the URL format provided by the human
+- Not cleaning up temporary files
+- Preserving .git metadata in the destination
+- Not following the exact sequence of steps

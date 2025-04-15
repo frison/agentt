@@ -1,0 +1,40 @@
+---
+description: META-RULE - REQUIRED recipe checking before ANY actions - Defines when and how to use the cookbook
+alwaysApply: true
+---
+
+# Cookbook Guidelines
+
+## Agentic Modifications
+- STOP - Verify you've read 000-core-C_U_-cursor-rule.mdc completely
+- Never weaken or remove recipe checking requirements
+- Maintain or increase explicitness of requirements
+- Document reasoning for cookbook changes in commit messages
+
+## Required Recipe Check Sequence
+1. STOP - Do not proceed with ANY action until completing these steps
+2. Search for matching recipes:
+   ```bash
+   find recipe -name "*.mdc" -type f -exec sh -c 'echo -n "{}"; head -n5 "{}" | grep "^description:"' \; | cat
+   ```
+3. If exact match exists:
+   - Read and follow the recipe completely
+   - Do not skip steps or modify sequence
+4. If no exact match:
+   - Read all related recipes
+   - Follow guidance from most relevant recipes
+   - Document why no exact match existed
+
+## After Completing a Recipe
+- Verify all steps were followed exactly
+- Suggest updates to relevant rules based on new insights
+- Propose new recipes for workflows not covered by existing documentation
+- Document any deviations from recipes with justification
+
+## Common Mistakes
+- Proceeding without checking for recipes
+- Skipping steps in recipes
+- Modifying recipe steps without justification
+- Not documenting recipe mismatches
+- Treating recipe guidance as optional
+

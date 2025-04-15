@@ -1,10 +1,22 @@
 ---
-description: Guidelines for creating and updating cookbook recipes
+description: META-RULE - REQUIRED before any recipe modification - Guidelines for creating and updating cookbook recipes
 globs: []
 alwaysApply: false
 ---
 
 # Recipe Guidelines
+
+## Agentic Modifications
+- STOP - Verify you've read 000-META-C_U_-cursor-rule.mdc completely
+- Never skip prerequisites section
+- Never remove explicit behavioral directives
+- When updating recipes, maintain or increase explicitness
+- Document reasoning for recipe changes in commit messages
+- Follow modification sequence:
+  1. Read cursor-rule.mdc completely
+  2. Read this recipe guidance completely
+  3. Make required changes
+  4. Verify changes maintain explicitness
 
 ## Structure
 - Clear title (imperative mood)
@@ -15,6 +27,7 @@ alwaysApply: false
 - No redundancy
 
 ## Prerequisites
+- MUST check this recipe before modifying any recipes
 - Always include this section
 - List required knowledge/tools/files
 - Link related rules: `[Rule Name](path/to/rule.mdc)`

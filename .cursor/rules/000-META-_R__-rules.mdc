@@ -1,5 +1,5 @@
 ---
-description: Describes the structure of the cursor rules
+description: META-RULE - REQUIRED recipe checking before ANY actions - Describes the structure of the Cursor rules
 globs:
 alwaysApply: true
 ---
@@ -26,11 +26,13 @@ Where:
   - D = Delete (when/how to remove components)
   - _ = Not applicable for this category
 - **name**: Brief description of the rule content in kebab-case. If a rules directory, it describes the directory.
+  - Use "META" at the start of the name for foundational rules that must be checked before any actions
+  - Example: `_R__-META-rules` indicates a meta-rule about rules themselves
 
 ## Examples:
-- `000-core-_RU_-structure.mdc`: High-priority core rule about structure (Read/Update)
-- `001-core-C_U_-recipe.mdc`: Recipe creation and updating documentation
-- `020-CRU_-api-endpoints.mdc`: Repository-specific API endpoint documentation
+- `000-META-_R__-rules.mdc`: High-priority meta rule about rule structure (Read)
+- `001-META-_RU_-cookbook.mdc`: Meta rule about cookbook usage (Read/Update)
+- `010-core-_R__-cursor-directories.mdc`: Core rule about directory structure (Read)
 
 ## Rule Structure
 - Each rule file should include YAML frontmatter with:

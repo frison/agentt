@@ -1,10 +1,21 @@
 ---
-description: Describes creating and modifying cursor rules.
-globs: .cursor/rules/**/*.mdc
+description: META-RULE - REQUIRED before any Cursor rule modification - Describes creating and modifying cursor rules.
+globs:
 alwaysApply: false
 ---
 
 # Cursor Rules Guidelines
+
+## Agentic Modifications
+- STOP - Check this rule completely before ANY rule modifications
+- Check recipe guidance (001-META-C_U_-recipe.mdc) next
+- Never remove or weaken explicit behavioral directives
+- Preserve all meta-rules about rule modification
+- When updating rules, maintain or increase explicitness
+- Add explicit statements about expected agent behavior
+- Document reasoning for rule changes in commit messages
+- Mark rules containing modification guidance with "META-RULE" prefix
+- Set alwaysApply: true for meta-rules
 
 ## Core Principles
 - **Extreme conciseness**: Eliminate all unnecessary words
