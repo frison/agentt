@@ -7,6 +7,9 @@ categories:
   - ai
   - agent-first
   - collaboration
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "15fc73d4bca6034f3a7aee00d398f00b94cde145"
 ---
 
 In the rapidly evolving landscape of software development, we're witnessing the emergence of a new paradigm that I'm tentatively calling "agent-first development." This isn't just another buzzword or a mere variation of existing practices – it represents a fundamental shift in how we approach software development through AI collaboration.
@@ -41,4 +44,8 @@ As we continue to refine this approach, we're discovering that "agent-first" dev
 What's particularly exciting is how this approach naturally leads to more maintainable, understandable code. By optimizing our development process for effective AI collaboration, we're also creating better practices for human developers.
 
 Stay tuned as we continue to explore and refine this approach. The term "agent-first" development might evolve, but the principles behind it – small contexts, transparency, and structured collaboration – are here to stay.
+
+---
+
+*This article was originally created in commit [`15fc73d4bca6034f3a7aee00d398f00b94cde145`](https://github.com/frison/agentt/commit/15fc73d4bca6034f3a7aee00d398f00b94cde145).*
 
