@@ -1,0 +1,12 @@
+---
+description: Structure and purpose of the blog directory
+globs: blog/**
+alwaysApply: false
+---
+
+# blog/ Directory Structure
+
+```
+blog/
+└── content/  # Collaborative articles with AI
+```
