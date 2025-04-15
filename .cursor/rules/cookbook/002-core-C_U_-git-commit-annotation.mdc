@@ -11,19 +11,35 @@ alwaysApply: false
 - [Writing for Public Consumption](003-core-C_U_-writing-for-public-consumption.mdc)
 - [Shell Commands](004-core-C_U_-shell-commands.mdc)
 
+## Core Principle
+NEVER modify the user's original commit message. AI annotations must be clearly separated and only appended after the original message.
+
 1. Verify: `git log @{u}..HEAD --oneline | cat`
 
 2. Annotate:
-   - Keep original message
-   - Add "-- AI annotation" line
+   - Keep original message EXACTLY as written
+   - Add "-- AI annotation" line as separator
    - Respect 72 char limit
    - Explain key decisions
+   - NEVER modify or "improve" the original message
 
 3. Apply:
-```bash
-printf "$(git log -1 --pretty=format:"%s%n%n%b")\n\n-- AI annotation\nText" > .cursor/tmp/commit_msg.txt
-git commit --amend -F .cursor/tmp/commit_msg.txt
-rm .cursor/tmp/commit_msg.txt
-```
+   ```bash
+   # First, save the original commit message
+   git log -1 --pretty=format:"%s%n%n%b" > .cursor/tmp/commit_msg.txt
 
-Never: Use multiline commands, modify pushed commits.
+   # Then append the AI annotation
+   echo -e "\n\n-- AI annotation\nText" >> .cursor/tmp/commit_msg.txt
+
+   # Finally, amend the commit and clean up
+   git commit --amend -F .cursor/tmp/commit_msg.txt
+   rm .cursor/tmp/commit_msg.txt
+   ```
+
+## Common Violations (NEVER DO THESE)
+- Modifying the user's commit message
+- Rewriting or reformatting the original message
+- Inserting AI content before or within the original message
+- "Improving" the user's wording
+
+Never: Use multiline commands, modify pushed commits, alter original message.

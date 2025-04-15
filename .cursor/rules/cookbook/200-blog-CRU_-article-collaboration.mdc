@@ -1,0 +1,56 @@
+# Blog Article Collaboration Process
+
+## Prerequisites
+- Working in the blog/content directory
+- Understanding of Markdown syntax
+- Clear topic idea for the article
+- Get the current date with `date +%Y-%m-%d`
+
+## File Naming Convention
+1. For regular blog posts:
+   - Format: `YYYY-MM-DD-title-in-kebab-case.md`
+   - Example: `2023-03-29-get-a-firebase-token-the-easy-way.md`
+2. For special pages:
+   - Use simple descriptive name: `about.md`, `contact.md`
+
+## Phase 1: Article Request & Setup
+1. User provides:
+   - Specific topic
+   - Initial thoughts or random meanderings
+   - Any specific sections they want covered
+2. AI validates topic and file naming
+3. AI creates new file with correct naming pattern
+4. AI generates frontmatter:
+   ```md
+   ---
+   title: "Article Title"
+   date: YYYY-MM-DD
+   draft: true
+   ---
+   ```
+
+## Phase 2: Outline Creation
+1. AI creates structured outline:
+   - Main headings (H2)
+   - Subheadings where appropriate (H3)
+   - Bullet points under each section
+   - No detailed content yet
+2. AI presents outline for review
+3. User approves or requests changes
+4. Iterate until outline is approved
+
+## Phase 3: Collaborative Writing
+1. User writes content following outline
+2. AI provides real-time commentary:
+   - Technical insights
+   - Witty observations
+   - Engineering-focused perspective
+   - Constructive suggestions
+3. AI maintains salty, funny, but professional tone
+4. Continue until article is complete
+
+## Notes
+- Keep AI commentary relevant to engineering context
+- Maintain consistent voice throughout collaboration
+- Preserve user's original ideas and style
+- Focus on technical accuracy while keeping it entertaining
