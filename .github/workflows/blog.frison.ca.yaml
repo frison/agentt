@@ -15,8 +15,8 @@ jobs:
         run: |
           mkdir public
           docker run \
-            -v "$(pwd)/content":/content \
-            -v "$(pwd)/config":/config \
+            -v "$(pwd)/blog/content":/content \
+            -v "$(pwd)/blog/config":/config \
             -v "$(pwd)/public":/static_site \
             -e UID="$(id -u)" \
             -e GID="$(id -g)" \
