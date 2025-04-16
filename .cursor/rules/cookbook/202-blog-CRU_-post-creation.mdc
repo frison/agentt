@@ -1,0 +1,91 @@
+---
+description: Recipe for creating, reading, and updating blog posts with consistent structure and provenance
+globs: ["blog/content/*.md"]
+alwaysApply: false
+---
+
+# Blog Post Creation and Updates
+
+## Prerequisites
+- [Time Awareness](../005-core-_R__-time-awareness.mdc)
+- [Blog Directory Structure](../200-blog-_R__-directories.mdc)
+- [Writing for Public Consumption](900-core-C_U_-writing-for-public-consumption.mdc)
+- [Article Provenance](201-blog-_RU_-article-provenance.mdc)
+
+## File Structure
+1. Name: `YYYY-MM-DD-kebab-case-title.md`
+2. Location: `blog/content/` directory
+
+## Frontmatter Format
+```yaml
+---
+layout: post
+title: Your Title Here
+date: YYYY-MM-DD HH:MM:SS -0600
+categories:
+  - category1
+  - category2
+  - category3
+---
+```
+
+Notes on frontmatter:
+- Title uses hyphens instead of colons for separators
+- Date includes time and timezone (standardized to -0600)
+- Categories are listed as YAML array items with hyphens
+- Category names use hyphens instead of spaces
+- No quotes around any values
+
+## Content Structure
+1. **Introduction**
+   - No heading
+   - Sets context
+   - Clear problem statement
+
+2. **Main Sections**
+   - Use H2 (`##`) headings
+   - Descriptive section titles
+   - Double newline between sections
+   - Code blocks with language specification
+   ```language
+   code here
+   ```
+
+3. **Conclusion**
+   - H2 heading (typically "Looking Forward")
+   - Summarize key points
+   - Future implications
+
+4. **Provenance Footer**
+   - Horizontal rule separator
+   - Generated after initial commit
+   - Must match frontmatter exactly
+
+## Creation Process
+1. Create file with proper name
+2. Add frontmatter without provenance
+3. Write content following structure
+4. Commit post
+5. Add provenance information
+6. Commit provenance update
+
+## Validation Steps
+1. **SHA Consistency**
+   - Frontmatter commit SHA matches footer
+   - Frontmatter prompt SHA matches footer
+   - All SHAs are complete (not abbreviated)
+   - SHAs verified from git history
+
+2. **Content Quality**
+   - No H1 headings (reserved for title)
+   - Proper section spacing
+   - Language-specified code blocks
+   - Links use absolute URLs
+   - Technical accuracy in examples
+
+## Common Mistakes
+- Inconsistent SHAs between frontmatter and footer
+- Abbreviated SHAs
+- Missing language in code blocks
+- Incorrect heading hierarchy
+- Insufficient section spacing

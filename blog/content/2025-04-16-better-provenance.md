@@ -1,13 +1,12 @@
 ---
-title: "Better Provenance: Tracking the Evolution of Ideas"
-date: 2025-04-17
-description: "Exploring how we're improving our system's ability to track the evolution of ideas through git commit provenance"
-tags: ["development", "git", "provenance", "llm"]
-provenance:
-  repo: "https://github.com/frison/agentt"
-  commit: "88e86388274de4fdba5688ffaf1546da63acabfd"
-  prompt: "88e86388274de4fdba5688ffaf1546da63acabfd"
-  modifications: []
+layout: post
+title: Better Provenance - Tracking the Evolution of Ideas
+date: 2025-04-16 12:00:00 -0600
+categories:
+  - development
+  - git
+  - provenance
+  - llm
 ---
 
 In the ever-evolving landscape of software development, tracking the origin and evolution of ideas is crucial. Today's commit introduces an enhanced approach to provenance in our system, specifically focusing on how we annotate our creations with LLM inputs using git SHAs as immutable reference points.

@@ -1,13 +1,11 @@
 ---
-title: "The Evolution Loop: Self-Improving Automation"
-date: 2025-04-17
-description: "Exploring the power of self-evolving systems through commit-driven LLM interactions"
-tags: ["automation", "llm", "development"]
-provenance:
-  repo: "https://github.com/frison/agentt"
-  commit: "372737af5e88faee09992858097084af7754e9be"
-  prompt: "d71ce9a"
-  modifications: []
+layout: post
+title: The Evolution Loop - Self-Improving Automation
+date: 2025-04-16 00:00:00 -0600
+categories:
+  - automation
+  - llm
+  - development
 ---
 
 In the ever-evolving landscape of software development, we've hit upon a fascinating pattern - a loop that demonstrates the power of self-improving automation. Today's commit marks an important milestone in understanding how we can create systems that get better through their own execution.
@@ -40,4 +38,4 @@ The key is maintaining the quality of commit messages and ensuring they capture 
 
 ---
 
-*This article was originally created in commit [`372737af5e88faee09992858097084af7754e9be`](https://github.com/frison/agentt/commit/372737af5e88faee09992858097084af7754e9be), prompted by commit [`d71ce9a`](https://github.com/frison/agentt/commit/d71ce9a).*
+*This article was originally created in commit [`372737af5e88faee09992858097084af7754e9be`](https://github.com/frison/agentt/commit/372737af5e88faee09992858097084af7754e9be), prompted by commit [`d71ce9aff8278cc29f92d01eb778b3764abc3c35`](https://github.com/frison/agentt/commit/d71ce9aff8278cc29f92d01eb778b3764abc3c35).*

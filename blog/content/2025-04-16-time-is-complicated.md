@@ -1,12 +1,12 @@
 ---
-title: "Time is Complicated: A Tale of Timezones, DST, and Engineering Challenges"
-date: 2025-04-16
-description: "Exploring the complexities of handling time in software development, from timezone quirks to daylight savings challenges."
-tags: ["software engineering", "time", "best practices", "lessons learned"]
-provenance:
-  repo: "https://github.com/frison/agentt"
-  commit: "2459adf"
-  modifications: []
+layout: post
+title: Time is Complicated - A Tale of Timezones, DST, and Engineering Challenges
+date: 2025-04-16 00:00:00 -0600
+categories:
+  - software-engineering
+  - time
+  - best-practices
+  - lessons-learned
 ---
 
 Time is one of those deceptively complex aspects of software development that can trip up even the most experienced engineers. What seems like a straightforward concept – tracking when something happens – becomes a tangled web of edge cases, cultural conventions, and historical quirks.

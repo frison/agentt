@@ -21,7 +21,7 @@ alwaysApply: false
    provenance:
      repo: "https://github.com/frison/agentt"
      commit: "${COMMIT_SHA}"  # The commit where this article was created
-     prompt: "${PROMPT_SHA}"  # Optional: The commit that prompted this article's creation
+     prompt: "${PROMPT_SHA}"  # The commit that prompted this article's creation. Can be same as commit SHA if the commit message itself served as the prompt
      modifications: []  # List of modification commit SHAs
    ```
 
@@ -32,6 +32,8 @@ alwaysApply: false
    *This article was originally created in commit [`${COMMIT_SHA}`](https://github.com/frison/agentt/commit/${COMMIT_SHA})${PROMPT_TEXT}.*
    ```
    where `${PROMPT_TEXT}` is `, prompted by commit [\`${PROMPT_SHA}\`](https://github.com/frison/agentt/commit/${PROMPT_SHA})` if a prompt commit exists, or empty string if not.
+
+   Note: When the commit message itself serves as the prompt (i.e., `${PROMPT_SHA}` equals `${COMMIT_SHA}`), we still include both references to maintain consistency and make the relationship explicit.
 
 4. Commit changes:
    ```bash
