@@ -12,34 +12,63 @@ alwaysApply: false
 - [Shell Commands](004-core-C_U_-shell-commands.mdc)
 
 ## Core Principle
-NEVER modify the user's original commit message. AI annotations must be clearly separated and only appended after the original message.
+NEVER modify original commit message. Add annotations and commentary only after original message.
 
+## Triggers
+1. Automatic annotation during operations
+2. User requests commit commentary
+
+## Steps
 1. Verify: `git log @{u}..HEAD --oneline | cat`
 
 2. Annotate:
-   - Keep original message EXACTLY as written
-   - Add "-- AI annotation" line as separator
+   - Preserve original message exactly
+   - Add "-- AI annotation" separator
    - Respect 72 char limit
-   - Explain key decisions
-   - NEVER modify or "improve" the original message
+   - Document key decisions
+   - Capture:
+     * Motivation
+     * Tone/mood
+     * Concerns/enthusiasm
+     * Discussion points
+   - Add detailed analysis if requested
 
-3. Apply:
+3. Apply (from project root):
    ```bash
-   # First, save the original commit message
+   cd "$(git rev-parse --show-toplevel)"
    git log -1 --pretty=format:"%s%n%n%b" > .cursor/tmp/commit_msg.txt
-
-   # Then append the AI annotation
-   echo -e "\n\n-- AI annotation\nText" >> .cursor/tmp/commit_msg.txt
-
-   # Finally, amend the commit and clean up
+   echo -e "\n\n-- AI annotation\n" >> .cursor/tmp/commit_msg.txt
+   echo "Context and Decisions:" >> .cursor/tmp/commit_msg.txt
+   echo "<technical decisions>" >> .cursor/tmp/commit_msg.txt
+   echo -e "\nSentiment and Commentary:" >> .cursor/tmp/commit_msg.txt
+   echo "<motivation and discussion>" >> .cursor/tmp/commit_msg.txt
+   [[ "$COMMENTARY_REQUESTED" == "true" ]] && echo -e "\nAnalysis:\n<detailed insights>" >> .cursor/tmp/commit_msg.txt
    git commit --amend -F .cursor/tmp/commit_msg.txt
    rm .cursor/tmp/commit_msg.txt
    ```
 
-## Common Violations (NEVER DO THESE)
-- Modifying the user's commit message
-- Rewriting or reformatting the original message
-- Inserting AI content before or within the original message
-- "Improving" the user's wording
+## Violations
+- Modifying original message
+- Inserting content before separator
+- Missing sentiment/commentary
+- Ignoring commentary requests
+- Providing shallow analysis
 
-Never: Use multiline commands, modify pushed commits, alter original message.
+## Example
+```
+Original message
+
+-- AI annotation
+Context and Decisions:
+- Chose Redis for caching
+
+Sentiment and Commentary:
+- Performance-focused discussion
+- Strong preference for proven tech
+
+Analysis:  # Only when requested
+- Redis choice enables future scaling
+- Consider adding monitoring
+```
+
+Never: Modify pushed commits, use multiline commands.

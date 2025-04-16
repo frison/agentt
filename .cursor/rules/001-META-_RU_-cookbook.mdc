@@ -13,9 +13,10 @@ alwaysApply: true
 
 ## Required Recipe Check Sequence
 1. STOP - Do not proceed with ANY action until completing these steps
-2. Search for matching recipes:
+2. Search for matching recipes FROM THE PROJECT ROOT (parent of .cursor directory):
    ```bash
-   find recipe -name "*.mdc" -type f -exec sh -c 'echo -n "{}"; head -n5 "{}" | grep "^description:"' \; | cat
+   # MUST be run from project root (parent of .cursor directory)
+   find .cursor/rules/cookbook -name "*.mdc" -type f -exec sh -c 'echo -n "{}"; head -n5 "{}" | grep "^description:"' \; | cat
    ```
 3. If exact match exists:
    - Read and follow the recipe completely
@@ -33,6 +34,7 @@ alwaysApply: true
 
 ## Common Mistakes
 - Proceeding without checking for recipes
+- Running recipe search from wrong directory (must be project root)
 - Skipping steps in recipes
 - Modifying recipe steps without justification
 - Not documenting recipe mismatches

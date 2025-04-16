@@ -17,6 +17,7 @@ alwaysApply: false
 - Only use the "my-gift-to-ai" branch - this represents permission to use code
 - Create clean imports without git history metadata
 - Maintain provenance information in commit messages
+- **ALWAYS operate from project root** unless explicitly stated otherwise
 
 ## Critical Elements
 - **SOURCE_URL**: URL provided by human - source repository location
@@ -24,43 +25,44 @@ alwaysApply: false
 - **SHA**: Commit hash for reference
 
 ## Required Import Process
-1. Clone the repository with specific branch (CRITICAL - use exact SOURCE_URL provided by human without modification):
+1. Start from project root and create provenance directory (CRITICAL - all paths relative to project root):
    ```bash
-   mkdir -p provenance
-   cd provenance
+   cd "$(git rev-parse --show-toplevel)"  # Ensure we're at project root
+   mkdir -p .cursor/tmp/provenance
+   cd .cursor/tmp/provenance
    git clone --branch my-gift-to-ai {SOURCE_URL}
    ```
 
-2. Create tar archive for provenance preservation:
+2. Create tar archive for provenance preservation (from provenance directory):
    ```bash
    tar -czf {repo-name}.tar.gz {repo-name}
    ```
 
-3. Get the commit SHA for reference:
+3. Get the commit SHA for reference (paths relative to current provenance directory):
    ```bash
    cd {repo-name}
    SHA=$(git rev-parse HEAD)
-   cd ../..
+   cd ../..  # Return to project root
    ```
 
-4. Extract repository content to destination without git history:
+4. Extract repository content to destination without git history (from project root):
    ```bash
    mkdir -p {destination}
-   tar -xzf provenance/{repo-name}.tar.gz -C {destination} --strip-components=1
+   tar -xzf .cursor/tmp/provenance/{repo-name}.tar.gz -C {destination} --strip-components=1
    cd {destination}
    rm -rf .git  # Remove git metadata
    ```
 
-5. Add to version control with provenance information:
+5. Add to version control with provenance information (from destination directory):
    ```bash
-   cd ..
+   cd "$(git rev-parse --show-toplevel)"  # Return to project root
    git add {destination}/
    git commit -m "Import {source} from {SOURCE_URL} (SHA: $SHA)"
    ```
 
-6. Clean up:
+6. Clean up (from project root):
    ```bash
-   rm -rf provenance/{repo-name}
+   rm -rf .cursor/tmp/provenance
    ```
 
 ## Common Mistakes
@@ -72,3 +74,6 @@ alwaysApply: false
 - Not cleaning up temporary files
 - Preserving .git metadata in the destination
 - Not following the exact sequence of steps
+- Not maintaining clear directory context
+- Running commands from incorrect directory
+- Using relative paths without clear context

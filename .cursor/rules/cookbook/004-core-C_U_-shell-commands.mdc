@@ -11,6 +11,7 @@ alwaysApply: false
 - Always append `| cat` to commands that may launch pagers or interactive tools
 - Use `-y` or equivalent non-interactive flags when available
 - Set environment variables to disable interactive prompts
+- **ALWAYS specify directory context** for commands (relative to project root or absolute path)
 
 ## Non-Interactive Git Configuration
 For git commands specifically:
@@ -89,25 +90,35 @@ Always append `| cat` to these commands:
 | `man cmd`   | `man cmd | cat` |
 | `top`       | `ps aux`        |
 
+## Directory Context
+- **ALWAYS** specify if paths are relative to:
+  - Project root (parent of .cursor directory)
+  - Current working directory
+  - Absolute paths
+- Use `pwd` to verify current directory when needed
+- Document directory assumptions in command comments
+- Prefer paths relative to project root for consistency
+
 ## Best Practices
 1. Test all commands before adding
 2. Add comments explaining purpose
 3. Make commands idempotent
-4. Use explicit file paths
+4. Use explicit paths relative to project root
 5. Clean up temporary files
 6. Use `.cursor/tmp/` for temporary files
+7. Document directory context for all commands
 
 ## Examples
 ```bash
-# Good
+# Good - explicit directory context
+cd "$(git rev-parse --show-toplevel)"  # Go to project root
 git log --no-pager -n 5
-cat file.txt
-printf "content" > .cursor/tmp/file.txt
+cat .cursor/tmp/file.txt  # Path relative to project root
 
-# Bad
-git log
-less file.txt
-vim file.txt
+# Bad - ambiguous directory context
+cd some/path  # Where is this relative to?
+cat file.txt  # Which directory?
+vim ../file.txt  # Unclear parent directory
 ```
 
 Never: Use interactive commands, leave processes running, forget cleanup.
