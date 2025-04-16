@@ -10,6 +10,8 @@ categories:
 provenance:
   repo: "https://github.com/frison/agentt"
   commit: "0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf"
+  modifications:
+    - "85831e6dd00d31435d76112ea4087d674127f864"
 ---
 
 In the ever-evolving landscape of software development, some challenges remain surprisingly constant. Today, we tackled one such perennial issue: the subtle complexity of relative paths in our codebase. What started as a simple observation about path resolution turned into a valuable lesson about human-AI collaboration and the importance of explicit intent.
@@ -47,3 +49,5 @@ Remember: in the path between relative and absolute, sometimes the clearest rout
 ---
 
 *This article was originally created in commit [`0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf`](https://github.com/frison/agentt/commit/0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf).*
+
+*Modified in commit [`85831e6dd00d31435d76112ea4087d674127f864`](https://github.com/frison/agentt/commit/85831e6dd00d31435d76112ea4087d674127f864).*
