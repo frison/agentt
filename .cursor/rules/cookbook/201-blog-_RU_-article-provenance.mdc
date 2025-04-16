@@ -21,6 +21,7 @@ alwaysApply: false
    provenance:
      repo: "https://github.com/frison/agentt"
      commit: "${COMMIT_SHA}"
+     modifications: []  # List of modification commit SHAs
    ```
 
 3. Append to article:
@@ -36,8 +37,36 @@ alwaysApply: false
    git commit -m "docs(blog): add provenance information"
    ```
 
+## Adding Modification Attestation
+
+1. Get modification commit SHA:
+   ```bash
+   MOD_SHA=$(git rev-parse HEAD)
+   ```
+
+2. Update frontmatter modifications array:
+   ```yaml
+   provenance:
+     repo: "https://github.com/frison/agentt"
+     commit: "original-sha"
+     modifications:
+       - "${MOD_SHA}"
+   ```
+
+3. Append to article's provenance section:
+   ```markdown
+   *Modified in commit [`${MOD_SHA}`](https://github.com/frison/agentt/commit/${MOD_SHA}).*
+   ```
+
+4. Commit changes:
+   ```bash
+   git add blog/content/your-article.md
+   git commit -m "docs(blog): add modification provenance"
+   ```
+
 ## Validation
 - Provenance points to article creation commit
+- Modifications list contains all update commits
 - Links use absolute URLs
 - Original commit SHA preserved
-- Provenance statement isolated from content
+- Provenance statements isolated from content
