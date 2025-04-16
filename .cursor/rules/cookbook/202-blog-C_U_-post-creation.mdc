@@ -1,0 +1,44 @@
+# Blog Post Creation and Updates
+
+## Prerequisites
+- [Blog Directory Structure](../200-blog-_R__-directories.mdc)
+- [Writing for Public Consumption](900-core-C_U_-writing-for-public-consumption.mdc)
+- [Article Provenance](201-blog-_RU_-article-provenance.mdc)
+
+## File Structure
+1. Name files: `YYYY-MM-DD-kebab-case-title.md`
+2. Place in `blog/content/` directory
+
+## Frontmatter Format
+```yaml
+---
+layout: post
+title: "Your Title Here"
+date: YYYY-MM-DD HH:MM:SS -0600
+categories:
+  - category1
+  - category2
+provenance:  # Added after initial commit
+  repo: "https://github.com/frison/agentt"
+  commit: "commit-sha-here"
+---
+```
+
+## Content Guidelines
+1. Use markdown for content
+2. Structure with H2 (`##`) for main sections
+3. Include code blocks with language specification
+4. End with provenance statement after commit
+
+## Required Sections
+1. Introduction (no heading)
+2. Main content sections (H2)
+3. Conclusion section (H2)
+4. Provenance footer (after commit)
+
+## Process
+1. Create post with initial frontmatter
+2. Write content following guidelines
+3. Commit post
+4. Add provenance information
+5. Commit provenance update

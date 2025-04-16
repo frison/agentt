@@ -1,9 +1,12 @@
 ---
+layout: post
 title: "The Path Less Relative: A Tale of Explicit Intent"
 date: 2024-04-15 23:05:00 -0600
-description: "Exploring why explicit paths lead to better collaboration between humans and AI"
-tags: ["development", "best practices", "ai", "cursor"]
-draft: false
+categories:
+  - development
+  - best-practices
+  - ai
+  - cursor
 provenance:
   repo: "https://github.com/frison/agentt"
   commit: "0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf"
