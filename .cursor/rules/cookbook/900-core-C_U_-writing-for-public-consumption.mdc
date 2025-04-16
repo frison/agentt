@@ -10,6 +10,7 @@ alwaysApply: false
 This recipe provides guidelines for crafting clear, effective, and personable content that will be publicly visible. Good writing serves as documentation, reflects the project's quality, and improves collaboration.
 
 ## Prerequisites
+- [Time Awareness](../005-core-_R__-time-awareness.mdc)
 - Understanding of the project's technical context
 - Awareness of the project's audience and contributors
 

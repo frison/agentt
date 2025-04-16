@@ -1,8 +1,12 @@
 ---
 title: "Debugging Docker Deployment: A Tale of Past and Present"
-date: 2024-04-16
+date: 2025-04-16T01:47:35-06:00
 description: "Exploring the debugging process of a Docker-based static site deployment, and the value of past documentation"
 tags: ["docker", "debugging", "devops", "documentation"]
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "b1c9bbc285617d50a55029258de5f6434a69f6dd"
+  modifications: []
 ---
 
 When debugging complex systems, sometimes the most valuable resource is documentation from your past self. Today's debugging session was a perfect example of how past documentation, combined with systematic debugging approaches, can lead to efficient problem-solving.
@@ -115,3 +119,5 @@ This debugging session highlighted the importance of:
 - Being aware of the trade-offs between quick fixes and deep understanding
 
 ---
+
+*This article was originally created in commit [`b1c9bbc285617d50a55029258de5f6434a69f6dd`](https://github.com/frison/agentt/commit/b1c9bbc285617d50a55029258de5f6434a69f6dd).*
