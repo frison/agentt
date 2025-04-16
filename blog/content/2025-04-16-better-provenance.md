@@ -1,12 +1,18 @@
 ---
 layout: post
 title: Better Provenance - Tracking the Evolution of Ideas
-date: 2025-04-16 12:00:00 -0600
+date: 2025-04-16 00:00:00 -0600
 categories:
   - development
   - git
   - provenance
   - llm
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "88e86388274de4fdba5688ffaf1546da63acabfd"
+  prompt: "88e86388274de4fdba5688ffaf1546da63acabfd"
+  modifications:
+    - "46911713e6676ba8dcdc3d1ddf714849df6d48e4"  # Frontmatter standardization update
 ---
 
 In the ever-evolving landscape of software development, tracking the origin and evolution of ideas is crucial. Today's commit introduces an enhanced approach to provenance in our system, specifically focusing on how we annotate our creations with LLM inputs using git SHAs as immutable reference points.
@@ -31,3 +37,4 @@ This improvement in provenance tracking sets the foundation for better documenta
 ---
 
 *This article was originally created in commit [`88e86388274de4fdba5688ffaf1546da63acabfd`](https://github.com/frison/agentt/commit/88e86388274de4fdba5688ffaf1546da63acabfd), prompted by commit [`88e86388274de4fdba5688ffaf1546da63acabfd`](https://github.com/frison/agentt/commit/88e86388274de4fdba5688ffaf1546da63acabfd).*
+*Modified in commit [`46911713e6676ba8dcdc3d1ddf714849df6d48e4`](https://github.com/frison/agentt/commit/46911713e6676ba8dcdc3d1ddf714849df6d48e4) to standardize frontmatter format.*

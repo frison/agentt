@@ -7,6 +7,11 @@ categories:
   - time
   - best-practices
   - lessons-learned
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "2459adfebc12e3f5e85de07ba28954db54ea833a"
+  modifications:
+    - "46911713e6676ba8dcdc3d1ddf714849df6d48e4"  # Frontmatter standardization update
 ---
 
 Time is one of those deceptively complex aspects of software development that can trip up even the most experienced engineers. What seems like a straightforward concept – tracking when something happens – becomes a tangled web of edge cases, cultural conventions, and historical quirks.
@@ -43,4 +48,5 @@ Remember: whenever you're dealing with time in your applications, take a moment 
 
 ---
 
-*This article was originally created in commit [`2459adf`](https://github.com/frison/agentt/commit/2459adf).*
+*This article was originally created in commit [`2459adfebc12e3f5e85de07ba28954db54ea833a`](https://github.com/frison/agentt/commit/2459adfebc12e3f5e85de07ba28954db54ea833a).*
+*Modified in commit [`46911713e6676ba8dcdc3d1ddf714849df6d48e4`](https://github.com/frison/agentt/commit/46911713e6676ba8dcdc3d1ddf714849df6d48e4) to standardize frontmatter format.*

@@ -6,6 +6,12 @@ categories:
   - automation
   - llm
   - development
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "372737af5e88faee09992858097084af7754e9be"
+  prompt: "d71ce9aff8278cc29f92d01eb778b3764abc3c35"
+  modifications:
+    - "46911713e6676ba8dcdc3d1ddf714849df6d48e4"  # Frontmatter standardization update
 ---
 
 In the ever-evolving landscape of software development, we've hit upon a fascinating pattern - a loop that demonstrates the power of self-improving automation. Today's commit marks an important milestone in understanding how we can create systems that get better through their own execution.
@@ -39,3 +45,4 @@ The key is maintaining the quality of commit messages and ensuring they capture 
 ---
 
 *This article was originally created in commit [`372737af5e88faee09992858097084af7754e9be`](https://github.com/frison/agentt/commit/372737af5e88faee09992858097084af7754e9be), prompted by commit [`d71ce9aff8278cc29f92d01eb778b3764abc3c35`](https://github.com/frison/agentt/commit/d71ce9aff8278cc29f92d01eb778b3764abc3c35).*
+*Modified in commit [`46911713e6676ba8dcdc3d1ddf714849df6d48e4`](https://github.com/frison/agentt/commit/46911713e6676ba8dcdc3d1ddf714849df6d48e4) to standardize frontmatter format.*

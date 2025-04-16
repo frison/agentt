@@ -7,6 +7,11 @@ categories:
   - debugging
   - devops
   - documentation
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "b1c9bbc285617d50a55029258de5f6434a69f6dd"
+  modifications:
+    - "46911713e6676ba8dcdc3d1ddf714849df6d48e4"  # Frontmatter standardization update
 ---
 
 When debugging complex systems, sometimes the most valuable resource is documentation from your past self. Today's debugging session was a perfect example of how past documentation, combined with systematic debugging approaches, can lead to efficient problem-solving.
@@ -121,3 +126,4 @@ This debugging session highlighted the importance of:
 ---
 
 *This article was originally created in commit [`b1c9bbc285617d50a55029258de5f6434a69f6dd`](https://github.com/frison/agentt/commit/b1c9bbc285617d50a55029258de5f6434a69f6dd).*
+*Modified in commit [`46911713e6676ba8dcdc3d1ddf714849df6d48e4`](https://github.com/frison/agentt/commit/46911713e6676ba8dcdc3d1ddf714849df6d48e4) to standardize frontmatter format.*
