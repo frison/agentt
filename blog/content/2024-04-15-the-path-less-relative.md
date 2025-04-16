@@ -4,6 +4,9 @@ date: 2024-04-15 23:05:00 -0600
 description: "Exploring why explicit paths lead to better collaboration between humans and AI"
 tags: ["development", "best practices", "ai", "cursor"]
 draft: false
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf"
 ---
 
 In the ever-evolving landscape of software development, some challenges remain surprisingly constant. Today, we tackled one such perennial issue: the subtle complexity of relative paths in our codebase. What started as a simple observation about path resolution turned into a valuable lesson about human-AI collaboration and the importance of explicit intent.
@@ -37,3 +40,7 @@ As we continue to explore the intersection of human and AI collaboration in soft
 This might seem like a small change, but it represents a larger pattern in software development: the move towards practices that benefit both human and AI understanding. As we continue to work alongside AI tools, these considerations will become increasingly important.
 
 Remember: in the path between relative and absolute, sometimes the clearest route is the most explicit one.
+
+---
+
+*This article was originally created in commit [`0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf`](https://github.com/frison/agentt/commit/0a047c7e0b7e1e99e8851e9ad4c4b77fe81a7dcf).*
