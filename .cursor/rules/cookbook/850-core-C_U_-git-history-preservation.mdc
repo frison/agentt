@@ -9,10 +9,20 @@ alwaysApply: false
 ⚠️ **SACRED DIRECTIVE**: All repository imports MUST use the sacred scripts. Manual imports are FORBIDDEN.
 
 ## Prerequisites
+- MUST start all operations from project root (parent of .cursor directory)
 - Git installed and configured
 - Access to target repositories
 - The sacred `my-gift-to-ai` branch must exist in source repository
 - `.cursor/code/850-core-git-history-preservation.sh` must be executable
+
+## Directory Context
+- ALL operations MUST start from project root directory
+- Project root is the parent directory of .cursor/
+- Use `$(git rev-parse --show-toplevel)` to ensure root context
+- All paths MUST be relative to project root
+- Document any temporary directory changes within steps
+- Return to project root after any directory changes
+- Sacred script paths MUST be relative to project root
 
 ## Core Principles
 - **Use Sacred Scripts**: All operations that affect repository history MUST be performed through sacred scripts
@@ -20,7 +30,6 @@ alwaysApply: false
 - Only use the "my-gift-to-ai" branch - this represents permission to use code
 - Create clean imports without git history metadata
 - Maintain provenance information in commit messages
-- **ALWAYS operate from project root** unless explicitly stated otherwise
 
 ## Critical Elements
 - **SOURCE_URL**: URL provided by human - source repository location
@@ -93,6 +102,9 @@ The sacred script will:
 ## Example Usage
 
 ```bash
+# First ensure we're in project root
+cd "$(git rev-parse --show-toplevel)"
+
 # Simple import
 .cursor/code/850-core-git-history-preservation.sh git@github.com:user/repo.git cortex_input
 
@@ -103,10 +115,10 @@ AGENTT_PERMIT_COMMIT=true .cursor/code/850-core-git-history-preservation.sh git@
 ## Troubleshooting
 
 If the script fails:
-1. Verify the `my-gift-to-ai` branch exists
-2. Check file permissions
-3. Ensure you're in the project root
-4. Verify the destination directory is clean
+1. Verify you are in the project root directory
+2. Verify the `my-gift-to-ai` branch exists
+3. Check file permissions
+4. Ensure the destination directory is clean
 5. Check provenance directory exists
 
 ## Additional Notes

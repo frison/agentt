@@ -28,11 +28,20 @@ alwaysApply: false
 
 ## Prerequisites
 - MUST check this recipe before modifying any recipes
+- MUST start all operations from project root (parent of .cursor directory)
 - Always include this section
 - List required knowledge/tools/files
 - Link related rules: `[Rule Name](path/to/rule.mdc)`
 - List dependencies on other recipes
 - Keep list brief, only essential items
+
+## Directory Context
+- ALL recipes MUST start from project root directory
+- Project root is the parent directory of .cursor/
+- Use `$(git rev-parse --show-toplevel)` to ensure root context
+- All paths MUST be relative to project root
+- Document any temporary directory changes within steps
+- Return to project root after any directory changes
 
 ## Format
 - YAML frontmatter
@@ -48,7 +57,6 @@ alwaysApply: false
 - Use direct commands
 - Include only essential examples
 - For git operations, follow [Git History Preservation Guidelines](000-core-C_U_-git-history-preservation.mdc)
-
 
 ## Maintenance
 - Remove outdated content
