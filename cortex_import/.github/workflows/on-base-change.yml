@@ -1,0 +1,66 @@
+name: 🧱 + 🖐 - On Base Push
+
+# (Name of the workflow)-(fully formed ref (ie. refs/heads/main,refs/tags/v10,refs/pull/<pr_number>/merge))
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-publish-base:
+    strategy:
+      fail-fast: false
+      matrix:
+        alpine-version:
+          - '3.18' # The latest
+          - '3.10' # Required for emojicode because of it's llvm8 dependency
+        include:
+          - alpine-version: '3.10'
+            image-label-prefix: 'alpine-3.10-'
+
+    name: 🚀 - alpine:${{ matrix.alpine-version }} - Build, Run and Publish Base
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: 🛒 - Checkout
+        uses: actions/checkout@master
+
+      # https://github.com/dorny/paths-filter
+      -
+        name: 📂 - Base Changed?
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            base:
+              - .base/**
+              - .github/workflows/on-base-change.yml
+
+      -
+        if: steps.changes.outputs.base == 'true'
+        name: 🎬 Publish
+        uses: ./.github/actions/build-test-publish
+        with:
+          display-as: Base
+          dockerfile: .base/Dockerfile
+          docker-image: 100hellos/base
+          docker-label-prefix: ${{ matrix.image-label-prefix }}
+          docker-context: .base
+          docker-build-target: base
+          docker-build-args: |
+            ALPINE_VERSION=${{ matrix.alpine-version }}
+          platforms: linux/amd64
+
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-description: "All \"Hello World!\"'s start with this image."
+          dockerhub-readme: ./.base/README.md
+
+          test: true
+          publish: ${{ github.ref == 'refs/heads/main' }}
+          publish-dockerhub-description: ${{ matrix.alpine-version == '3.18' }}
+
+

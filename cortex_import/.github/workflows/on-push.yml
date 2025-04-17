@@ -1,0 +1,76 @@
+name: 🖥 + 🖐 - On Push
+
+# (Name of the workflow)-(fully formed ref (ie. refs/heads/main,refs/tags/v10,refs/pull/<pr_number>/merge))
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    paths-ignore:
+      - .base/**
+  pull_request:
+    paths-ignore:
+      - .base/**
+
+jobs:
+  what-to-build:
+    name: 🔎 - Find Build Surface
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required for dorny/paths-filter
+      pull-requests: read
+
+    steps:
+      -
+        name: 🛒 - Checkout
+        uses: actions/checkout@master
+
+      -
+        name: 🧠 - Generate Language Filters
+        id: generate-filters
+        shell: bash
+        run: |
+          ./.github/bin/generate-language-filters.sh > ${GITHUB_WORKSPACE:-.}/lang-filters.yml
+
+      # https://github.com/dorny/paths-filter
+      -
+        name: 📂 - Changed Languages?
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: lang-filters.yml
+
+    outputs:
+      languages: ${{ steps.changes.outputs.changes }}
+
+  validate:
+    name: 🔬 - Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      -
+        name: 🛒 - Checkout
+        uses: actions/checkout@master
+
+      -
+        name: 🧠 - Validations
+        id: generate-filters
+        shell: bash
+        run: |
+          ./.github/bin/validate.sh
+
+
+  build-test-publish:
+    name: 🧪 - Build and Run
+    uses: ./.github/workflows/build-test-publish.yml
+    if: ${{ needs.what-to-build.outputs.languages != '[]' }}
+    needs:
+      - what-to-build
+      - validate
+    secrets: inherit
+    with:
+      languages: ${{ needs.what-to-build.outputs.languages }}
+      publish: ${{ github.ref == 'refs/heads/main' }}
+

@@ -1,0 +1,28 @@
+# This repository publishes each of the directories as docker images
+# and you don't need to do anything special to make that happen.
+# But to accomplish that, we need to maintain a list of directories
+# that we **do not** want to publish. This file is that list.
+.
+.git
+.github
+.utils
+.template
+.base
+.trunk
+.vscode
+000-base
+050-c
+100-java11
+200-dotnet
+300-node
+
+# A repository's name must:
+#  - be unique within the account
+#  - be 2-255 characters
+#  - only lowercase, -, and _
+#
+# Consequently single character language names are not possible. To get around this,
+# we suffix single character languages with an underscore.
+# c
+# r
+
