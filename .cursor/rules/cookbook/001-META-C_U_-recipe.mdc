@@ -6,17 +6,23 @@ alwaysApply: false
 
 # Recipe Guidelines
 
+## Required Sequence
+1. STOP - Do not proceed until completing these steps
+2. Read 000-META-_R__-rules.mdc completely
+3. Read this recipe guidance completely
+4. Follow modification sequence below
+5. Verify changes maintain explicitness
+
 ## Agentic Modifications
-- STOP - Verify you've read 000-META-C_U_-cursor-rule.mdc completely
 - Never skip prerequisites section
 - Never remove explicit behavioral directives
 - When updating recipes, maintain or increase explicitness
 - Document reasoning for recipe changes in commit messages
 - Follow modification sequence:
-  1. Read cursor-rule.mdc completely
-  2. Read this recipe guidance completely
-  3. Make required changes
-  4. Verify changes maintain explicitness
+  1. Verify current directory is project root
+  2. Make required changes
+  3. Verify changes maintain explicitness
+  4. Document changes in commit message
 
 ## Structure
 - Clear title (imperative mood)
@@ -31,7 +37,7 @@ alwaysApply: false
 - MUST start all operations from project root (parent of .cursor directory)
 - Always include this section
 - List required knowledge/tools/files
-- Link related rules: `[Rule Name](path/to/rule.mdc)`
+- Link related rules: `[Rule Name](../path/to/rule.mdc)`
 - List dependencies on other recipes
 - Keep list brief, only essential items
 
@@ -45,7 +51,7 @@ alwaysApply: false
 
 ## Format
 - YAML frontmatter
-  - description: One sentence
+  - description: Critical statement used for agentic discovery.
   - globs: Patterns or []
   - alwaysApply: Boolean
 - Use H1 for title, H2 for sections
@@ -56,7 +62,7 @@ alwaysApply: false
 - Focus on actions, not theory
 - Use direct commands
 - Include only essential examples
-- For git operations, follow [Git History Preservation Guidelines](000-core-C_U_-git-history-preservation.mdc)
+- For git operations, follow [Git History Preservation Guidelines](850-core-C_U_-git-history-preservation.mdc)
 
 ## Maintenance
 - Remove outdated content
