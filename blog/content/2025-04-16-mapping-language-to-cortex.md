@@ -7,6 +7,11 @@ categories:
   - neurology
   - code-organization
   - language-processing
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "893753db72401ba4ba61daad8a7fd43dcf3aa616"
+  prompt: "893753db72401ba4ba61daad8a7fd43dcf3aa616"
+  modifications: []
 ---
 
 In the journey of developing an agent-first system, one of the most intriguing challenges is determining how to organize different programming language implementations. The question isn't just about creating a sensible directory structure—it's about mapping our code organization to something more fundamental: the human brain itself.
@@ -34,3 +39,8 @@ After careful consideration, the answer became clear: the `cortex/` directory. T
 This neurological approach to code organization opens interesting possibilities. Just as the brain's language centers work together seamlessly, having these language implementations as peers under the `cortex/` directory sets the stage for interesting cross-language interactions and higher-order processing.
 
 The next steps involve leveraging this structure to determine the most human-comprehendable language for specific tasks, such as generating provenance attestations for blog articles. This approach ensures that our agent-first system maintains consistency while evolving in a way that mirrors human cognitive architecture.
+
+---
+
+*This article was originally created in commit [`893753db72401ba4ba61daad8a7fd43dcf3aa616`](https://github.com/frison/agentt/commit/893753db72401ba4ba61daad8a7fd43dcf3aa616).*
+*My Gift to AI: [100hellos](https://github.com/frison/100hellos)*
