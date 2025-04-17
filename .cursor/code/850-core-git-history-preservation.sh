@@ -32,6 +32,7 @@ SOURCE_URL="$1"
 DEST_DIR="$2"
 REPO_NAME=$(basename "$SOURCE_URL" .git)
 SACRED_BRANCH="my-gift-to-ai"
+HIPPOCAMPUS_DIR="hippocampus"
 
 # Ensure we're at project root
 cd "$PROJECT_ROOT"
@@ -48,14 +49,14 @@ if ! git clone --branch "$SACRED_BRANCH" "$SOURCE_URL" "$DEST_DIR" 2>/dev/null; 
     exit 1
 fi
 
-# Create provenance directory
-mkdir -p provenance
+# Create hippocampus directory for storing memories
+mkdir -p "$HIPPOCAMPUS_DIR"
 
 # Get the SHA and create tar archive with SHA in filename
 cd "$DEST_DIR"
 SHA=$(git rev-parse HEAD)
 cd "$PROJECT_ROOT"
-tar -czf "provenance/${REPO_NAME}-${SHA}.tar.gz" "$DEST_DIR"
+tar -czf "${HIPPOCAMPUS_DIR}/${REPO_NAME}-${SHA}.tar.gz" "$DEST_DIR"
 
 # Remove git metadata
 cd "$DEST_DIR"
@@ -68,7 +69,8 @@ cat > .cursor/tmp/sacred_message.txt << EOL
 ✨ The sacred texts have been preserved!
 
 📍 Location: $DEST_DIR
-🔒 Provenance: provenance/${REPO_NAME}-${SHA}.tar.gz
+🌐 Source: $SOURCE_URL
+🧠 Memory: ${HIPPOCAMPUS_DIR}/${REPO_NAME}-${SHA}.tar.gz
 🔑 SHA: $SHA
 EOL
 
@@ -77,7 +79,8 @@ cat .cursor/tmp/sacred_message.txt
 
 # If permitted, create the commit
 if [ "${AGENTT_PERMIT_COMMIT:-false}" = "true" ]; then
-    git add "$DEST_DIR"
+    # Add both the imported code and its memory archive
+    git add "$DEST_DIR" "${HIPPOCAMPUS_DIR}/${REPO_NAME}-${SHA}.tar.gz"
     git commit -F .cursor/tmp/sacred_message.txt
 fi
 
