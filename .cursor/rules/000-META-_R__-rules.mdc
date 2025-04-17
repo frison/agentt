@@ -9,7 +9,7 @@ alwaysApply: true
 Files are named using this pattern:
 
 ```
-[NNN]-[core-][CRUD]-[name].mdc
+[NNN]-[core-|eph-][CRUD]-[name].mdc
 ```
 
 Where:
@@ -18,7 +18,9 @@ Where:
   - 100-499: General patterns and practices
   - 500-899: Specific domains or components
   - 900-999: Temporary or transitional guidance
-- **core-**: (Optional) Indicates repository-agnostic rules that apply to any codebase
+- **core-|eph-**: (Optional) Category prefix:
+  - core-: Indicates repository-agnostic rules that apply to any codebase
+  - eph-: Indicates ephemeral rules that are only relevant during transitions or temporary states
 - **CRUD**: Which operations are documented:
   - C = Create (guidance for new implementations)
   - R = Read (how to understand existing patterns)
@@ -33,6 +35,7 @@ Where:
 - `000-META-_R__-rules.mdc`: High-priority meta rule about rule structure (Read)
 - `001-META-_RU_-cookbook.mdc`: Meta rule about cookbook usage (Read/Update)
 - `010-core-_R__-cursor-directories.mdc`: Core rule about directory structure (Read)
+- `500-eph-CRU_-migration-steps.mdc`: Ephemeral rule for guiding a specific migration process
 
 ## Rule Structure
 - Each rule file should include YAML frontmatter with:
