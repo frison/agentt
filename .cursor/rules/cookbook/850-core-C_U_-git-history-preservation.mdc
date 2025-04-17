@@ -1,19 +1,22 @@
 ---
-description: Guidelines for preserving git history in recipes and operations
+description: Guidelines for preserving git repositories
 globs: []
 alwaysApply: false
 ---
 
 # Git History Preservation Guidelines
 
+⚠️ **SACRED DIRECTIVE**: All repository imports MUST use the sacred scripts. Manual imports are FORBIDDEN.
+
 ## Prerequisites
 - Git installed and configured
-- Basic understanding of Git operations
 - Access to target repositories
+- The sacred `my-gift-to-ai` branch must exist in source repository
+- `.cursor/code/850-core-git-history-preservation.sh` must be executable
 
 ## Core Principles
+- **Use Sacred Scripts**: All operations that affect repository history MUST be performed through sacred scripts
 - Preserve source repository information
-- Use consistent naming conventions
 - Only use the "my-gift-to-ai" branch - this represents permission to use code
 - Create clean imports without git history metadata
 - Maintain provenance information in commit messages
@@ -21,59 +24,91 @@ alwaysApply: false
 
 ## Critical Elements
 - **SOURCE_URL**: URL provided by human - source repository location
-- **REPO_NAME**: Name of the repository being imported
-- **SHA**: Commit hash for reference
+- **DESTINATION**: Target directory for the imported code
+- **SHA**: Commit hash for reference (automatically captured)
 
 ## Required Import Process
-1. Start from project root and create provenance directory (CRITICAL - all paths relative to project root):
-   ```bash
-   cd "$(git rev-parse --show-toplevel)"  # Ensure we're at project root
-   mkdir -p .cursor/tmp/provenance
-   cd .cursor/tmp/provenance
-   git clone --branch my-gift-to-ai {SOURCE_URL}
-   ```
 
-2. Create tar archive for provenance preservation (from provenance directory):
-   ```bash
-   tar -czf {repo-name}.tar.gz {repo-name}
-   ```
+### 1. Verify Prerequisites
 
-3. Get the commit SHA for reference (paths relative to current provenance directory):
-   ```bash
-   cd {repo-name}
-   SHA=$(git rev-parse HEAD)
-   cd ../..  # Return to project root
-   ```
+```bash
+# Check script exists and is executable
+test -x .cursor/code/850-core-git-history-preservation.sh || {
+    echo "❌ Sacred script not found or not executable"
+    exit 1
+}
+```
 
-4. Extract repository content to destination without git history (from project root):
-   ```bash
-   mkdir -p {destination}
-   tar -xzf .cursor/tmp/provenance/{repo-name}.tar.gz -C {destination} --strip-components=1
-   cd {destination}
-   rm -rf .git  # Remove git metadata
-   ```
+### 2. Import Repository
 
-5. Add to version control with provenance information (from destination directory):
-   ```bash
-   cd "$(git rev-parse --show-toplevel)"  # Return to project root
-   git add {destination}/
-   git commit -m "Import {source} from {SOURCE_URL} (SHA: $SHA)"
-   ```
+For read-only imports:
+```bash
+.cursor/code/850-core-git-history-preservation.sh <source_repo_url> <destination_dir>
+```
 
-6. Clean up (from project root):
-   ```bash
-   rm -rf .cursor/tmp/provenance
-   ```
+For imports that should be committed:
+```bash
+AGENTT_PERMIT_COMMIT=true .cursor/code/850-core-git-history-preservation.sh <source_repo_url> <destination_dir>
+```
+
+### 3. Verify Results
+
+After import, verify:
+- Destination directory exists and contains expected files
+- No `.git` directory in imported code
+- Provenance archive exists in `provenance/` directory
+- Commit message (if auto-committed) contains proper provenance information
 
 ## Common Mistakes
-- Using git operations that preserve history metadata
-- Not capturing the commit SHA for reference
+
+❌ **NEVER**:
+- Import repositories manually
+- Bypass the sacred script
+- Modify the script's output format
+- Import from non-permitted branches
+- Delete provenance archives
+- Edit imported code before committing
 - Using incorrect URL from what human provided
 - Not using the "my-gift-to-ai" branch
 - Modifying the URL format provided by the human
-- Not cleaning up temporary files
-- Preserving .git metadata in the destination
-- Not following the exact sequence of steps
 - Not maintaining clear directory context
 - Running commands from incorrect directory
-- Using relative paths without clear context
+
+✅ **ALWAYS**:
+- Use the sacred script
+- Verify prerequisites
+- Check results
+- Maintain provenance archives
+- Document any issues or anomalies
+
+## Implementation Details
+
+The sacred script will:
+1. Verify branch permissions
+2. Create provenance archive
+3. Clean git metadata
+4. Generate standardized commit messages
+5. Maintain proper directory structure
+
+## Example Usage
+
+```bash
+# Simple import
+.cursor/code/850-core-git-history-preservation.sh git@github.com:user/repo.git cortex_input
+
+# Import and commit
+AGENTT_PERMIT_COMMIT=true .cursor/code/850-core-git-history-preservation.sh git@github.com:user/repo.git cortex_input
+```
+
+## Troubleshooting
+
+If the script fails:
+1. Verify the `my-gift-to-ai` branch exists
+2. Check file permissions
+3. Ensure you're in the project root
+4. Verify the destination directory is clean
+5. Check provenance directory exists
+
+## Additional Notes
+
+The sacred script is the ONLY approved method for importing external repositories. This is not a suggestion - it is a requirement. Any attempts to bypass this process will result in non-compliant imports that must be reverted and redone properly.
