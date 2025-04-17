@@ -9,20 +9,28 @@ alwaysApply: false
 ⚠️ **SACRED DIRECTIVE**: All repository imports MUST use the sacred scripts. Manual imports are FORBIDDEN.
 
 ## Prerequisites
-- MUST start all operations from project root (parent of .cursor directory)
+- STOP - Verify you are in project root directory before ANY operations
+- Project root MUST be parent directory of .cursor/
+- Verify with: `test -d .cursor || { echo "Not in project root"; exit 1; }`
 - Git installed and configured
 - Access to target repositories
 - The sacred `my-gift-to-ai` branch must exist in source repository
 - `.cursor/code/850-core-git-history-preservation.sh` must be executable
 
 ## Directory Context
-- ALL operations MUST start from project root directory
-- Project root is the parent directory of .cursor/
-- Use `$(git rev-parse --show-toplevel)` to ensure root context
-- All paths MUST be relative to project root
-- Document any temporary directory changes within steps
-- Return to project root after any directory changes
-- Sacred script paths MUST be relative to project root
+⚠️ **CRITICAL PATH REQUIREMENTS**:
+1. NEVER assume current directory
+2. ALWAYS verify project root first:
+   ```bash
+   # Verify project root (REQUIRED)
+   test -d .cursor || { echo "Not in project root"; exit 1; }
+   ```
+3. ALL paths MUST start with:
+   - `.cursor/` for cursor files
+   - `provenance/` for archives
+   - Relative paths from project root for all else
+4. NEVER use absolute paths
+5. NEVER skip directory verification
 
 ## Core Principles
 - **Use Sacred Scripts**: All operations that affect repository history MUST be performed through sacred scripts
@@ -39,8 +47,10 @@ alwaysApply: false
 ## Required Import Process
 
 ### 1. Verify Prerequisites
-
 ```bash
+# STOP - Verify project root first
+test -d .cursor || { echo "Not in project root"; exit 1; }
+
 # Check script exists and is executable
 test -x .cursor/code/850-core-git-history-preservation.sh || {
     echo "❌ Sacred script not found or not executable"
@@ -49,20 +59,19 @@ test -x .cursor/code/850-core-git-history-preservation.sh || {
 ```
 
 ### 2. Import Repository
-
-For read-only imports:
 ```bash
+# MUST be run from project root
+test -d .cursor || { echo "Not in project root"; exit 1; }
+
+# For read-only imports
 .cursor/code/850-core-git-history-preservation.sh <source_repo_url> <destination_dir>
-```
 
-For imports that should be committed:
-```bash
+# For imports that should be committed
 AGENTT_PERMIT_COMMIT=true .cursor/code/850-core-git-history-preservation.sh <source_repo_url> <destination_dir>
 ```
 
 ### 3. Verify Results
-
-After import, verify:
+MUST verify from project root:
 - Destination directory exists and contains expected files
 - No `.git` directory in imported code
 - Provenance archive exists in `provenance/` directory
@@ -71,19 +80,23 @@ After import, verify:
 ## Common Mistakes
 
 ❌ **NEVER**:
+- Skip project root verification
+- Use absolute paths
 - Import repositories manually
 - Bypass the sacred script
 - Modify the script's output format
 - Import from non-permitted branches
 - Delete provenance archives
 - Edit imported code before committing
-- Using incorrect URL from what human provided
-- Not using the "my-gift-to-ai" branch
-- Modifying the URL format provided by the human
+- Use incorrect URL from what human provided
+- Not use the "my-gift-to-ai" branch
+- Modify the URL format provided by the human
 - Not maintaining clear directory context
-- Running commands from incorrect directory
+- Run commands from incorrect directory
 
 ✅ **ALWAYS**:
+- Verify project root before ANY operation
+- Use paths relative to project root
 - Use the sacred script
 - Verify prerequisites
 - Check results
@@ -91,19 +104,18 @@ After import, verify:
 - Document any issues or anomalies
 
 ## Implementation Details
-
 The sacred script will:
-1. Verify branch permissions
-2. Create provenance archive
-3. Clean git metadata
-4. Generate standardized commit messages
-5. Maintain proper directory structure
+1. Verify project root context
+2. Verify branch permissions
+3. Create provenance archive
+4. Clean git metadata
+5. Generate standardized commit messages
+6. Maintain proper directory structure
 
 ## Example Usage
-
 ```bash
-# First ensure we're in project root
-cd "$(git rev-parse --show-toplevel)"
+# REQUIRED - Verify project root first
+test -d .cursor || { echo "Not in project root"; exit 1; }
 
 # Simple import
 .cursor/code/850-core-git-history-preservation.sh git@github.com:user/repo.git cortex_input
@@ -113,14 +125,15 @@ AGENTT_PERMIT_COMMIT=true .cursor/code/850-core-git-history-preservation.sh git@
 ```
 
 ## Troubleshooting
-
-If the script fails:
-1. Verify you are in the project root directory
-2. Verify the `my-gift-to-ai` branch exists
-3. Check file permissions
-4. Ensure the destination directory is clean
-5. Check provenance directory exists
+1. First verify project root:
+   ```bash
+   test -d .cursor || { echo "Not in project root"; exit 1; }
+   ```
+2. Then check:
+   - Script exists and is executable
+   - my-gift-to-ai branch exists
+   - Destination directory is clean
+   - Provenance directory exists
 
 ## Additional Notes
-
 The sacred script is the ONLY approved method for importing external repositories. This is not a suggestion - it is a requirement. Any attempts to bypass this process will result in non-compliant imports that must be reverted and redone properly.
