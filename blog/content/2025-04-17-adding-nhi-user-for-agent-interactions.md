@@ -7,6 +7,9 @@ categories:
   - agents
   - infrastructure
   - development
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "a8fbe4ab31a68cc47b901e8eb770905f2a673a8b"
 ---
 
 As we continue to build infrastructure for agent-based systems, we face an important design decision: how should we set up the execution environment for the agents? Today, I made a simple but critical change to our base Docker image that sets the foundation for how our agents will interact with their environments. Because let's face it, even AI needs a proper home! 🏠
@@ -123,3 +126,7 @@ Future work might include:
 - Developing monitoring and logging specific to agent activities (so we can watch the watchers 👁️)
 
 As we continue building our agent infrastructure, this seemingly simple change provides an important foundation for how we think about and implement the relationship between human and non-human actors in our system. It's like establishing diplomatic relations with a new species, except the species lives in your computer and doesn't need a bathroom break! 🚽❌
+
+---
+
+*This article was originally created in commit [`a8fbe4ab31a68cc47b901e8eb770905f2a673a8b`](https://github.com/frison/agentt/commit/a8fbe4ab31a68cc47b901e8eb770905f2a673a8b).*
