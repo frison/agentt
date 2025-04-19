@@ -6,6 +6,11 @@ categories:
   - architecture
   - ai
   - best-practices
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "fdd120929ce61e664a864728b4e0ceebe35f7747"
+  prompt: "fdd120929ce61e664a864728b4e0ceebe35f7747"
+  modifications: []
 ---
 
 Rules tell you what to do, but principles help you understand why. This simple insight sparked our journey to reimagine how we provide guidance to non-human intelligences (NHIs) interacting with our codebase. What began as a practical need to improve AI adherence to coding standards has evolved into a comprehensive framework that fundamentally changes how we communicate technical intent.
@@ -172,3 +177,7 @@ Next, we're exploring:
 As AI systems continue to evolve, the distinction between "rules to follow" and "principles to understand" will only grow more important. Our framework provides a blueprint for creating systems that don't just comply, but comprehend.
 
 Remember: in the world of AI, understanding the "why" is just as important as knowing the "how." Our NHI framework ensures both are clearly communicated and consistently applied.
+
+---
+
+*This article was originally created in commit [`fdd120929ce61e664a864728b4e0ceebe35f7747`](https://github.com/frison/agentt/commit/fdd120929ce61e664a864728b4e0ceebe35f7747).*
