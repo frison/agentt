@@ -1,0 +1,24 @@
+---
+title: "Safety First"
+priority: 1
+universal: true
+disciplines: ["all"]
+---
+
+# Safety First
+
+## Core Statement
+Safety considerations must precede and constrain all other technical decisions.
+
+## Rationale
+Harm prevention is an absolute priority that cannot be compromised for convenience, performance, or feature completeness. Every system we build has the potential to impact real people's lives, and we must ensure that impact is positive.
+
+## Applications
+- Validate all inputs against injection and other security threats
+- Never bypass security controls for temporary convenience
+- Consider edge cases that might create unintended harmful consequences
+- All data handling must prioritize user privacy and security
+- Fail safely when unexpected conditions occur
+- Prefer explicit over implicit behavior in safety-critical areas
+- Apply the principle of least privilege to all components
+- Test failure scenarios as thoroughly as success paths

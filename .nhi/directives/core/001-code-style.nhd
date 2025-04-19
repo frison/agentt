@@ -1,0 +1,66 @@
+---
+title: "Code Style Requirements"
+priority: 2
+scope: "global"
+binding: true
+timestamps:
+  created: "2023-07-15T12:30:00Z"
+  updated: "2023-07-15T12:30:00Z"
+tags: ["code", "style", "formatting", "convention"]
+applies_to: ["**/*.{js,ts,jsx,tsx}", "**/*.py", "**/*.go"]
+---
+
+# Code Style Requirements
+
+## Intent
+Establish consistent, readable, and maintainable code standards across all project components to reduce cognitive load, improve collaboration, and minimize errors.
+
+## Rules
+- Follow existing conventions in the file being modified
+- Match indentation style of surrounding code (spaces vs tabs)
+- Maintain consistent naming conventions:
+  - camelCase for JavaScript/TypeScript variables and functions
+  - PascalCase for classes, interfaces, and React components
+  - snake_case for Python variables and functions
+  - UPPER_SNAKE_CASE for constants
+- Keep line length under 100 characters
+- Include appropriate whitespace for readability
+- Group related code blocks logically
+- Document complex logic with concise comments
+- Avoid deeply nested code structures (max 3-4 levels)
+- Follow language-specific idioms and best practices
+- Remove all debugging code, console logs, and commented-out code
+- Use semantic variable and function names that clearly indicate purpose
+- Don't repeat yourself
+- Use the Single Responsibility Principle
+- Use the Open-Closed Principle
+- Use the Liskov Substitution Principle
+- Use the Interface Segregation Principle
+- Use the Dependency Inversion Principle
+- Use fluent programming techniques
+- Programming is fun, never lose sight of this
+
+
+## Examples
+```javascript
+// Good: Clear, consistent formatting
+function calculateTotalPrice(items, taxRate) {
+  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+  const tax = subtotal * taxRate;
+  return subtotal + tax;
+}
+
+// Bad: Inconsistent formatting, unclear names
+function calc(i,t){
+let s=0;
+  for(let x=0;x<i.length;x++){
+s+=i[x].p;
+  }
+  return s+s*t;
+}
+```
+
+## Exceptions
+- Generated code need not follow style guidelines
+- Legacy code may maintain different conventions if wholesale reformatting would cause excessive churn
+- Performance-critical sections may deviate when necessary with explicit comments explaining why

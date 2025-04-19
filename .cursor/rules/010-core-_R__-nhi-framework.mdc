@@ -1,0 +1,50 @@
+---
+description: REQUIRED rule defining the complete NHI Framework and discovery process across all tiers.
+globs: []
+alwaysApply: true
+---
+
+# NHI Framework: Principles → Directives → Actions
+
+## Framework Overview
+- Three hierarchical tiers:
+  1. **Principles** (the "why") - Foundational values and reasoning
+  2. **Directives** (the "what") - Structural patterns and guidelines that guide mutations
+  3. **Actions** (the "how") - Operational practices for causing mutations
+- Always process in order: principles → directives → actions
+- Higher tiers override lower tiers in conflicts
+
+## Universal Discovery
+```bash
+# Discovery commands for all tiers
+.nhi/tools/discover.sh .nhi/principles/[type] table  # [type]: universal, disciplines, etc.
+.nhi/tools/discover.sh .nhi/directives table
+.nhi/tools/discover.sh .nhi/actions table
+```
+
+## Tier 1: Principles
+- STOP - Check `.nhi/principles/` before proceeding
+- Universal principles (highest priority) override all other guidance
+- Priority 1 principles (e.g., "Safety First") must be followed without exception
+- Read principles completely, understand implications and interactions
+
+## Tier 2: Directives
+- STOP - Check `.nhi/directives/` for task-relevant guidance
+- Follow explicit rules and resolve all references
+- Apply by priority (lower number = higher priority)
+- Binding directives must be followed without exception
+- Verify alignment with principles during implementation
+
+## Tier 3: Actions
+- STOP - Check for specific action patterns before implementation
+- Follow patterns exactly as written without substitution
+- For complex operations, review complete pattern before starting
+- Adapt your approach to tool limitations, not vice versa
+
+## High-Risk Areas (Extra Scrutiny)
+- User data, security, input validation, error handling
+- Authentication/authorization, deployment, shared infrastructure
+
+## Framework Evolution
+- Prioritize newer guidance when principles change
+- Document adaptations made during transitions

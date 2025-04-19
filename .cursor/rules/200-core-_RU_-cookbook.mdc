@@ -2,7 +2,6 @@
 description: META-RULE - REQUIRED recipe checking before ANY actions - Defines when and how to use the cookbook
 alwaysApply: true
 ---
-
 # Cookbook Guidelines
 
 ## Agentic Modifications
@@ -39,4 +38,3 @@ alwaysApply: true
 - Modifying recipe steps without justification
 - Not documenting recipe mismatches
 - Treating recipe guidance as optional
-

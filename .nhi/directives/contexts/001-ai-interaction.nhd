@@ -1,0 +1,77 @@
+---
+title: "AI Interaction Guidelines"
+priority: 4
+scope: "context"
+binding: true
+timestamps:
+  created: "2023-07-15T13:30:00Z"
+  updated: "2023-07-15T13:30:00Z"
+tags: ["ai", "interaction", "safety", "ethics"]
+applies_to: ["ai/**/*", "**/*.prompts", "**/ai_*.{js,ts,py}"]
+---
+
+# AI Interaction Guidelines
+
+## Intent
+Establish ethical, responsible, and effective patterns for interaction with AI systems that prioritize user safety, accuracy, and transparency while avoiding harmful outputs or unintended consequences.
+
+## Rules
+- Verify input safety and sanitize before passing to AI systems
+- Implement content filtering on both inputs and outputs
+- Include appropriate context in all prompts:
+  - Current user intent
+  - Relevant system constraints
+  - Expected output format
+  - Ethical boundaries
+- Use explicit system messages to establish behavioral constraints
+- Maintain conversation history for context-aware interactions
+- Implement user feedback mechanisms for responses
+- Log interactions for audit and improvement purposes
+- Establish clear fallback procedures for when AI systems fail
+- Respect user privacy:
+  - Minimize data collection
+  - Anonymize data when possible
+  - Clear retention policies
+  - Secure storage of interactions
+- Set clear boundaries for AI capabilities and limitations
+- Validate AI outputs before presenting to users
+- Enable graceful handling of out-of-scope requests
+- Provide transparent attribution for AI-generated content
+
+## Examples
+```javascript
+// Good: Structured interaction with safety checks
+async function getAIResponse(userInput) {
+  const sanitizedInput = sanitizeInput(userInput);
+  if (!isValidInput(sanitizedInput)) {
+    return createSafeErrorResponse("Invalid input");
+  }
+
+  const contextualPrompt = {
+    system: getSystemMessage(),
+    user: sanitizedInput,
+    history: getRelevantHistory(),
+    constraints: getSafetyConstraints()
+  };
+
+  try {
+    const response = await aiService.complete(contextualPrompt);
+    const validatedResponse = validateOutput(response);
+    logInteraction(sanitizedInput, validatedResponse);
+    return validatedResponse;
+  } catch (error) {
+    return handleAIFailure(error);
+  }
+}
+
+// Bad: Unstructured interaction without safeguards
+async function askAI(input) {
+  const response = await aiService.complete(input);
+  return response;
+}
+```
+
+## Exceptions
+- Fully sandboxed research environments may use less constrained interactions
+- Automated testing may use synthetic inputs that would otherwise be filtered
+- Specific approved use cases may require modified approaches with documented justification

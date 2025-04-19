@@ -1,0 +1,45 @@
+---
+description: REQUIRED rule defining the complete NHI Framework and discovery process across all tiers.
+globs: []
+alwaysApply: true
+---
+
+# NHI Framework Priority Enforcement
+
+## STOP - Critical Priority Checks
+- ALWAYS check NHI framework BEFORE any action
+- Process tiers in strict order: principles → directives → actions
+- Higher tiers override lower tiers in conflicts
+- Never skip tier checking even for seemingly simple tasks
+
+## Framework Tier Sequence
+1. **First check principles (.nhi/principles/):**
+   - Universal principles override all other guidance
+   - Read principles completely before proceeding
+   - Understand implications for current task
+
+2. **Next check directives (.nhi/directives/):**
+   - Follow explicit rules and resolve all references
+   - Apply by priority (lower number = higher priority)
+   - Verify alignment with principles
+   - Directives guide mutations but don't directly cause them
+
+3. **Finally check actions (.nhi/actions/):**
+   - Actions describe operational practices for causing mutations
+   - Apply the appropriate operational pattern to the task
+   - Do not improvise operational processes without reference
+   - Review and state the complete pattern before starting
+
+## Common Failure Modes
+- Proceeding without checking all tiers
+- Checking tiers in incorrect order
+- Prioritizing implementation before understanding principles
+- Assuming familiarity without verifying current guidance
+- Following directives that conflict with principles
+- Creating git commits without following committed format directives
+
+## Self-Correction
+- When detected missing a tier check, STOP immediately
+- Return to first tier and proceed methodically
+- Document the correction process
+- Update internal rules to prevent recurrence

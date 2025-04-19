@@ -1,0 +1,25 @@
+---
+title: "Non-Interactive Command Safety"
+priority: 2
+disciplines: ["shell", "automation", "system-interaction"]
+---
+
+# Non-Interactive Command Safety
+
+## Core Statement
+Shell commands in automated environments must never rely on interactive input or produce interactive output, and must always specify clear directory context.
+
+## Rationale
+Interactive commands cause automation to hang indefinitely, create unpredictable behavior, and may unintentionally modify the system. Ambiguous directory contexts lead to operating on incorrect files, causing data loss or unintended side effects. Safety requires explicit, predictable, and controlled command execution.
+
+## Applications
+- Never run commands that prompt for user input
+- Always append `| cat` to commands that may launch pagers
+- Use `-y` or equivalent non-interactive flags when available
+- Set environment variables to disable interactive prompts
+- Always specify directory context for all commands
+- Use explicit paths relative to well-defined reference points
+- Test commands with `--help` or `--dry-run` flags before execution
+- Verify commands exist before trying to execute them
+- Always check exit codes and handle errors appropriately
+- Clean up temporary files and processes after execution

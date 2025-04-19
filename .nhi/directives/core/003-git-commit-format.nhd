@@ -1,0 +1,80 @@
+---
+title: "Git Commit Message Format"
+priority: 2
+scope: "global"
+binding: true
+tags: ["git", "version-control", "documentation"]
+applies_to: ["**/.git/*", "**/*.md"]
+---
+
+# Git Commit Message Format
+
+## Intent
+Establish a consistent, informative commit message structure that effectively communicates changes, reasoning, and context to maintain a useful and navigable project history.
+
+## Rules
+- Structure all commit messages with these components:
+  1. Title (REQUIRED):
+     - 50 characters maximum
+     - Imperative mood ("Add" not "Added")
+     - Capitalize first word
+     - No period at end
+     - Concise summary of the change
+
+  2. Body (REQUIRED):
+     - Blank line after title
+     - 72 characters per line
+     - Explain what changed and why
+     - Use markdown formatting
+     - Focus on motivation and context
+
+  3. Footer (OPTIONAL):
+     - Reference issues/PRs
+     - Add metadata tags
+     - One item per line
+
+- For NHI annotations, add:
+  ```
+  -- NHI annotation
+
+  Context and Decisions:
+  <key technical decisions>
+
+  Sentiment and Commentary:
+  <tone and motivation analysis>
+  ```
+
+- Always preserve the following in commit messages:
+  - Original commit message when amending
+  - Emoji if present
+  - Referenced issue numbers
+  - Co-author credits
+
+## Examples
+```
+Add user authentication to API
+
+Implement JWT-based authentication to secure API endpoints.
+This change is required for GDPR compliance and improves
+overall system security.
+
+Refs: #123, #456
+Security: High
+
+-- NHI annotation
+
+Context and Decisions:
+- Chose JWT for stateless authentication
+- Implemented in middleware layer
+- Added rate limiting for security
+
+Sentiment and Commentary:
+- Security-focused implementation
+- Proactive compliance approach
+- Strong emphasis on best practices
+```
+
+## Exceptions
+- Automated commits (merge commits, version bumps)
+- Temporary WIP commits that will be squashed
+- Initial repository setup commits

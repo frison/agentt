@@ -1,0 +1,56 @@
+---
+title: "Error Handling Implementation"
+priority: 2
+applies_to: ["**/*.{js,ts,py,go}", "api/**/*"]
+guided_by: [".nhi/principles/universal/001-safety-first.nhp"]
+---
+
+# Error Handling Implementation
+
+## When to Apply
+Apply these patterns whenever implementing code that can potentially generate errors, especially at system boundaries or in user-facing components.
+
+## Actions
+- **Input validation**:
+  ```javascript
+  function processUserInput(input) {
+    if (!validateInput(input)) {
+      throw new ValidationError('Invalid input: ' + getSpecificReason(input));
+    }
+    // Continue with processing
+  }
+  ```
+
+- **Promise rejection handling**:
+  ```javascript
+  async function fetchData() {
+    try {
+      const response = await api.getData();
+      return processResponse(response);
+    } catch (error) {
+      logError('Data fetch failed', error);
+      return getDefaultOrCachedData();
+    }
+  }
+  ```
+
+- **Error classification**:
+  ```javascript
+  function handleError(error) {
+    if (isNetworkError(error)) {
+      notifyUser('Connection problem. Please check your network.');
+    } else if (isPermissionError(error)) {
+      notifyUser('You don\'t have permission to perform this action.');
+    } else {
+      notifyUser('An unexpected error occurred. Support has been notified.');
+      reportToMonitoring(error);
+    }
+  }
+  ```
+
+## Common Pitfalls
+- Swallowing errors without handling them
+- Using generic error messages that don't help users
+- Exposing sensitive error details to users
+- Not logging sufficient context for debugging
+- Handling all errors the same way regardless of type

@@ -1,0 +1,23 @@
+---
+title: "Separation of Concerns"
+priority: 2
+disciplines: ["architecture", "code-organization", "system-design"]
+---
+
+# Separation of Concerns
+
+## Core Statement
+Each component should have a single, well-defined responsibility and minimal knowledge of other components.
+
+## Rationale
+When concerns are properly separated, components become more reusable, testable, and maintainable. The cognitive load of understanding any single piece is reduced, and the system as a whole becomes more adaptable to change.
+
+## Applications
+- Use clear boundaries between layers (e.g., UI, business logic, data access)
+- Design interfaces that hide implementation details
+- Break complex problems into smaller, focused pieces
+- Avoid mixing different levels of abstraction within a component
+- Prefer composition over inheritance
+- Use dependency injection to decouple components
+- Each function, module, or class should do one thing well
+- Changes to one area should not require changes in unrelated areas
