@@ -13,7 +13,7 @@ alwaysApply: false
 - [Article Provenance](201-blog-_RU_-article-provenance.mdc)
 
 ## File Structure
-1. Name: `YYYY-MM-DD-kebab-case-title.md`
+1. Name: `YYYY-MM-DD-kebab-case-title.md` (where `YYYY-MM-DD` is derived from current system time per the Time Awareness Directive)
 2. Location: `blog/content/` directory
 
 ## Frontmatter Format
@@ -21,7 +21,7 @@ alwaysApply: false
 ---
 layout: post
 title: Your Title Here
-date: YYYY-MM-DD HH:MM:SS -0600
+date: YYYY-MM-DD HH:MM:SS -0600 # Derived from current system time & formatted to CST/CDT per Time Awareness Directive
 categories:
   - category1
   - category2
@@ -31,7 +31,7 @@ categories:
 
 Notes on frontmatter:
 - Title uses hyphens instead of colons for separators
-- Date includes time and timezone (standardized to -0600)
+- Date includes time and timezone (standardized to -0600), derived from system time.
 - Categories are listed as YAML array items with hyphens
 - Category names use hyphens instead of spaces
 - No quotes around any values

@@ -11,14 +11,20 @@ alwaysApply: true
 - Document reasoning for cookbook changes in commit messages
 
 ## Required Recipe Check Sequence
-1. STOP - Do not proceed with ANY action until completing these steps
+1. STOP - Do not proceed with ANY action, including informational queries or non-coding tasks, until completing these steps
 2. Search for matching recipes FROM THE PROJECT ROOT (parent of .cursor directory):
    ```bash
    # MUST be run from project root (parent of .cursor directory)
    find .cursor/rules/cookbook -name "*.mdc" -type f -exec sh -c 'echo -n "{}"; head -n5 "{}" | grep "^description:"' \; | cat
    ```
 3. If exact match exists:
-   - Read and follow the recipe completely
+   - Attempt to read the recipe using the primary tool (e.g., `fetch_rules`).
+   - **Handling Retrieval Failures:**
+       - If the primary tool fails, **STOP** the main task.
+       - Attempt to read the recipe using alternative valid methods (e.g., `run_terminal_cmd` with `cat <full_path_to_recipe>`).
+       - If an alternative method succeeds, **document the successful method used** and proceed by following the retrieved recipe completely.
+       - If all available methods fail, report the inability to access the required instructions and await guidance. **DO NOT proceed with the task using assumptions or fallbacks.**
+   - If reading succeeds (via primary or alternative method), follow the recipe completely.
    - Do not skip steps or modify sequence
 4. If no exact match:
    - Read all related recipes
@@ -38,3 +44,8 @@ alwaysApply: true
 - Modifying recipe steps without justification
 - Not documenting recipe mismatches
 - Treating recipe guidance as optional
+- Proceeding with assumptions or fallbacks when a required recipe exists but could not be read.
+- Modifying recipe steps without justification
+- Not documenting recipe mismatches
+- Treating recipe guidance as optional
+- Proceeding with assumptions or fallbacks when a required recipe exists but could not be read.
