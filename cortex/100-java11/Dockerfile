@@ -1,4 +1,5 @@
-FROM 100hellos/000-base:local
+ARG TAG_PATH_ROOT
+FROM ${TAG_PATH_ROOT}/000-base:local
 
 RUN sudo \
   apk add --no-cache \

@@ -1,6 +1,7 @@
+ARG TAG_PATH_ROOT
 # syntax=docker/dockerfile:1
 # escape=\
-FROM 100hellos/000-base:local
+FROM ${TAG_PATH_ROOT}/000-base:local
 
 # Note, we don't technically need zef (the Rakudo package manager) but we
 # include it for tinkerers.

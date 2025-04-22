@@ -1,5 +1,6 @@
+ARG TAG_PATH_ROOT
 # syntax=docker/dockerfile:1
-FROM 100hellos/000-base:local
+FROM ${TAG_PATH_ROOT}/000-base:local
 
 RUN sudo \
   apk add --no-cache \

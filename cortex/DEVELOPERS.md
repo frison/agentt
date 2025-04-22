@@ -41,3 +41,9 @@ The Magic Stuff, is all the CI/CD and automation that makes this project extend 
   - Only publishes what's [necessary!](./.github/workflows/on-push.yml)
   - [DockerHub image overview generation!](./.github/bin/generate-overview-readme.sh)
   - There are **weekly** [builds](./.github/workflows/weekly-release.yml) for all language containers
+
+## CI
+
+- Builds images tagged `latest` for all languages not in `.no-publish`
+- Publishes to [DockerHub](https://hub.docker.com/u/100hellos)!
+  (Note: Local builds default to the `cortex/` prefix unless `TAG_PATH_ROOT=100hellos` is set.)

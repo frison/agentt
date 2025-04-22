@@ -17,21 +17,35 @@ This demonstrates "Hello World" in 100 languages (one day...) and their correspo
 ## Try it out (from the repository)
 
 ⚠️Running the shell commands below should only be done for trusted sources.
+
+### Building Locally
+
 ```bash
-git clone git@github.com:frison/100hellos.git
-cd 100hellos
-# cat for the cool factor
-cat perl/files/hello-world.pl
-make perl R=1
+git clone git@github.com:frison/100hellos.git # Or your fork
+cd 100hellos/cortex # Note: This assumes you are in the cortex subdir of the repo
+make base       # Build base images
+make perl       # Build perl image
+make            # Build all images (takes a while!)
+
+# Note: By default, images are built with the prefix 'cortex/'.
+# To build with the original '100hellos/' prefix (e.g., for consistency
+# with Docker Hub), use the TAG_PATH_ROOT variable:
+# make TAG_PATH_ROOT=100hellos perl
 ```
+
 ## Try it out (from DockerHub)
 
+### Running
+
 ```bash
-# Hello World! From perl.
+# Run the default command (usually prints "hello world")
 docker run --rm 100hellos/perl:latest
 
-# Or for an interactive shell
+# Run interactively
 docker run --rm -it 100hellos/perl:latest zsh
+
+# Note: If built locally without TAG_PATH_ROOT=100hellos, use 'cortex/' prefix:
+# docker run --rm cortex/perl:local
 ```
 
 # How to use this repository

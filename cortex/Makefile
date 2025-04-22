@@ -1,9 +1,15 @@
 ##
+# This Makefile builds Docker images for each language directory.
+#
 # Usage:
-# `make [lang]` -- Build an image named `100hellos/[lang]:local` from the `[lang]` directory.
-#                  This image has everything you need to build and run hello-world programs in that language.
+# `make [lang]` -- Build an image named `${TAG_PATH_ROOT}/[lang]:local` from the `[lang]` directory.
+#                  By default, TAG_PATH_ROOT is the name of the current directory (cortex).
+#                  Override prefix with `make P=100hellos [lang]` or `make PREFIX=100hellos [lang]`.
+# `make all`    -- Build all language images.
+# `make clean`  -- Remove all built language images.
 #
 # Parameters:
+#   - `P=<prefix>` (or `PREFIX=<prefix>`) -- Set the image tag prefix (defaults to 'cortex').
 #   - `RUN=1` (or `R=1`)         -- Will build the image, and then (maybe build) and run the code.
 #   - `INTERACTIVE=1` (or `I=1`) -- Try it, poke around!
 #   - `MOUNT=1` (or `M=1`)       -- Mounts the `files` directory in the container. (caution: permissions issues likely)
@@ -11,6 +17,14 @@
 # Note: It is assumed there are no dependencies between the non-base containers.
 
 DIR_NAME := $(notdir ${CURDIR})
+# Define TAG_PATH_ROOT. Check for P or PREFIX override first.
+ifdef P
+	TAG_PATH_ROOT := ${P}
+else ifdef PREFIX
+	TAG_PATH_ROOT := ${PREFIX}
+endif
+# Default to the current directory name (cortex) if not overridden
+TAG_PATH_ROOT ?= $(shell basename ${PWD})
 BASE_CONTAINERS = $(shell find ${CURDIR} -maxdepth 2 -type f -name "Dockerfile" -exec dirname "{}" \; | grep '.*[0-9]\{3\}-.*' | sort )
 LANG_CONTAINERS = $(shell find ${CURDIR} -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | grep -vxFf .no-publish | sort )
 IMAGE_PREFIX = ${DIR_NAME}
@@ -83,6 +97,7 @@ base: $(BASE_SUBDIRS)
 
 $(BASE_SUBDIRS):
 	@$(MAKE) -C $@ ${MAKECMDGOALS} -f ${CURDIR}/Makefile.language-container.mk $(ADDITIONAL_OPTIONS) \
+		TAG_PATH_ROOT=${TAG_PATH_ROOT} \
 		IS_BASE_MAKE=1 \
 		COMPOSITE_DOCKERFILE_DIR=${CURDIR} \
 		COMPOSITE_DOCKERFILE=Dockerfile.composite
@@ -90,6 +105,7 @@ $(BASE_SUBDIRS):
 
 $(LANG_SUBDIRS):
 	@$(MAKE) -C $@ ${MAKECMDGOALS} -f ${CURDIR}/Makefile.language-container.mk $(ADDITIONAL_OPTIONS) \
+		TAG_PATH_ROOT=${TAG_PATH_ROOT} \
 		IS_LANG_MAKE=1 \
 		COMPOSITE_DOCKERFILE_DIR=${CURDIR} \
 		COMPOSITE_DOCKERFILE=Dockerfile.composite

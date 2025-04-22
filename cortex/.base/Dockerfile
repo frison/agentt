@@ -1,3 +1,4 @@
+ARG TAG_PATH_ROOT
 # syntax=docker/dockerfile:1
 # escape=\
 ARG ALPINE_VERSION=3.18
