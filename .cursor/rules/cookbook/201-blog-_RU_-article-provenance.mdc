@@ -11,12 +11,19 @@ alwaysApply: false
 - [Git History Preservation](850-core-C_U_-git-history-preservation.mdc)
 
 ## Steps
-1. Get article creation commit SHA:
+1. Get article creation commit SHA (the commit where the file was first added, possibly under a different name):
    ```bash
-   COMMIT_SHA=$(git rev-parse HEAD)
+   ARTICLE_FILE="path/to/your/article.md" # Replace with the actual article file path
+   COMMIT_SHA=$(git log --follow --diff-filter=A --find-copies --find-renames --pretty=format:'%H' "${ARTICLE_FILE}" | tail -n 1)
+   # This command traces the file's history, following renames/copies,
+   # finds the commit where it was Added ('A'), and gets its SHA.
+   ```
+2. Get the prompt commit SHA (the commit that inspired the article, often the same as COMMIT_SHA). Determine this based on context or use COMMIT_SHA as default:
+   ```bash
+   PROMPT_SHA="${COMMIT_SHA}" # Adjust if a different prompt commit exists
    ```
 
-2. Add to frontmatter:
+3. Add to frontmatter:
    ```yaml
    provenance:
      repo: "https://github.com/frison/agentt"
@@ -25,7 +32,7 @@ alwaysApply: false
      modifications: []  # List of modification commit SHAs
    ```
 
-3. Append to article:
+4. Append to article:
    ```markdown
    ---
 
@@ -35,7 +42,7 @@ alwaysApply: false
 
    Note: When the commit message itself serves as the prompt (i.e., `${PROMPT_SHA}` equals `${COMMIT_SHA}`), we still include both references to maintain consistency and make the relationship explicit.
 
-4. Commit changes:
+5. Commit changes:
    ```bash
    git add blog/content/your-article.md
    git commit -m "docs(blog): add provenance information"
@@ -70,6 +77,11 @@ alwaysApply: false
 
 ## Validation
 - Provenance points to article creation commit
+- If present, prompt points to the commit that inspired the article
+- Modifications list contains all update commits
+- Links use absolute URLs
+- Original commit SHA preserved
+- Provenance statements isolated from content
 - If present, prompt points to the commit that inspired the article
 - Modifications list contains all update commits
 - Links use absolute URLs
