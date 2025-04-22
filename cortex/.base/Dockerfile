@@ -76,7 +76,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["zsh"]
 
 # This is how we flatten the image into a single layer
-FROM scratch as base
+FROM scratch AS base
 COPY --from=earth / /
 
 USER nhi
