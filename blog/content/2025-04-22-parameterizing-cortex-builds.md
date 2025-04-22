@@ -10,6 +10,11 @@ categories:
   - refactoring
   - ci
   - 100hellos
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "46166f8b1f344533bce5ce0ffbc3de0e3068d027" # The commit where this article was created
+  prompt: "46166f8b1f344533bce5ce0ffbc3de0e3068d027" # The commit that prompted this article's creation. Can be same as commit SHA if the commit message itself served as the prompt
+  modifications: [] # List of modification commit SHAs
 ---
 
 ## The Challenge: Hardcoded Image Prefixes
@@ -52,5 +57,9 @@ This refactoring provides the desired flexibility:
 *   Running `make P=100hellos java` builds `100hellos/100-java11:local` and `100hellos/java:local`, preserving the original behavior for CI/publishing workflows.
 
 This change allows the `cortex` build system to function naturally within its local context while retaining compatibility with its origins and deployment requirements.
+
+---
+
+*This article was originally created in commit [`46166f8b1f344533bce5ce0ffbc3de0e3068d027`](https://github.com/frison/agentt/commit/46166f8b1f344533bce5ce0ffbc3de0e3068d027), prompted by commit [`46166f8b1f344533bce5ce0ffbc3de0e3068d027`](https://github.com/frison/agentt/commit/46166f8b1f344533bce5ce0ffbc3de0e3068d027).*
 
 ---
