@@ -3,48 +3,42 @@ description: REQUIRED rule defining the complete NHI Framework and discovery pro
 globs: []
 alwaysApply: true
 ---
-
-# NHI Framework: Principles → Directives → Actions
+# NHI Framework: Needs → Practices
 
 ## Framework Overview
-- Three hierarchical tiers:
-  1. **Principles** (the "why") - Foundational values and reasoning
-  2. **Directives** (the "what") - Structural patterns and guidelines that guide mutations
-  3. **Actions** (the "how") - Operational practices for causing mutations
-- Always process in order: principles → directives → actions
-- Higher tiers override lower tiers in conflicts
+- Two hierarchical tiers:
+  1. **Needs** (`.nhi/needs/`) - Non-negotiable requirements, constraints, core values (the "why" and "musts").
+  2. **Practices** (`.nhi/practices/`) - Guidance, patterns, procedures for implementation (the "how").
+- Always process in order: needs → practices
+- Needs override Practices in conflicts.
 
 ## Universal Discovery
 ```bash
 # Discovery commands for all tiers
-.nhi/tools/discover.sh .nhi/principles/[type] table  # [type]: universal, disciplines, etc.
-.nhi/tools/discover.sh .nhi/directives table
-.nhi/tools/discover.sh .nhi/actions table
+.nhi/tools/discover.sh .nhi/needs table
+.nhi/tools/discover.sh .nhi/practices table
 ```
 
-## Tier 1: Principles
-- STOP - Check `.nhi/principles/` before proceeding
-- Universal principles (highest priority) override all other guidance
-- Priority 1 principles (e.g., "Safety First") must be followed without exception
-- Read principles completely, understand implications and interactions
+## Tier 1: Needs
+- STOP - Check `.nhi/needs/` before proceeding.
+- These define absolute constraints and fundamental requirements.
+- Priority 1 needs (e.g., "Safety First") must be followed without exception.
+- Read relevant needs completely, understand implications and interactions.
+- Ensure fundamental compliance before considering practices.
 
-## Tier 2: Directives
-- STOP - Check `.nhi/directives/` for task-relevant guidance
-- Follow explicit rules and resolve all references
-- Apply by priority (lower number = higher priority)
-- Binding directives must be followed without exception
-- Verify alignment with principles during implementation
-
-## Tier 3: Actions
-- STOP - Check for specific action patterns before implementation
-- Follow patterns exactly as written without substitution
-- For complex operations, review complete pattern before starting
-- Adapt your approach to tool limitations, not vice versa
+## Tier 2: Practices
+- STOP - Check `.nhi/practices/` for task-relevant guidance after verifying needs.
+- These provide standard patterns, procedures, and guidelines.
+- Follow explicit rules and patterns relevant to the task.
+- Apply by priority (lower number = higher priority).
+- Verify alignment with needs during implementation.
+- Adapt your approach to tool limitations, not vice versa.
 
 ## High-Risk Areas (Extra Scrutiny)
-- User data, security, input validation, error handling
-- Authentication/authorization, deployment, shared infrastructure
+- Areas often governed by critical `Needs` (User data, security, etc.)
+- Always re-verify relevant `Needs` when working in these areas.
+- Authentication/authorization, deployment, shared infrastructure.
 
 ## Framework Evolution
-- Prioritize newer guidance when principles change
-- Document adaptations made during transitions
+- Prioritize newer guidance when needs or practices change.
+- Document adaptations made during transitions.

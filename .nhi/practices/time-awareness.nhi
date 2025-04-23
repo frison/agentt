@@ -1,8 +1,9 @@
 ---
-title: "Time Awareness Guidelines"
-priority: 5
-applies_to: ["**/*"]
-guided_by: [".nhi/principles/universal/001-safety-first.nhp"]
+title: "Time Awareness Practice"
+priority: 504
+tier: practice
+description: "Guidelines for handling time and dates consistently, anchoring to system time."
+tags: ["time", "date", "consistency", "system-time", "formatting", "safety"]
 ---
 
 # Time Awareness Guidelines

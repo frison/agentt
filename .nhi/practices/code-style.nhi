@@ -1,13 +1,9 @@
 ---
-title: "Code Style Requirements"
-priority: 2
-scope: "global"
-binding: true
-timestamps:
-  created: "2023-07-15T12:30:00Z"
-  updated: "2023-07-15T12:30:00Z"
-tags: ["code", "style", "formatting", "convention"]
-applies_to: ["**/*.{js,ts,jsx,tsx}", "**/*.py", "**/*.go"]
+title: "Code Style Requirements Practice"
+priority: 103
+tier: practice
+description: "Establishes consistent, readable, and maintainable code standards."
+tags: ["code", "style", "formatting", "convention", "readability", "maintainability"]
 ---
 
 # Code Style Requirements

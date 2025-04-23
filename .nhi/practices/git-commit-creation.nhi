@@ -1,8 +1,9 @@
 ---
-title: "Git Commit Creation"
-priority: 2
-applies_to: ["**/.git/*"]
-guided_by: [".nhi/principles/disciplines/003-git-commit-quality.nhp", ".nhi/directives/core/003-git-commit-format.nhd"]
+title: "Git Commit Creation Practice"
+priority: 502
+tier: practice
+description: "Steps and patterns for creating high-quality, well-formatted git commits."
+tags: ["git", "version-control", "workflow", "collaboration"]
 ---
 
 # Git Commit Creation

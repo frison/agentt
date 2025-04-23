@@ -1,7 +1,9 @@
 ---
 title: "Separation of Concerns"
-priority: 2
-disciplines: ["architecture", "code-organization", "system-design"]
+priority: 1
+tier: need
+description: "Each component should have a single, well-defined responsibility."
+tags: ["architecture", "code-organization", "system-design", "core"]
 ---
 
 # Separation of Concerns

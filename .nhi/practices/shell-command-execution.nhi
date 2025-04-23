@@ -1,8 +1,9 @@
 ---
-title: "Safe Shell Command Execution"
-priority: 2
-applies_to: ["**/*.sh", "**/*.js", "**/*.py"]
-guided_by: [".nhi/principles/disciplines/002-shell-safety.nhp", ".nhi/directives/core/002-shell-commands.nhd"]
+title: "Safe Shell Command Execution Practice"
+priority: 503
+tier: practice
+description: "Patterns for executing shell commands safely in scripts and automation."
+tags: ["shell", "scripting", "automation", "safety", "execution", "commands"]
 ---
 
 # Safe Shell Command Execution

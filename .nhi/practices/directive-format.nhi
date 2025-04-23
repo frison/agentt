@@ -1,0 +1,83 @@
+---
+title: "NHI Needs & Practices Format Practice"
+priority: 102
+tier: practice
+description: "Defines the standard structure and format for all NHI Needs (.nhn) and Practices (.nhp) files."
+tags: ["meta", "format", "structure", "needs", "practices", "nhi"]
+---
+
+# NHI Needs & Practices Format
+
+## Intent
+Define the standard structure, format, and metadata for all NHI Needs (`.nhn`) and Practices (`.nhp`) files to ensure consistency, discoverability, and appropriate application of guidance across the system.
+
+## Rules
+- Need files MUST use the `.nhn` extension.
+- Practice files MUST use the `.nhp` extension.
+- All Need and Practice files MUST begin with YAML frontmatter bounded by triple dashes (`---`).
+- Frontmatter MUST include these fields:
+  - `title`: "Clear and Concise Title" (String)
+  - `priority`: NNN (Numeric value, lower = higher importance)
+  - `tier`: `need` | `practice` (String, exactly 'need' or 'practice')
+  - `description`: "A short (1-2 sentence) explanation." (String)
+  - `tags`: `["list", "of", "relevant", "tags"]` (Array of strings)
+- Frontmatter fields MUST appear in the order specified above.
+- Body MUST be structured Markdown with at least an "Intent" or "Core Statement" section explaining the purpose.
+- Body SHOULD include relevant sections like "Rules", "Actions", "Applications", "Examples", "Common Mistakes", or "Exceptions" as appropriate for the content.
+
+## Examples
+
+### Need Example (`.nhn`)
+```yaml
+---
+title: "Example Core Need"
+priority: 1
+tier: need
+description: "This is a fundamental, non-negotiable requirement for the system."
+tags: ["core", "example", "fundamental"]
+---
+
+# Example Core Need
+
+## Core Statement
+All systems must adhere to this fundamental principle X.
+
+## Rationale
+Why principle X is critical...
+
+## Applications
+- How X applies in scenario A...
+- How X applies in scenario B...
+```
+
+### Practice Example (`.nhp`)
+```yaml
+---
+title: "Example Implementation Practice"
+priority: 201
+tier: practice
+description: "Standard procedure for implementing feature Y according to our needs."
+tags: ["implementation", "workflow", "feature-y"]
+---
+
+# Example Implementation Practice
+
+## Intent
+Provide the standard steps for implementing Feature Y.
+
+## Actions
+- Step 1: Do this...
+- Step 2: Then do that...
+
+## Rules
+- Always check condition Z before proceeding.
+
+## Examples
+```bash
+# Code example demonstrating the practice
+example_command --option
+```
+```
+
+## Exceptions
+- When integrating with legacy system Q, use alternative procedure Z.

@@ -1,8 +1,9 @@
 ---
 title: "Safety First"
 priority: 1
-universal: true
-disciplines: ["all"]
+tier: need
+description: "Safety considerations must precede and constrain all other technical decisions."
+tags: ["core", "safety", "security", "universal", "all"]
 ---
 
 # Safety First

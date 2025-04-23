@@ -1,7 +1,9 @@
 ---
 title: "Git Commit Quality"
 priority: 3
-disciplines: ["version-control", "collaboration", "documentation"]
+tier: need
+description: "Commits must clearly document what changed and why, using consistent structure and context."
+tags: ["version-control", "git", "collaboration", "documentation", "core"]
 ---
 
 # Git Commit Quality

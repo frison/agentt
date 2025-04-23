@@ -1,10 +1,9 @@
 ---
-title: "Shell Command Structure"
-priority: 2
-scope: "global"
-binding: true
-tags: ["shell", "automation", "commands"]
-applies_to: ["**/*.sh", "scripts/**/*"]
+title: "Shell Command Structure Practice"
+priority: 105
+tier: practice
+description: "Rules for safe, predictable shell command execution in automated environments."
+tags: ["shell", "automation", "commands", "safety", "scripting"]
 ---
 
 # Shell Command Structure

@@ -1,10 +1,9 @@
 ---
-title: "Git Commit Message Format"
-priority: 2
-scope: "global"
-binding: true
-tags: ["git", "version-control", "documentation"]
-applies_to: ["**/.git/*", "**/*.md"]
+title: "Git Commit Message Format Practice"
+priority: 104
+tier: practice
+description: "Specifies the required structure and content for git commit messages."
+tags: ["git", "version-control", "documentation", "format", "standard"]
 ---
 
 # Git Commit Message Format
