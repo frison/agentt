@@ -3,7 +3,6 @@ description: Recipe for creating, reading, and updating blog posts with consiste
 globs: ["blog/content/*.md"]
 alwaysApply: false
 ---
-
 # Blog Post Creation and Updates
 
 ## Prerequisites
@@ -87,20 +86,30 @@ Notes on frontmatter:
    - Use light self-deprecation when discussing challenging implementations
 
 ## Creation Process
-1. Create file with proper name
-2. Add frontmatter without provenance
-3. Write content following structure
-4. Add engagement elements (emojis, humor) where appropriate
-5. Commit post
-6. Add provenance information
-7. Commit provenance update
+1. Create file with proper name (`YYYY-MM-DD-kebab-case-title.md`) in `blog/content/`.
+2. Add frontmatter (basic structure, no `provenance` block yet).
+3. Write content following structure.
+4. Add engagement elements (emojis, humor) where appropriate.
+5. Commit the initial post content:
+   ```bash
+   # Example commit
+   git add blog/content/YYYY-MM-DD-kebab-case-title.md
+   git commit -m "feat(blog): add initial draft for [topic]"
+   ```
+6. Add the `provenance` block and footer using the SHA from the previous commit, following the [Article Provenance Recipe](201-blog-_RU_-article-provenance.mdc).
+7. Commit the provenance addition:
+   ```bash
+   # Example commit
+   git add blog/content/YYYY-MM-DD-kebab-case-title.md
+   git commit -m "docs(blog): add provenance for [topic] post"
+   ```
 
 ## Validation Steps
 1. **SHA Consistency**
-   - Frontmatter commit SHA matches footer
-   - Frontmatter prompt SHA matches footer
-   - All SHAs are complete (not abbreviated)
-   - SHAs verified from git history
+   - Frontmatter commit SHA matches footer commit SHA.
+   - Frontmatter prompt SHA matches footer prompt SHA (if different).
+   - All SHAs are complete (not abbreviated).
+   - SHAs correspond to the actual creation commit verifiable in git history.
 
 2. **Content Quality**
    - No H1 headings (reserved for title)
@@ -118,3 +127,5 @@ Notes on frontmatter:
 - Insufficient section spacing
 - Overuse of emojis that diminish readability
 - Humor that undermines technical credibility
+- Forgetting the second commit to add provenance.
+- Adding provenance referencing the wrong commit.
