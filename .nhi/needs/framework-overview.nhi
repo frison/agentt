@@ -1,0 +1,29 @@
+---
+title: "NHI Framework Overview"
+priority: 0 # Foundational rule
+tier: need
+description: "Defines the core structure, tiers, and rules of the NHI framework, including priority."
+tags: ["meta", "core", "nhi-framework", "structure", "priority", "needs", "practices"]
+---
+
+# NHI Framework Overview
+
+## Core Statement
+The NHI framework guides decision-making and implementation through a strict two-tier hierarchy: Needs and Practices. Understanding and adhering to this structure is mandatory for all operations.
+
+## Framework Tiers
+
+1.  **Tier 1: Needs (`.nhi/needs/`)**
+    *   **Purpose:** Define fundamental, non-negotiable requirements, constraints, core values, and essential principles. They represent the absolute "musts."
+    *   **Compliance:** **Mandatory.** All applicable Needs *must* be satisfied. An action violating *any* relevant Need is prohibited.
+    *   **Priority Role:** The `priority` field within Needs primarily serves to **resolve conflicts between Needs**. If two applicable Needs seem to contradict, the Need with the lower number (higher priority) dictates the outcome. Priority may also guide the *order* or *intensity* of review, but does not diminish the mandatory compliance requirement for all relevant Needs.
+    *   **Checking Order:** **Must be checked first.**
+
+2.  **Tier 2: Practices (`.nhi/practices/`)**
+    *   **Purpose:** Provide standard patterns, procedures, guidelines, and implementation details for *how* to achieve goals within the constraints set by Needs.
+    *   **Compliance:** Follow relevant Practices unless they conflict with a Need.
+    *   **Priority Role:** The `priority` field within Practices determines the **order of preference or application** when multiple relevant Practices exist. Lower numbers indicate higher preference or importance.
+    *   **Checking Order:** Must be checked *after* confirming full compliance with all relevant Needs.
+
+## Overriding Rule
+**Needs always override Practices.** If a Practice is found to conflict with a Need, the Need must be followed, and the Practice should either be ignored for that context or flagged for revision.

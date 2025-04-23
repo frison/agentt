@@ -7,6 +7,11 @@ categories:
   - philosophy
   - development-practices
   - nhi-framework
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "6b17310698da619546138d19a3c5121107dad72f"
+  prompt: "6b17310698da619546138d19a3c5121107dad72f"
+  modifications: []
 ---
 
 We've all been there. Staring at a piece of code, a document, or a system structure that's just... *unclear*. Maybe it made sense when it was written, maybe it grew organically into a tangled mess, but the result is the same: confusion, potential errors, and friction for anyone trying to understand or modify it. The ideal solution? Refactor! Make it clear! But then comes the counter-argument: "It works fine," "We don't have time," or the dreaded, "Think of the churn!"
@@ -45,3 +50,7 @@ By automating or significantly speeding up the most painful parts of making chan
 Embracing "Clarity over Churn" isn't just about writing better code or docs; it's about building systems that are understandable, maintainable, and adaptable for *all* intelligences interacting with them, human or otherwise. Historically, the cost of churn often made this an impractical ideal.
 
 Now, with AI as a powerful accelerator, we have the opportunity to aggressively pursue clarity, knowing that the tools to manage the associated churn are becoming increasingly capable. Let's leverage our AI partners to help us build not just functional systems, but *clear* ones. The long-term benefits will far outweigh the (now reduced) cost of change.
+
+---
+
+*This article was originally created in commit [`6b17310698da619546138d19a3c5121107dad72f`](https://github.com/frison/agentt/commit/6b17310698da619546138d19a3c5121107dad72f), prompted by commit [`6b17310698da619546138d19a3c5121107dad72f`](https://github.com/frison/agentt/commit/6b17310698da619546138d19a3c5121107dad72f).*
