@@ -1,13 +1,8 @@
 ---
 title: "Time Awareness Guidelines"
-priority: 5 # Based on filename 005-
-scope: core # Based on directory path
-binding: true # Assuming this is a mandatory guideline
-timestamps:
-  created: "2025-04-22T04:36:43Z"
-  updated: "2025-04-22T04:36:43Z"
-tags: ["time", "date", "timestamp", "system-time", "convention"]
-applies_to: ["global"] # Applies generally
+priority: 5
+applies_to: ["**/*"]
+guided_by: [".nhi/principles/universal/001-safety-first.nhp"]
 ---
 
 # Time Awareness Guidelines
