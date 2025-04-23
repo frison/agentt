@@ -16,6 +16,11 @@
 #
 # Note: It is assumed there are no dependencies between the non-base containers.
 
+# Explicitly set MAKE to avoid issues with Cursor's make command output parsing
+# This is needed because Cursor's output of "$ make -f - print-make <<< 'print-make: ; @echo "MAKE path: $(MAKE)"'"
+# can be unreliable
+MAKE := make
+
 DIR_NAME := $(notdir ${CURDIR})
 # Define TAG_PATH_ROOT. Check for P or PREFIX override first.
 ifdef P

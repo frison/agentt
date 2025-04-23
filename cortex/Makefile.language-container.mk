@@ -3,6 +3,12 @@
 #
 # Instead of using --relative-to or other options for realpath, we use sed to remove the parent directory
 # as it's more portable across different versions of realpath.
+
+# Explicitly set MAKE to avoid issues with Cursor's make command output parsing
+# This is needed because Cursor's output of "$ make -f - print-make <<< 'print-make: ; @echo "MAKE path: $(MAKE)"'"
+# can be unreliable
+MAKE := make
+
 ABSOLUTE_PARENT_DIR := $(shell realpath ${CURDIR}/..)
 ABSOLUTE_PARENT_PARENT_DIR := $(shell realpath ${ABSOLUTE_PARENT_DIR}/..)
 DIR_NAME :=$(shell echo ${CURDIR} | sed "s|${ABSOLUTE_PARENT_DIR}||g" | sed "s|^/||g")
