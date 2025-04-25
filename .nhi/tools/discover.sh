@@ -95,25 +95,23 @@ format_as_json() {
     fi
 
     # Extract metadata using the YAML helper
-    local title priority tier description tags
+    local title priority description tags
     title=$(get_yaml_value "$frontmatter" "title")
     priority=$(get_yaml_value "$frontmatter" "priority")
-    tier=$(get_yaml_value "$frontmatter" "tier")
     description=$(get_yaml_value "$frontmatter" "description")
     tags=$(get_yaml_value "$frontmatter" "tags")
 
     # Basic validation - ensure essential fields are present
-    if [ -z "$title" ] || [ -z "$priority" ] || [ -z "$tier" ]; then
-      echo "# Warning: Skipping $artifact_path - missing required frontmatter (title, priority, tier)." >&2
+    if [ -z "$title" ] || [ -z "$priority" ]; then
+      echo "# Warning: Skipping $artifact_path - missing required frontmatter (title, priority)." >&2
       continue
     fi
 
     # Escape strings for JSON
-    local escaped_title escaped_description escaped_path escaped_tier
+    local escaped_title escaped_description escaped_path
     escaped_title=$(escape_json_string "$title")
     escaped_description=$(escape_json_string "$description")
     escaped_path=$(escape_json_string "$artifact_path")
-    escaped_tier=$(escape_json_string "$tier")
     local formatted_tags_json=$(format_tags_json "$tags")
 
     # Add comma separator if not the first element
@@ -127,7 +125,6 @@ format_as_json() {
     cat <<-JSON_EOF
   {
     "path": "${escaped_path}",
-    "tier": "${escaped_tier}",
     "title": "${escaped_title}",
     "priority": ${priority:-999},
     "description": "${escaped_description}",
@@ -146,22 +143,21 @@ JSON_EOF
 # Deprecated table format - kept for reference or potential future use.
 format_as_table() {
   echo "# Warning: Table output format is deprecated. Use JSON." >&2
-  printf "%-9s | %-10s | %-30s | %s\n" "PRIORITY" "TIER" "TITLE" "PATH"
-  printf "%s\n" "---------|-----------|-----------------------------|-----------------"
+  printf "%-9s | %-30s | %s\n" "PRIORITY" "TITLE" "PATH"
+  printf "%s\n" "---------|-----------------------------|-----------------"
 
   while read -r artifact_path; do
      local frontmatter
      frontmatter=$(extract_frontmatter "$artifact_path")
      if [ -z "$frontmatter" ]; then continue; fi
 
-     local title priority tier
+     local title priority
      title=$(get_yaml_value "$frontmatter" "title")
      priority=$(get_yaml_value "$frontmatter" "priority")
-     tier=$(get_yaml_value "$frontmatter" "tier")
 
-     if [ -z "$title" ] || [ -z "$priority" ] || [ -z "$tier" ]; then continue; fi
+     if [ -z "$title" ] || [ -z "$priority" ]; then continue; fi
 
-     printf "%-9s | %-10s | %-30s | %s\n" "${priority:-999}" "${tier}" "${title:0:30}" "$artifact_path"
+     printf "%-9s | %-30s | %s\n" "${priority:-999}" "${title:0:30}" "$artifact_path"
   done < <(find_artifacts)
 }
 
