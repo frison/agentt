@@ -8,6 +8,11 @@ categories:
   - documentation
   - meta
   - rfc-2119
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "114884be8bc84dc5f6d13fb746441216bece24b4"
+  prompt: "114884be8bc84dc5f6d13fb746441216bece24b4"
+  modifications: []
 ---
 
 Remember our previous discussion on how an AI navigates the NHI framework? We talked about the `Needs` and `Practices` tiers and the `discover.sh` script used to parse them. Well, like any good system, the NHI framework itself isn't static. Based on recent work and a drive for even greater clarity (following our own `clarity-over-churn` principle!), we've made some significant evolutionary changes.
@@ -67,4 +72,5 @@ Refactoring our own process framework might seem overly meta, but it's crucial. 
 The goal, as always, is a system that effectively guides development while remaining adaptable. Now, let's get this documented with some provenance...
 
 ---
-<!-- Provenance section will be added here after the first commit -->
+
+*This article was originally created in commit [`114884be8bc84dc5f6d13fb746441216bece24b4`](https://github.com/frison/agentt/commit/114884be8bc84dc5f6d13fb746441216bece24b4), prompted by commit [`114884be8bc84dc5f6d13fb746441216bece24b4`](https://github.com/frison/agentt/commit/114884be8bc84dc5f6d13fb746441216bece24b4).*
