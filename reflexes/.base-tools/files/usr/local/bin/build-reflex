@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# build-reflex - Conditionally build a reflex if build.sh is present
+#
+# This script runs during the Docker build process and compiles
+# the reflex if a build.sh script is present in /reflex.
+
+set -e  # Exit on any error
+
+BUILD_SCRIPT="/reflex/build.sh"
+
+if [ ! -f "$BUILD_SCRIPT" ]; then
+    echo "No build.sh found in /reflex - skipping build step"
+    exit 0
+fi
+
+if [ ! -x "$BUILD_SCRIPT" ]; then
+    echo "Making build.sh executable"
+    chmod +x "$BUILD_SCRIPT"
+fi
+
+echo "Found build.sh - executing build process"
+cd /reflex && ./build.sh

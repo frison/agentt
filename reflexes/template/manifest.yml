@@ -1,0 +1,21 @@
+name: template-reflex
+version: "1.0"
+description: |
+  A template reflex that demonstrates the standard pattern.
+  Requires INPUT_TEXT environment variable.
+
+# Input specifications
+environment:
+  INPUT_TEXT:
+    type: string
+    description: "Text to process"
+    required: true
+  UPPERCASE:
+    type: boolean
+    description: "Whether to convert text to uppercase"
+    default: false
+
+# Output specifications
+stdout:
+  type: string
+  description: "Processed text result"

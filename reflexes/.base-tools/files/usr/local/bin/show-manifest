@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# show-manifest - Display reflex manifest in various formats
+#
+# Usage: show-manifest [format] [output-path]
+#   format: human (default), nhi, or json
+#   output-path: path to write output (default: stdout)
+
+FORMAT="${1:-human}"
+OUTPUT_PATH="${2:--}"
+
+# Set environment variables for manifest handler
+export MANIFEST_PATH="${MANIFEST_PATH:-manifest.yml}"
+export OUTPUT_FORMAT="$FORMAT"
+export OUTPUT_PATH="$OUTPUT_PATH"
+
+# Run manifest handler
+exec manifest

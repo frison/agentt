@@ -1,0 +1,50 @@
+name: template-reflex
+version: "1.0"
+description: "A template reflex that demonstrates the standard pattern for reflex implementation"
+
+# Input specifications
+environment:
+  INPUT_TEXT:
+    type: string
+    description: "Text to process"
+    required: true
+  UPPERCASE:
+    type: boolean
+    description: "Whether to convert text to uppercase"
+    default: false
+  CALLING_UID:
+    type: string
+    description: "UID to assign to output files (optional)"
+    required: false
+  CALLING_GID:
+    type: string
+    description: "GID to assign to output files (optional)"
+    required: false
+
+input_paths:
+  "/input/additional.txt":
+    type: file
+    description: "Additional text to append to the input"
+    required: false
+    format: "plain text"
+
+# Output specifications
+stdout:
+  type: json
+  description: "JSON output containing the processed text and timestamp"
+  schema:
+    type: object
+    properties:
+      processed_text:
+        type: string
+        description: "The processed text result"
+      timestamp:
+        type: string
+        format: date-time
+        description: "Processing timestamp"
+
+output_paths:
+  "/output/result.txt":
+    type: file
+    description: "The processed text saved to a file"
+    format: "plain text"
