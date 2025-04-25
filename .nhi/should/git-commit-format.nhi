@@ -1,7 +1,6 @@
 ---
 title: "Git Commit Message Format Practice"
 priority: 104
-tier: practice
 description: "Specifies the required structure and content for git commit messages."
 tags: ["git", "version-control", "documentation", "format", "standard"]
 ---

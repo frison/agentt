@@ -1,7 +1,6 @@
 ---
 title: "AI Interaction Guidelines Practice"
 priority: 101
-tier: practice
 description: "Establishes ethical, responsible, and effective patterns for AI interaction."
 tags: ["ai", "interaction", "safety", "ethics", "prompting", "llm"]
 ---

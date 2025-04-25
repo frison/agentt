@@ -1,7 +1,6 @@
 ---
 title: "Clarity Over Churn"
 priority: 1
-tier: need
 description: "Prioritize framework clarity and usability for both humans and AI over the cost of making changes (churn)."
 tags: ["meta", "clarity", "usability", "evolution", "nhi-framework", "core"]
 ---

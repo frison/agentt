@@ -3,42 +3,42 @@ description: REQUIRED rule defining the complete NHI Framework and discovery pro
 globs: []
 alwaysApply: true
 ---
-# NHI Framework: Needs → Practices
+# NHI Framework: MUST → SHOULD
 
-## Framework Overview
-- Two hierarchical tiers:
-  1. **Needs** (`.nhi/needs/`) - Non-negotiable requirements, constraints, core values (the "why" and "musts").
-  2. **Practices** (`.nhi/practices/`) - Guidance, patterns, procedures for implementation (the "how").
-- Always process in order: needs → practices
-- Needs override Practices in conflicts.
+## Framework Overview & RFC 2119 Alignment
+- This framework uses two hierarchical tiers, conceptually aligned with RFC 2119 requirement levels:
+  1. **MUST Requirements** (`.nhi/must/`) - Formerly "Needs". These represent non-negotiable requirements, constraints, and core values. They are absolute requirements (**MUST** / **REQUIRED** per RFC 2119). Failure to comply constitutes a violation of core principles.
+  2. **SHOULD Recommendations** (`.nhi/should/`) - Formerly "Practices". These provide guidance, patterns, and recommended procedures. They are generally expected to be followed (**SHOULD** / **RECOMMENDED** per RFC 2119). Valid reasons may exist to deviate, but the implications must be understood, and deviations must *never* violate a MUST requirement.
+- Always process in order: MUST → SHOULD.
+- MUST requirements always override SHOULD recommendations in case of conflict.
 
 ## Universal Discovery
 ```bash
 # Discovery commands for all tiers
-.nhi/tools/discover.sh .nhi/needs table
-.nhi/tools/discover.sh .nhi/practices table
+.nhi/tools/discover.sh .nhi/must json
+.nhi/tools/discover.sh .nhi/should json
 ```
 
-## Tier 1: Needs
-- STOP - Check `.nhi/needs/` before proceeding.
-- These define absolute constraints and fundamental requirements.
-- Priority 1 needs (e.g., "Safety First") must be followed without exception.
-- Read relevant needs completely, understand implications and interactions.
-- Ensure fundamental compliance before considering practices.
+## Tier 1: MUST Requirements (`.nhi/must/`)
+- STOP - Check `.nhi/tools/discover.sh .nhi/must json`  before proceeding.
+- These define **absolute requirements** (RFC 2119 **MUST**).
+- They must be followed without exception.
+- Read relevant MUST requirements completely, understand implications and interactions.
+- Ensure fundamental compliance before considering SHOULD recommendations.
 
-## Tier 2: Practices
-- STOP - Check `.nhi/practices/` for task-relevant guidance after verifying needs.
-- These provide standard patterns, procedures, and guidelines.
-- Follow explicit rules and patterns relevant to the task.
+## Tier 2: SHOULD Recommendations (`.nhi/should/`)
+- STOP - Check `.nhi/tools/discover.sh .nhi/should json` for task-relevant guidance after verifying MUST requirements.
+- These provide **recommended** guidelines (RFC 2119 **SHOULD**).
+- Follow explicit rules and patterns relevant to the task unless a strong, documented justification exists and no MUST requirement is violated.
 - Apply by priority (lower number = higher priority).
-- Verify alignment with needs during implementation.
-- Adapt your approach to tool limitations, not vice versa.
+- Verify alignment with MUST requirements during implementation.
+- Adapt your approach to tool limitations, not vice versa, but always within the bounds set by MUST requirements.
 
 ## High-Risk Areas (Extra Scrutiny)
-- Areas often governed by critical `Needs` (User data, security, etc.)
-- Always re-verify relevant `Needs` when working in these areas.
+- Areas often governed by critical **MUST** level requirements (e.g., User data, security).
+- Always re-verify relevant **MUST** requirements when working in these areas.
 - Authentication/authorization, deployment, shared infrastructure.
 
 ## Framework Evolution
-- Prioritize newer guidance when needs or practices change.
+- Prioritize newer guidance when MUST requirements or SHOULD recommendations change.
 - Document adaptations made during transitions.

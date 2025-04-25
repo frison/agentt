@@ -6,7 +6,7 @@ alwaysApply: false
 # Blog Post Creation and Updates
 
 ## Prerequisites
-- [Time Awareness](../005-core-_R__-time-awareness.mdc)
+- Adherence to NHI Framework guidelines (check MUST and SHOULD for relevant rules, e.g., time formatting)
 - [Blog Directory Structure](../200-blog-_R__-directories.mdc)
 - [Writing for Public Consumption](900-core-C_U_-writing-for-public-consumption.mdc)
 - [Article Provenance](201-blog-_RU_-article-provenance.mdc)

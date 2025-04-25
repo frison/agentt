@@ -1,7 +1,6 @@
 ---
 title: "Time Awareness Practice"
 priority: 504
-tier: practice
 description: "Guidelines for handling time and dates consistently, anchoring to system time."
 tags: ["time", "date", "consistency", "system-time", "formatting", "safety"]
 ---

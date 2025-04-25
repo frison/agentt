@@ -1,7 +1,6 @@
 ---
 title: "NHI Needs & Practices Format Practice"
 priority: 102
-tier: practice
 description: "Defines the standard structure and format for all NHI Needs (.nhn) and Practices (.nhp) files."
 tags: ["meta", "format", "structure", "needs", "practices", "nhi"]
 ---
@@ -32,7 +31,6 @@ Define the standard structure, format, and metadata for all NHI Needs (`.nhn`) a
 ---
 title: "Example Core Need"
 priority: 1
-tier: need
 description: "This is a fundamental, non-negotiable requirement for the system."
 tags: ["core", "example", "fundamental"]
 ---
@@ -55,7 +53,6 @@ Why principle X is critical...
 ---
 title: "Example Implementation Practice"
 priority: 201
-tier: practice
 description: "Standard procedure for implementing feature Y according to our needs."
 tags: ["implementation", "workflow", "feature-y"]
 ---

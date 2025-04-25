@@ -1,7 +1,6 @@
 ---
 title: "Git Commit Creation Practice"
 priority: 502
-tier: practice
 description: "Steps and patterns for creating high-quality, well-formatted git commits."
 tags: ["git", "version-control", "workflow", "collaboration"]
 ---
