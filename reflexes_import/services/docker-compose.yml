@@ -1,0 +1,41 @@
+version: "3.8"
+
+# It is assumed this compose file will be ran from a path
+# with a .env file.
+x-defaults: &defaults
+  env_file: ./.env
+
+services:
+  database:
+    <<: *defaults
+    image: services/postgres:local
+    volumes:
+      - postgres:/var/lib/postgresql/data:delegated
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      start_period: 3s # Wait this long before doing any checks
+      interval: 5s
+      timeout: 30s
+      retries: 10
+
+  database-admin:
+    <<: *defaults
+    image: services/pgadmin4:local
+    networks:
+      - database
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "3081:80"
+
+volumes:
+  postgres:
+    name: dev-postgres
+
+networks:
+  database:
+    name: database
