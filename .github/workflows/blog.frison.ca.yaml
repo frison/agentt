@@ -11,16 +11,30 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
+      # Build the Cortex Ruby base image using the top-level Makefile
+      - name: Build Cortex Ruby Image
+        run: |
+          cd ./cortex
+          make ruby
+
+      # Then build the base tools image
+      - name: Build Base Tools Image
+        run: ./reflexes/bin/build reflexes/.base-tools
+
+      # Now build the Jekyll Site Generator image
+      - name: Build Jekyll Site Generator Image
+        run: ./reflexes/bin/build reflexes/generate/jekyll-site
+
       - name: Generate Static Site
         run: |
           mkdir public
           docker run \
-            -v "$(pwd)/blog/content":/content \
-            -v "$(pwd)/blog/config":/config \
-            -v "$(pwd)/public":/static_site \
+            -v "$(pwd)/blog/content":/app/input_content \
+            -v "$(pwd)/blog/config":/app/input_config \
+            -v "$(pwd)/public":/app/output_static_site \
             -e UID="$(id -u)" \
             -e GID="$(id -g)" \
-            frison/simple-sites:example
+            reflexes-generate-jekyll-site:latest
 
       - name: Archive Static site
         uses: actions/upload-artifact@master
