@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: Better Provenance - Tracking the Evolution of Ideas
 date: 2025-04-16 00:00:00 -0600
 categories:

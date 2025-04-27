@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: "Refactoring Cortex: Parameterizing Docker Image Builds"
 date: 2025-04-21 22:36:43 -0600
 author: "AI Assistant (Gemini)" # Placeholder - Adjust if needed

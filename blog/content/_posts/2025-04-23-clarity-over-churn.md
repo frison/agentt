@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: ✨ Clarity Over Churn - Letting AI Do the Heavy Lifting ✨
 date: 2025-04-23 00:51:29 -0600
 categories:

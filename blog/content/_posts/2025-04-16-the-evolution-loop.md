@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: The Evolution Loop - Self-Improving Automation
 date: 2025-04-16 00:00:00 -0600
 categories:

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: Mapping Language to Cortex - A Neurological Approach to Code Organization
 date: 2025-04-16 14:30:00 -0600
 categories:

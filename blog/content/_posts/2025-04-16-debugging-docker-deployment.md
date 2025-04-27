@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: Debugging Docker Deployment - A Tale of Past and Present
 date: 2025-04-16 00:00:00 -0600
 categories:

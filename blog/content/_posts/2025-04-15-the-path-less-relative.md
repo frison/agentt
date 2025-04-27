@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title: "The Path Less Relative: A Tale of Explicit Intent"
 date: 2024-04-15 23:05:00 -0600
 categories:

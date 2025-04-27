@@ -13,12 +13,12 @@ alwaysApply: false
 
 ## File Structure
 1. Name: `YYYY-MM-DD-kebab-case-title.md` (where `YYYY-MM-DD` is derived from current system time per the Time Awareness Directive)
-2. Location: `blog/content/` directory
+2. Location: `blog/content/_posts/` directory
 
 ## Frontmatter Format
 ```yaml
 ---
-layout: post
+layout: default
 title: Your Title Here
 date: YYYY-MM-DD HH:MM:SS -0600 # Derived from current system time & formatted to CST/CDT per Time Awareness Directive
 categories:
@@ -86,7 +86,7 @@ Notes on frontmatter:
    - Use light self-deprecation when discussing challenging implementations
 
 ## Creation Process
-1. Create file with proper name (`YYYY-MM-DD-kebab-case-title.md`) in `blog/content/`.
+1. Create file with proper name (`YYYY-MM-DD-kebab-case-title.md`) in `blog/content/_posts/`.
 2. Add frontmatter (basic structure, no `provenance` block yet).
 3. Write content following structure.
 4. Add engagement elements (emojis, humor) where appropriate.

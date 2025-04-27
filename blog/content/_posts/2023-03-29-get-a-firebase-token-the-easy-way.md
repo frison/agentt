@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: default
 title:  Firebase Tokens (The Easy Way)
 date:   2023-03-29 00:05:00 -0600
 categories:
