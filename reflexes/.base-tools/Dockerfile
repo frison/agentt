@@ -1,5 +1,5 @@
 # Build stage for manifest handler
-FROM 100hellos/golang:latest as tool-builder
+FROM cortex/golang:local as tool-builder
 # Set working directory to the module root
 WORKDIR /build
 

@@ -1,15 +1,15 @@
 # Stage 1: Get tools from the base-tools image
 # Replace 'reflexes:base-tools' with the actual image name/tag if different
-FROM reflexes:base-tools AS tools
+FROM reflexes--base-tools:latest AS tools
 
 # Stage 2: Build/runtime environment (example using Python)
 # Choose a minimal base image suitable for the reflex language
-FROM python:3.9-alpine AS final
+FROM cortex/python:local AS final
 
 # Set up the user and working directory (ensure nhi user exists or use root)
 # Alpine images don't have adduser by default, common pattern is to run as root
 # or use a fuller base image if non-root is strictly required.
-USER root
+USER nhi
 WORKDIR /app
 
 # Copy the toolset from the tools stage, overlaying the root filesystem
@@ -28,7 +28,7 @@ COPY files/ .
 
 # Ensure the main script is executable (if applicable)
 # Adjust 'main.py' if the primary script file has a different name
-RUN chmod +x main.py
+RUN sudo chmod +x main.py
 
 # Default ENTRYPOINT uses the nhi-entrypoint-helper to provide
 # usage instructions based on manifest.yml and run the main script

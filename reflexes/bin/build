@@ -1,0 +1,70 @@
+#!/bin/bash
+# Builds a reflex Docker image based on a directory path.
+# Assumes the Dockerfile is named 'Dockerfile' within that directory.
+# Usage: build <path_to_reflex_dir> [tag] [docker_build_flags...]
+
+set -e # Exit immediately if a command exits with a non-zero status.
+
+# --- Argument Validation ---
+if [ -z "$1" ]; then
+    echo "Usage: $0 <path_to_reflex_dir> [tag] [docker_build_flags...]" >&2
+    echo "Error: Path to reflex directory is required." >&2
+    exit 1
+fi
+
+REFLEX_PATH_RELATIVE="$1"
+shift # Processed path
+
+# Check if the next argument looks like a tag (doesn't start with -)
+CUSTOM_TAG="latest" # Default tag
+EXTRA_BUILD_FLAGS=()
+if [[ $# -gt 0 && "$1" != -* ]]; then
+    CUSTOM_TAG="$1"
+    shift # Processed tag
+fi
+
+# Remaining arguments are passed to docker build
+EXTRA_BUILD_FLAGS=("$@")
+
+# --- Path Calculation ---
+# Determine the absolute path to the directory containing this script
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# Assume the project root is two levels up from the script's directory (reflexes/bin)
+PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
+
+# Absolute path to the reflex directory (build context)
+REFLEX_DIR_ABS="$PROJECT_ROOT/$REFLEX_PATH_RELATIVE"
+
+# Verify reflex directory exists
+if [ ! -d "$REFLEX_DIR_ABS" ]; then
+    echo "Error: Reflex directory not found: $REFLEX_DIR_ABS" >&2
+    exit 1
+fi
+
+# Verify Dockerfile exists
+DOCKERFILE_PATH="$REFLEX_DIR_ABS/Dockerfile"
+if [ ! -f "$DOCKERFILE_PATH" ]; then
+    echo "Error: Dockerfile not found at: $DOCKERFILE_PATH" >&2
+    exit 1
+fi
+
+# --- Image Naming ---
+# Create a valid image name from the relative path (replace / and . with -)
+# Example: reflexes/generate/jekyll-site -> reflexes-generate-jekyll-site
+# Example: reflexes/.base-tools -> reflexes--base-tools
+IMAGE_BASE_NAME=$(echo "$REFLEX_PATH_RELATIVE" | tr '/.' '--')
+IMAGE_NAME="${IMAGE_BASE_NAME}:${CUSTOM_TAG}"
+
+# --- Docker Build ---
+echo "Building reflex image ('${IMAGE_NAME}')..."
+echo "  Reflex Path (relative): ${REFLEX_PATH_RELATIVE}"
+echo "  Dockerfile location:    ${DOCKERFILE_PATH}"
+echo "  Build context:          ${REFLEX_DIR_ABS}"
+if [ ${#EXTRA_BUILD_FLAGS[@]} -gt 0 ]; then
+  echo "  Extra build flags:      ${EXTRA_BUILD_FLAGS[*]}"
+fi
+
+# Execute the docker build command
+docker build "${EXTRA_BUILD_FLAGS[@]}" -t "${IMAGE_NAME}" -f "${DOCKERFILE_PATH}" "${REFLEX_DIR_ABS}"
+
+echo "Build complete: ${IMAGE_NAME}"

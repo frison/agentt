@@ -66,7 +66,8 @@ RUN \
 # Copy necessary dotfiles from human to nhi user for agent interactions
 USER root
 RUN cp -r /home/human/.zshrc /home/human/.oh-my-zsh /home/nhi/ && \
-    chown -R nhi:nhi /home/nhi/.zshrc /home/nhi/.oh-my-zsh
+    chown -R nhi:nhi /home/nhi/.zshrc /home/nhi/.oh-my-zsh && \
+    sed -i 's/human/nhi/g' /home/nhi/.zshrc
 
 # Reset to entrypoint for nhi user
 USER nhi

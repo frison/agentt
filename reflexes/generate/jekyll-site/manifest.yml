@@ -1,0 +1,34 @@
+name: generate-jekyll-site
+version: "1.0"
+description: |
+  Generates a static website using Jekyll.
+  Takes content and configuration directories as input, produces a static site.
+
+input_paths:
+  content:
+    type: directory
+    required: true
+    description: "Directory containing Jekyll content (_posts, pages, etc.)"
+  config:
+    type: directory
+    required: true
+    description: "Directory containing Jekyll configuration (_config.yml, etc.)"
+
+output_paths:
+  static_site:
+    type: directory
+    required: true
+    description: "Directory where the generated static HTML site will be written."
+
+environment:
+  # Add other env vars the process.sh might use/need here, e.g.:
+  # JEKYLL_ENV:
+  #   description: "Set the Jekyll environment (e.g., production, development)"
+  #   required: false
+  # Include UID/GID implicitly handled by helper for permissions
+
+# Define the actual command to run inside the container
+# The helper prepends env vars and handles setup
+# command: ["/app/process.sh"]
+# Args for the command can be specified here if needed
+# args: []

@@ -1,4 +1,4 @@
-FROM 100hellos/base:latest
+FROM cortex/base:local
 
 COPY --chown=human:human ./files /
 

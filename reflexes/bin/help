@@ -1,0 +1,53 @@
+#!/bin/bash
+# Displays help information for a reflex by executing its entrypoint helper inside the container.
+# Assumes the image has been built and the helper supports a --help flag.
+# Usage: help <path_to_reflex_dir>
+
+set -e # Exit immediately if a command exits with a non-zero status.
+
+# --- Argument Validation ---
+if [ -z "$1" ]; then
+    echo "Usage: $0 <path_to_reflex_dir>" >&2
+    echo "Error: Path to reflex directory is required." >&2
+    exit 1
+fi
+
+REFLEX_PATH_RELATIVE="$1"
+
+# --- Path & Image Name Calculation ---
+# Determine the absolute path to the directory containing this script
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# Assume the project root is two levels up from the script's directory (reflexes/bin)
+PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
+
+# Absolute path to the reflex directory
+REFLEX_DIR_ABS="$PROJECT_ROOT/$REFLEX_PATH_RELATIVE"
+
+# Verify reflex directory exists (basic check)
+if [ ! -d "$REFLEX_DIR_ABS" ]; then
+    echo "Error: Reflex directory not found: $REFLEX_DIR_ABS" >&2
+    exit 1
+fi
+
+# Create the expected image name from the relative path (replace / with -)
+IMAGE_BASE_NAME=$(echo "$REFLEX_PATH_RELATIVE" | sed 's|/|-|g')
+IMAGE_NAME="${IMAGE_BASE_NAME}:latest" # Assumes 'latest' tag for now
+
+# --- Helper Execution ---
+HELPER_PATH_INSIDE_CONTAINER="/usr/local/bin/nhi-entrypoint-helper"
+HELP_FLAG="--help" # Assumption: the helper uses --help
+
+echo "Attempting to get help from image '${IMAGE_NAME}' using entrypoint '${HELPER_PATH_INSIDE_CONTAINER} ${HELP_FLAG}'..."
+echo "--- Help Output --- "
+
+# Execute docker run, overriding entrypoint to call the helper with --help
+# We capture both stdout and stderr
+# Run as root to avoid issues with the default 'nhi' user not existing when overriding entrypoint
+if ! docker run --rm --user=root --entrypoint "${HELPER_PATH_INSIDE_CONTAINER}" "${IMAGE_NAME}" "${HELP_FLAG}" 2>&1; then
+    echo "--- End Help Output --- "
+    echo "Warning: Docker run command failed. Image might not exist, helper might not support --help, or internal error occurred." >&2
+    # Exit with a non-zero status if docker run failed
+    exit 1
+fi
+
+echo "--- End Help Output --- "

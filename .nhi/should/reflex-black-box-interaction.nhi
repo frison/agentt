@@ -1,0 +1,63 @@
+---
+title: "Reflex Interaction: Black-Box Principle"
+priority: 510 # Mid-range priority, adjust as needed
+description: "Guidance on interacting with reflexes as black boxes via their defined interfaces, without inspecting internals."
+tags: ["reflex", "interface", "interaction", "docker", "abstraction", "bin"]
+---
+
+# Reflex Interaction: Black-Box Principle
+
+## Intent
+
+Establish the recommended pattern for interacting with reflexes, treating them as black boxes defined solely by their external interface. This promotes modularity, scalability, and simplifies usage for both humans and AI agents.
+
+## Key Practices
+
+1.  **Interface is Primary:**
+    - The primary source for understanding how to use a reflex **SHOULD** be its defined interface, accessible via `reflexes/bin/help <reflex_path>`.
+    - Trust the output of `bin/help` to accurately reflect the necessary environment variables, volume mounts, and command structure required by `bin/run`.
+
+2.  **Avoid Internal Inspection:**
+    - You **SHOULD NOT** inspect the internal source code (e.g., scripts like `process.sh`, `main.py`, the `Dockerfile`, helper source code) of a reflex solely to determine how to run it or what arguments it requires.
+    - Relying on implementation details creates tight coupling and makes the system brittle.
+
+3.  **Use Standard Tooling:**
+    - Interaction with reflexes **SHOULD** occur through the standard scripts provided in `reflexes/bin/`:
+        - `build <reflex_path> [tag] [docker_flags...]`: For building/rebuilding the reflex image.
+        - `help <reflex_path>`: For understanding the interface.
+        - `run <reflex_path> [-e KEY=VALUE]... [-v HOST:CONTAINER]... [-- <command> [args...]]`: For executing the reflex.
+
+4.  **Improve Interface, Not Workaround:**
+    - If the interface exposed by `bin/help` is unclear, insufficient, or seems incorrect (e.g., help output doesn't match required inputs discovered through trial-and-error), the correct action **SHOULD** be to:
+        1.  Identify the deficiency in the interface definition.
+        2.  Propose improvements to the interface itself (likely by modifying the reflex's `manifest.yml`, or potentially the `nhi-entrypoint-helper` if the issue is systemic).
+        3.  Rebuild the reflex image using `bin/build`.
+        4.  Verify the `bin/help` output is now correct.
+    - Do not create usage patterns or scripts that rely on knowledge obtained by inspecting the reflex's internals.
+
+5.  **Assume Correct Invocation:**
+    - When using `bin/run`, assume the standard script correctly translates the provided `-e`, `-v`, and `--` arguments into the necessary `docker run` flags for the container's entrypoint helper.
+    - Assume the helper correctly handles environment setup and command execution based on these inputs and the internal `manifest.yml`.
+
+## Example Workflow
+
+```bash
+# Discover (Example: list reflexes)
+ls reflexes/some_category/
+
+# Build
+reflexes/bin/build reflexes/some_category/my_reflex
+
+# Understand Interface
+reflexes/bin/help reflexes/some_category/my_reflex
+# --> Shows description, needs env VAR1, needs mount /data/input
+
+# Run based *only* on help info
+reflexes/bin/run reflexes/some_category/my_reflex \
+  -e VAR1="some_value" \
+  -v ./local_data:/data/input
+```
+
+## Rationale
+
+Treating reflexes as black boxes decouples their usage from their implementation. This allows internal refactoring or technology changes within a reflex without breaking external consumers (human or AI), provided the external interface (`manifest.yml` interpretation via `bin/help`) remains consistent or is versioned appropriately.

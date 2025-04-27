@@ -1,0 +1,104 @@
+#!/bin/bash
+# Runs a reflex Docker container.
+# Parses arguments for environment variables (-e), volumes (-v),
+# and the command to run (after --).
+# Usage: run <path_to_reflex_dir> [-e KEY=VALUE]... [-v HOST:CONTAINER]... [-- <command> [args...]]
+
+set -e # Exit immediately if a command exits with a non-zero status.
+
+# --- Argument Validation ---
+if [ -z "$1" ]; then
+    echo "Usage: $0 <path_to_reflex_dir> [-e KEY=VALUE]... [-v HOST:CONTAINER]... [-- <command> [args...]]" >&2
+    echo "Error: Path to reflex directory is required." >&2
+    exit 1
+fi
+
+REFLEX_PATH_RELATIVE="$1"
+shift # Processed path
+
+# --- Path & Image Name Calculation ---
+# Determine the absolute path to the directory containing this script
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+# Assume the project root is two levels up from the script's directory (reflexes/bin)
+PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
+
+# Create the expected image name from the relative path (replace / with -)
+IMAGE_BASE_NAME=$(echo "$REFLEX_PATH_RELATIVE" | sed 's|/|-|g')
+IMAGE_NAME="${IMAGE_BASE_NAME}:latest" # Assumes 'latest' tag
+
+# Absolute path to the reflex directory (useful for potentially reading manifest later)
+REFLEX_DIR_ABS="$PROJECT_ROOT/$REFLEX_PATH_RELATIVE"
+# Verify reflex directory exists (basic check)
+if [ ! -d "$REFLEX_DIR_ABS" ]; then
+    echo "Error: Reflex directory not found: $REFLEX_DIR_ABS" >&2
+    exit 1
+fi
+
+# --- Argument Parsing for docker run flags --- #
+DOCKER_RUN_ARGS=()
+COMMAND_ARGS=() # Command and args to run inside container
+
+# Add default UID/GID passthrough (essential for permissions)
+DOCKER_RUN_ARGS+=("-e" "UID=$(id -u)")
+DOCKER_RUN_ARGS+=("-e" "GID=$(id -g)")
+DOCKER_RUN_ARGS+=("--user=$(id -u):$(id -g)")
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e)
+            if [[ -z "$2" ]]; then
+                echo "Error: -e requires an argument (e.g., KEY=VALUE)" >&2; exit 1;
+            fi
+            DOCKER_RUN_ARGS+=("-e" "$2")
+            shift 2
+            ;;
+        -v)
+            if [[ -z "$2" ]]; then
+                echo "Error: -v requires an argument (e.g., HOST:CONTAINER)" >&2; exit 1;
+            fi
+            # Basic validation: Check if arg contains a colon
+            if ! [[ "$2" == *":"* ]]; then
+                 echo "Error: Invalid volume format for -v: '$2'. Expected HOST:CONTAINER" >&2; exit 1;
+            fi
+            # Resolve host path if relative
+            HOST_PATH=$(echo "$2" | cut -d: -f1)
+            CONTAINER_PART=$(echo "$2" | cut -d: -f2-)
+            [[ "$HOST_PATH" != /* && -e "$HOST_PATH" ]] && HOST_PATH="$(realpath "$HOST_PATH")"
+            # TODO: Add check if host path exists? Create if output?
+            DOCKER_RUN_ARGS+=("-v" "${HOST_PATH}:${CONTAINER_PART}")
+            shift 2
+            ;;
+        --)
+            shift # Consume the -- separator
+            COMMAND_ARGS=("$@") # All remaining arguments are the command
+            break # Stop parsing docker args
+            ;;
+        -*)
+            echo "Error: Unknown option: $1" >&2
+            echo "Usage: $0 <path_to_reflex_dir> [-e KEY=VALUE]... [-v HOST:CONTAINER]... [-- <command> [args...]]" >&2
+            exit 1
+            ;;
+        *) # Deprecated positional args - remove this block once migrated
+           # echo "Warning: Positional arguments for paths are deprecated. Use -v flags." >&2
+           # For now, assume old Jekyll-style args if no flags encountered yet?
+           # This logic gets complex fast. Better to enforce flags.
+           echo "Error: Unexpected argument: $1. Use flags (-e, -v) or -- to separate command." >&2
+           exit 1
+           ;;
+    esac
+done
+
+# --- Docker Execution --- #
+echo "Running reflex image ('${IMAGE_NAME}')..."
+echo "  Reflex Path: $REFLEX_PATH_RELATIVE"
+# echo "  Docker Run Args: ${DOCKER_RUN_ARGS[*]}" # Uncomment for debugging
+
+if [ ${#COMMAND_ARGS[@]} -gt 0 ]; then
+    echo "  Command: ${COMMAND_ARGS[*]}"
+    docker run --rm "${DOCKER_RUN_ARGS[@]}" "$IMAGE_NAME" "${COMMAND_ARGS[@]}"
+else
+    echo "  Command: <Default Entrypoint/CMD>"
+    docker run --rm "${DOCKER_RUN_ARGS[@]}" "$IMAGE_NAME"
+fi
+
+echo "Run complete."

@@ -1,0 +1,47 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Reflex Interaction: Black-Box Principle (SHOULD)
+
+## Overview
+
+This document outlines the recommended (**SHOULD**) approach for interacting with reflexes, treating them as black boxes defined solely by their external interface. Adhering to this principle promotes modularity, scalability, and simplifies usage for both humans and AI agents.
+
+## Core Principles
+
+1.  **Interface is Primary:** The primary source for understanding how to use a reflex **SHOULD** be its defined interface, accessible via the `reflexes/bin/help <reflex_path>` command.
+2.  **Avoid Internal Inspection:** You **SHOULD NOT** inspect the internal source code (e.g., `process.sh`, `main.py`, `Dockerfile`, helper source) of a reflex simply to determine how to run it or what arguments it requires. The `bin/help` output is intended to be sufficient.
+3.  **Use Standard Tooling:** Interaction with reflexes **SHOULD** primarily occur through the standard scripts provided in `reflexes/bin/`:
+    *   `reflexes/bin/build`: For building the reflex image.
+    *   `reflexes/bin/help`: For understanding the reflex's interface (required environment variables, volumes, command arguments).
+    *   `reflexes/bin/run`: For executing the reflex, providing necessary inputs via flags (`-e`, `-v`, `--`) as determined from `bin/help`.
+4.  **Improve Interface, Not Workaround:** If the interface exposed by `bin/help` is unclear, insufficient, or seems incorrect, the recommended course of action **SHOULD** be to improve the interface itself (e.g., by refining the reflex's `manifest.yml` or potentially enhancing the `nhi-entrypoint-helper`'s help generation) rather than developing workarounds based on internal implementation details.
+5.  **Assume Correctness:** When using `bin/run`, assume the reflex image and its internal entrypoint helper correctly handle environment variable propagation, volume mounting, and command execution based on the arguments provided via the `bin/run` flags (`-e`, `-v`, `--`).
+
+## Example Workflow
+
+```bash
+# 1. Discover available reflexes (Method TBD - perhaps filesystem listing)
+ls reflexes/generate/
+
+# 2. Build the desired reflex
+reflexes/bin/build reflexes/generate/jekyll-site
+
+# 3. Understand its interface
+reflexes/bin/help reflexes/generate/jekyll-site
+# (Output shows description, expected mounts like /app/input_content, etc.)
+
+# 4. Run the reflex, providing inputs based *only* on help output
+reflexes/bin/run reflexes/generate/jekyll-site \
+  -v ./blog/content:/app/input_content \
+  -v ./blog/config:/app/input_config \
+  -v ./tmp_jekyll_output:/app/output_static_site
+# Note: We use the container paths shown in help, not hardcoded knowledge.
+# Note: We don't need to specify `-- /app/process.sh` if it's the default CMD.
+```
+
+## Rationale
+
+Treating reflexes as black boxes decouples their usage from their implementation. This allows internal refactoring or technology changes within a reflex without breaking external consumers (human or AI), provided the external interface (`manifest.yml` interpretation via `bin/help`) remains consistent or is versioned appropriately.
