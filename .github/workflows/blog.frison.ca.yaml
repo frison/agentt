@@ -15,26 +15,17 @@ jobs:
       - name: Build Cortex Ruby Image
         run: |
           cd ./cortex
+          make base-image
           make ruby
-
-      # Then build the base tools image
-      - name: Build Base Tools Image
-        run: ./reflexes/bin/build reflexes/.base-tools
-
-      # Now build the Jekyll Site Generator image
-      - name: Build Jekyll Site Generator Image
-        run: ./reflexes/bin/build reflexes/generate/jekyll-site
-
-      - name: Generate Static Site
-        run: |
+          make golang # Needed to build the base-tools
+          cd ..
+          ./reflexes/bin/build reflexes/.base-tools
+          ./reflexes/bin/build reflexes/generate/jekyll-site
           mkdir public
-          docker run \
-            -v "$(pwd)/blog/content":/app/input_content \
-            -v "$(pwd)/blog/config":/app/input_config \
-            -v "$(pwd)/public":/app/output_static_site \
-            -e UID="$(id -u)" \
-            -e GID="$(id -g)" \
-            reflexes-generate-jekyll-site:latest
+          reflexes/bin/run reflexes/generate/jekyll-site \
+            -v ./blog/content:/app/input_content \
+            -v ./blog/config:/app/input_config \
+            -v ./public:/app/output_static_site
 
       - name: Archive Static site
         uses: actions/upload-artifact@master
