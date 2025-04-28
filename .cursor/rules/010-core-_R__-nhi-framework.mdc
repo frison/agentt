@@ -23,7 +23,7 @@ alwaysApply: true
 Reflexes encapsulate specific functionalities or build processes within the system. To discover available reflexes and their capabilities (as defined in their `manifest.yml`):
 ```bash
 # Discover available reflexes and output as JSON
-./reflexes/bin/discover-reflexes.sh json
+./reflexes/bin/discover.sh json
 ```
 
 ## Tier 1: MUST Requirements (`.nhi/must/`)
