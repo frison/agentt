@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-# 🛸 NHI Artifact Discovery Protocol 🛸
-# Scans specified sectors (.nhi directories) for Need/Practice artifacts (.nhi files)
+# 🛸 Agent Behavior Discovery Protocol 🛸
+# Scans specified behavior sectors (.agent/behavior directories) for behavioral directives (.bhv files)
 # Parses YAML frontmatter and transmits findings as structured JSON data.
 #
-# Based on the principles encoded in .nhi/practices/directive-format.nhi
+# Based on the principles encoded in this project's agent guidance.
 
 # --- Configuration & Safety ---
 set -euo pipefail
 
 # --- Argument Parsing & Validation ---
-SEARCH_DIR="${1:-.nhi}"   # Default scan target: .nhi directory
+SEARCH_DIR="${1:-.agent/behavior}"   # Default scan target: .agent/behavior directory
 OUTPUT_FORMAT="${2:-json}" # Default transmission format: json
 # Note: 'table' format is deprecated, script now primarily outputs JSON.
 # FILTER_TYPE="${3:-all}" # Filtering by type (.nhn/.nhp) is deprecated, use 'tier' from frontmatter.
@@ -22,9 +22,9 @@ fi
 
 # --- Core Logic Functions ---
 
-# Finds all .nhi artifacts within the designated search directory.
+# Finds all .bhv artifacts within the designated search directory.
 find_artifacts() {
-  find "$SEARCH_DIR" -name "*.nhi" -type f | sort
+  find "$SEARCH_DIR" -name "*.bhv" -type f | sort
 }
 
 # Extracts the YAML frontmatter block (between the first pair of '---')
@@ -164,7 +164,7 @@ format_as_table() {
 # --- Main Execution ---
 
 # Transmit findings based on requested format
-echo "# 📡 Scanning Sector: $SEARCH_DIR for NHI artifacts..." >&2
+echo "# 📡 Scanning Sector: $SEARCH_DIR for behavioral directives..." >&2
 case "$OUTPUT_FORMAT" in
   json)
     format_as_json

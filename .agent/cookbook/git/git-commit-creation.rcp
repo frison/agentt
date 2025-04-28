@@ -1,0 +1,99 @@
+---
+id: git-commit-creation
+title: "Git Commit Creation Recipe"
+priority: 502
+description: "Provides standard procedures for creating and annotating Git commits."
+tags: ["git", "version-control", "workflow", "commit", "annotation"]
+domain: git
+tools_required: ["git"]
+related_guidance:
+  behavior:
+    - behavior/should/git-commit-format.bhv
+---
+
+# Recipe: Git Commit Creation
+
+## Purpose
+This recipe outlines the standard procedures for creating a new Git commit with a well-structured message and optionally amending it later to add detailed Agent annotations.
+
+## Prerequisites
+- Changes staged for commit (`git add .` or similar).
+- Understanding of the required commit message format (see `behavior/should/git-commit-format.bhv`).
+
+## Steps
+
+### 1. Create Initial Commit
+   This method uses a temporary file for the commit message.
+
+   ```bash
+   # Define commit subject and body (replace with actual content)
+   commit_subject="feat(scope): Add concise commit title"
+   commit_body="Explain the what and why of the change here.\n\nFurther details or bullet points can follow."
+   temp_commit_file="$(mktemp)" # Create a secure temporary file
+
+   # Write message to temporary file
+   printf "%s\n\n%s\n" "${commit_subject}" "${commit_body}" > "${temp_commit_file}"
+
+   # Create the commit using the temporary file
+   git commit -F "${temp_commit_file}"
+
+   # Clean up the temporary file
+   rm "${temp_commit_file}"
+   echo "✅ Commit created."
+   ```
+
+### 2. (Optional) Amend Commit to Add Agent Annotation
+   Use this *after* the initial commit is created to add detailed context.
+
+   ```bash
+   temp_commit_file="$(mktemp)" # Create a secure temporary file
+
+   # Extract current commit message
+   git log -1 --pretty=format:"%s%n%n%b" > "${temp_commit_file}"
+
+   # Add Agent annotation block (replace placeholder text)
+   printf "\n\n-- Agent annotation\n"
+   printf "---\n"
+   printf "Context and Decisions:\n"
+   printf "- Decision 1 rationale...\n"
+   printf "- Decision 2 rationale...\n\n"
+   printf "Sentiment and Commentary:\n"
+   printf "- Observation 1...\n"
+   printf "- Observation 2...\n"
+   >> "${temp_commit_file}"
+
+   # Perform the amend commit
+   git commit --amend -F "${temp_commit_file}"
+
+   # Clean up the temporary file
+   rm "${temp_commit_file}"
+   echo "✅ Commit amended with Agent annotation."
+   ```
+
+### 3. Verify Commit Quality (Example Checks)
+   These are example checks; more can be added.
+
+   ```bash
+   # Check title length (should be <= 50 chars)
+   title_len=$(git log -1 --pretty=%s | wc -c)
+   if [ "$title_len" -gt 50 ]; then
+     echo "⚠️ Commit title potentially too long: $title_len chars (max 50 recommended)" >&2
+   else
+     echo "✅ Commit title length OK ($title_len chars)."
+   fi
+
+   # Quick check if body exists (more than just the title line)
+   body_lines=$(git log -1 --pretty=%b | wc -l)
+   if [ "$body_lines" -lt 2 ]; then
+     echo "⚠️ Commit body seems short or missing." >&2
+   else
+     echo "✅ Commit body present."
+   fi
+   ```
+
+## Common Mistakes
+- Forgetting to `git add` changes before committing.
+- Creating commit messages that don't follow the format defined in `behavior/should/git-commit-format.bhv`.
+- Not cleaning up temporary files.
+- Amending public/shared history incorrectly.
+- Adding annotations without the `-- Agent annotation` separator.

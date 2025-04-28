@@ -1,4 +1,19 @@
-# Blog Article Collaboration Process
+---
+id: blog-article-collaboration
+title: "Blog Article Collaboration Workflow"
+priority: 200
+description: "Defines the process for collaborating on blog articles using Git and GitHub."
+tags: ["blog", "collaboration", "git", "github", "workflow"]
+domain: blog
+related_guidance:
+  behavior:
+    - behavior/should/git-commit-format.bhv
+    - behavior/should/git-commit-creation.bhv
+calls_recipes:
+  - git-history-preservation # Example if it calls another recipe
+---
+
+# Recipe: Blog Article Collaboration
 
 ## Prerequisites
 - Working in the blog/content directory

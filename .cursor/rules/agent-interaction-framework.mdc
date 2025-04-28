@@ -1,0 +1,52 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Agent Interaction Framework (Enforcement)
+
+## STOP - Critical Interaction Sequence
+This rule defines the MANDATORY sequence for interacting with the project's `.agent/` guidance framework before proceeding with ANY task (coding, analysis, planning, etc.). Failure to follow this sequence violates core operational principles.
+
+## 1. Consult Framework Overview
+- **Reference:** `.agent/README.md` defines the overall purpose and structure of the `.agent/` directory and its subdomains.
+
+## 2. Phase 1: Behavior Domain Check (MUST then SHOULD)
+- **STOP:** Do NOT proceed to Phase 2 or the main task until this phase is complete.
+- **Definition Reference:** Consult `.agent/behavior/README.md` for the authoritative definition of the Behavior domain, tiers, and discovery mechanism.
+- **Discovery:**
+    - **First, check MUST requirements:**
+      ```bash
+      # Run from project root
+      .agent/behavior/bin/discover.sh .agent/behavior/must json | cat
+      ```
+      Analyze JSON output. Ensure the proposed action **fundamentally complies** with ALL discovered MUST requirements. If not, STOP and re-evaluate the action.
+    - **Second, check SHOULD recommendations:**
+      ```bash
+      # Run from project root
+      .agent/behavior/bin/discover.sh .agent/behavior/should json | cat
+      ```
+      Analyze JSON output. Follow discovered recommendations according to priority (from JSON), ensuring alignment with MUST requirements.
+- **Common Behavior Failures:** Proceeding without checking both tiers using discovery; Checking in wrong order; Prioritizing task before understanding MUSTs; Assuming familiarity; Following SHOULDs that conflict with MUSTs. **If a failure is detected, STOP and restart from MUST check.**
+
+## 3. Phase 2: Cookbook Domain Check (Recipes)
+- **STOP:** Do NOT proceed to the main task until this phase is complete.
+- **Definition Reference:** Consult `.agent/cookbook/README.md` for the authoritative definition of the Cookbook domain, recipe format, and discovery mechanism.
+- **Discovery:**
+    ```bash
+    # Run from project root
+    .agent/cookbook/bin/discover.sh json | cat
+    ```
+- **Recipe Handling:**
+    1.  Analyze the JSON output to find recipes relevant to the current task (matching `id`, `title`, `tags`, or `description`).
+    2.  **If relevant recipes are found:**
+        - Attempt to read the highest priority relevant recipe(s) using the `path` field from the JSON (e.g., via `read_file`).
+        - **Handling Retrieval Failures:** If reading fails, **STOP** the main task. Report the inability to access the required instructions and await guidance. **DO NOT proceed using assumptions.**
+        - If reading succeeds, **follow the recipe completely**. Do not skip steps or modify sequence.
+    3.  **If no relevant recipes are found** after analyzing discovery output:
+        - Document that no specific recipe was found for the task.
+        - Proceed with the task (Step 4), ensuring adherence to Behavior directives from Phase 1.
+- **Common Cookbook Failures:** Proceeding without checking for recipes using discovery; Running discovery from wrong directory; Failing to parse JSON correctly; Skipping recipe steps; Modifying steps; Treating recipes as optional; Proceeding with assumptions when a recipe exists but couldn't be read.
+
+## 4. Phase 3: Proceed with Task
+- Only after successfully completing Phase 1 (Behavior Check) and Phase 2 (Cookbook Check) may you proceed with the main task, guided by the discovered directives and recipes.

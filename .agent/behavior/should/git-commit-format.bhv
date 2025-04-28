@@ -31,9 +31,9 @@ Establish a consistent, informative commit message structure that effectively co
      - Add metadata tags
      - One item per line
 
-- For NHI annotations, add:
+- For agent annotations, add:
   ```
-  -- NHI annotation
+  -- Agent annotation
 
   Context and Decisions:
   <key technical decisions>
@@ -59,7 +59,7 @@ overall system security.
 Refs: #123, #456
 Security: High
 
--- NHI annotation
+-- Agent annotation
 
 Context and Decisions:
 - Chose JWT for stateless authentication
@@ -76,3 +76,6 @@ Sentiment and Commentary:
 - Automated commits (merge commits, version bumps)
 - Temporary WIP commits that will be squashed
 - Initial repository setup commits
+
+## Related Recipes
+- For the standard procedure for creating commits using this format, see recipe `id: git-commit-creation`.

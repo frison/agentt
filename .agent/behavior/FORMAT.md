@@ -1,40 +1,41 @@
 ---
-title: "NHI MUST & SHOULD Guidance Format"
+title: "Agent Behaviours Format (`.bhv` files)"
 priority: 102
-description: "Defines the standard structure and format for all NHI MUST Requirement and SHOULD Recommendation files."
-tags: ["meta", "format", "structure", "must", "should", "nhi"]
+description: "Defines the standard structure and format for all behavioral MUST Requirement and SHOULD Recommendation files."
+tags: ["meta", "format", "structure", "must", "should", "behavior", "agent"]
 ---
 
-# NHI MUST & SHOULD Guidance Format
+# Agent Behaviours Format (`.bhv` files)
 
 ## Intent
-Define the standard structure, format, and metadata for all NHI MUST Requirement (`must/*.nhi`) and SHOULD Recommendation (`should/*.nhi`) files to ensure consistency, discoverability, and appropriate application of guidance across the system.
+This document defines the standard structure, format, and metadata for all agent behaviour files (`must/*.bhv` and `should/*.bhv`) within the `.agent/behavior/` directory. This ensures consistency, discoverability, and appropriate application of guidance across the system.
 
 ## Rules
-- All MUST Requirement and SHOULD Recommendation files MUST use the `.nhi` extension.
-- Filenames SHOULD use a concise, kebab-case name describing the content (e.g., `build-process.nhi`, `directive-format.nhi`).
-- All guidance files MUST begin with YAML frontmatter bounded by triple dashes (`---`).
+- All behaviour files MUST use the `.bhv` extension.
+- Filenames SHOULD use a concise, kebab-case name describing the content (e.g., `build-process.bhv`, `shell-safety.bhv`).
+- All behaviour files MUST begin with YAML frontmatter bounded by triple dashes (`---`).
 - Frontmatter MUST include these fields:
   - `title`: "Clear and Concise Title" (String)
   - `priority`: NNN (Numeric value, lower = higher importance)
   - `description`: "A short (1-2 sentence) explanation." (String)
   - `tags`: `["list", "of", "relevant", "tags"]` (Array of strings)
 - Frontmatter fields MUST appear in the order specified above.
+- The main body MUST follow the frontmatter.
 - Body MUST be structured Markdown with at least an "Intent" or "Core Statement" section explaining the purpose.
 - Body SHOULD include relevant sections like "Rules", "Actions", "Applications", "Examples", "Common Mistakes", or "Exceptions" as appropriate for the content.
 
 ## Examples
 
-### MUST Requirement Example (`must/*.nhi`)
+### MUST Behaviour Example (`must/*.bhv`)
 ```yaml
 ---
-title: "Example Core MUST Requirement"
+title: "Example Core MUST Behaviour"
 priority: 1
-description: "This is a fundamental, non-negotiable requirement for the system."
+description: "This is a fundamental, non-negotiable behaviour for the system."
 tags: ["core", "example", "fundamental"]
 ---
 
-# Example Core MUST Requirement
+# Example Core MUST Behaviour
 
 ## Core Statement
 All systems must adhere to this fundamental principle X.
@@ -47,7 +48,7 @@ Why principle X is critical...
 - How X applies in scenario B...
 ```
 
-### SHOULD Recommendation Example (`should/*.nhi`)
+### SHOULD Behaviour Example (`should/*.bhv`)
 ```yaml
 ---
 title: "Example Implementation Recommendation"
@@ -72,7 +73,6 @@ Provide the standard steps for implementing Feature Y.
 ```bash
 # Code example demonstrating the practice
 example_command --option
-```
 ```
 
 ## Exceptions

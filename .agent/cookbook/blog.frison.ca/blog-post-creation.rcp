@@ -1,15 +1,28 @@
 ---
-description: Recipe for creating, reading, and updating blog posts with consistent structure and provenance
-globs: ["blog/content/*.md"]
-alwaysApply: false
+id: blog-post-creation
+title: "Blog Post Creation Recipe"
+priority: 202
+description: "Steps for creating, formatting, and committing a new blog post."
+tags: ["blog", "content-creation", "workflow", "markdown"]
+domain: blog
+applies_to_paths: ["content/_posts/*.md"]
+tools_required: ["git"]
+related_guidance:
+  behavior:
+    - behavior/should/git-commit-format.bhv
+    - behavior/must/clarity-over-churn.bhv
+    - behavior/should/time-awareness.bhv
+  cookbook:
+    - .agent/cookbook/blog.frison.ca/writing-public.rcp
+    - .agent/cookbook/blog.frison.ca/blog-article-provenance.rcp
 ---
-# Blog Post Creation and Updates
+
+# Recipe: Create New Blog Post
 
 ## Prerequisites
-- Adherence to NHI Framework guidelines (check MUST and SHOULD for relevant rules, e.g., time formatting)
-- [Blog Directory Structure](../200-blog-_R__-directories.mdc)
-- [Writing for Public Consumption](900-core-C_U_-writing-for-public-consumption.mdc)
-- [Article Provenance](201-blog-_RU_-article-provenance.mdc)
+- Adherence to the Agent Interaction Framework (consult Behavior MUST/SHOULD and relevant Cookbook recipes).
+- Familiarity with Behavior guidance listed in frontmatter's `related_guidance.behavior`.
+- Familiarity with related Cookbook recipes listed in frontmatter's `related_guidance.cookbook`.
 
 ## File Structure
 1. Name: `YYYY-MM-DD-kebab-case-title.md` (where `YYYY-MM-DD` is derived from current system time per the Time Awareness Directive)
@@ -100,7 +113,7 @@ Notes on frontmatter:
    git add blog/content/YYYY-MM-DD-kebab-case-title.md
    git commit -m "feat(blog): add initial draft for [topic]"
    ```
-6. Add the `provenance` block and footer using the SHA from the previous commit, following the [Article Provenance Recipe](201-blog-_RU_-article-provenance.mdc).
+6. Add the `provenance` block and footer using the SHA from the previous commit, following the [Article Provenance Recipe](blog-article-provenance.rcp).
 7. Commit the provenance addition:
    ```bash
    # Example commit

@@ -1,7 +1,13 @@
 ---
-description: Recipe for adding git commit provenance to blog articles
-globs: ["blog/content/*.md"]
-alwaysApply: false
+id: blog-article-provenance
+title: "Blog Article Provenance Tracking"
+priority: 201
+description: "Ensuring blog articles correctly track author and origin information."
+tags: ["blog", "provenance", "metadata", "authorship"]
+domain: blog
+related_guidance:
+  behavior:
+    - behavior/should/git-commit-format.bhv
 ---
 
 # Add Git Commit Provenance to Blog Article

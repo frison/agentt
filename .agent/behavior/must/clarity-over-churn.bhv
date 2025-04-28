@@ -1,14 +1,14 @@
 ---
-title: "Clarity Over Churn"
+title: "Clarity Over Churn (Agent Framework)"
 priority: 1
-description: "Prioritize framework clarity and usability for both humans and AI over the cost of making changes (churn)."
-tags: ["meta", "clarity", "usability", "evolution", "nhi-framework", "core"]
+description: "Ensures the Agent framework prioritizes clarity over avoiding rework."
+tags: ["meta", "clarity", "usability", "evolution", "agent-framework", "core"]
 ---
 
-# Clarity Over Churn
+# Clarity Over Churn (Agent Framework)
 
 ## Core Statement
-The NHI framework (structure, content, tooling) must prioritize clarity and usability for both human developers and AI agents above the desire to avoid rework (churn). When a structural or content change demonstrably improves clarity or usability, it should be implemented even if it requires modifying existing files or documentation.
+The Agent Framework (structure, content, tooling) must prioritize clarity and usability for both human developers and AI agents above the desire to avoid rework (churn). When a structural or content change demonstrably improves clarity or usability, it should be implemented even if it requires modifying existing files or documentation.
 
 ## Rationale
 A clear, intuitive, and easily parsable framework is essential for effective guidance, consistent application, and reliable automation. The long-term benefits of clarity (reduced errors, faster onboarding, better AI interpretation, easier maintenance) outweigh the short-term costs of modification. Obscurity, ambiguity, or awkwardness maintained solely to avoid churn ultimately hinders the framework's purpose and effectiveness.

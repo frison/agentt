@@ -1,7 +1,12 @@
 ---
-description: META-RULE - REQUIRED before any Cursor rule modification - Describes creating and modifying cursor rules.
-globs:
-alwaysApply: false
+id: cursor-rule-creation
+title: "Cursor Rule Creation Recipe"
+priority: 10 # Meta rules are high priority
+description: "How to create a new Cursor rule (.mdc file) for agent guidance."
+tags: ["meta", "cursor", "rule", "agent", "creation"]
+related_guidance:
+  behavior:
+    - behavior/should/directive-format.bhv # Refers to general structure, adaptable
 ---
 
 # Cursor Rules Guidelines
@@ -48,4 +53,6 @@ alwaysApply: false
 ## Organization
 - Split large rules into focused small ones
 - Group related rules in subdirectories
+
+# Recipe: Create New Cursor Rule
 
