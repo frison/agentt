@@ -18,23 +18,27 @@ alwaysApply: false
 ## Frontmatter Format
 ```yaml
 ---
-layout: default
-title: Your Title Here
-date: YYYY-MM-DD HH:MM:SS -0600 # Derived from current system time & formatted to CST/CDT per Time Awareness Directive
+layout: post
+title: Example Blog Post Title - With Hyphenated Subtitle 🚀
+date: YYYY-MM-DD HH:MM:SS -0600 # Derived from system time & formatted to CST/CDT per Time Awareness Directive
 categories:
   - category1
   - category2
   - category3
+provenance:
+  commit_sha: FULL_GIT_SHA_OF_INITIAL_COMMIT # Replace with actual SHA
+  parent_sha: FULL_GIT_SHA_OF_PARENT_COMMIT # Replace with actual SHA
 ---
 ```
 
 Notes on frontmatter:
-- Title uses hyphens instead of colons for separators
-- Date includes time and timezone (standardized to -0600), derived from system time.
-- Categories are listed as YAML array items with hyphens
-- Category names use hyphens instead of spaces
-- No quotes around any values
-- Optionally add relevant emojis to the title for increased visibility and engagement
+- Use `post` for the layout.
+- Title can contain hyphens and optionally relevant emojis (🚀).
+- Date includes time and timezone (standardized to -0600), derived from system time. Check relevant Time directives for updates.
+- Categories are listed as YAML array items with hyphens.
+- Category names use hyphens instead of spaces.
+- No quotes around any values.
+- `provenance` block is added *after* the first commit (see [Article Provenance Recipe](201-blog-_RU_-article-provenance.mdc) and Creation Process below).
 
 ## Content Structure
 1. **Introduction**
@@ -87,7 +91,7 @@ Notes on frontmatter:
 
 ## Creation Process
 1. Create file with proper name (`YYYY-MM-DD-kebab-case-title.md`) in `blog/content/_posts/`.
-2. Add frontmatter (basic structure, no `provenance` block yet).
+2. Add frontmatter (basic structure including layout, title, date, categories, but **NO** `provenance` block yet).
 3. Write content following structure.
 4. Add engagement elements (emojis, humor) where appropriate.
 5. Commit the initial post content:
