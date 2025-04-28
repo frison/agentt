@@ -9,6 +9,11 @@ categories:
   - computation
   - devops
   - vision
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee"
+  prompt: "7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee"
+  modifications: []
 ---
 
 Here at `agentt`, we've been pushing the boundaries of AI-assisted development. Watching an AI collaborator refactor code based on NHI framework guidelines or spin up infrastructure using a Reflex is pretty magical. But even magic needs scrutiny. We started asking ourselves: how could we *prove*, beyond doubt, exactly what happened? How could we guarantee that a complex, automated, AI-driven workflow is not just correct, but also entirely transparent and reproducible?
@@ -82,3 +87,7 @@ Why go to all this trouble? Because the potential applications are vast and tran
 We're moving from opaque automation, even sophisticated AI-driven automation, towards **glass-box, verifiable computational processes.** It's a complex undertaking, but we believe it's essential for building truly trustworthy automated systems.
 
 Stay tuned as we continue laying this foundation, one content-addressed block at a time. The future of development is verifiable. 🚀
+
+---
+
+*This article was originally created in commit [`7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee`](https://github.com/frison/agentt/commit/7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee), prompted by commit [`7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee`](https://github.com/frison/agentt/commit/7e36a6433e516a9b7c4a2dcbab86e4b86b0d86ee).*
