@@ -8,6 +8,11 @@ categories:
   - refactoring
   - agent-framework
   - development-process
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "30f72a95d251a3fe1bd5c3b679f0fcf166e691b7"
+  prompt: "c787599e42baaf6e5cc677fa308c252ce0e0eac3"
+  modifications: []
 ---
 
 As our project evolves, so does our collaboration with AI assistants. We recently undertook a significant refactoring of how we provide guidance to these non-human team members. Our previous system, a mix of `.nhi` files and `.cursor` rules scattered about, became increasingly confusing. As one developer noted, *"I'm thinking as a human, looking in my IDE, without a clear boundary around what's AI meta/instructions..."* We needed a change, prioritizing **"clarity over churn"**. This post details the journey to our new, unified `.agent` framework!
@@ -83,3 +88,7 @@ This ensures that all actions taken by the AI align with our defined behaviors a
 ## Looking Forward 🚀
 
 This refactoring provides a much clearer, more consistent, robust, and maintainable framework for guiding AI collaboration. By separating behavioral rules from procedural recipes and consolidating them under `.agent`, we've improved the developer experience and laid a stronger foundation for future integrations. We believe this structured approach will lead to more predictable, reliable, and effective AI assistance as we continue to build. Who knows, maybe a `reflex` domain for executable agent capabilities is next? 😉
+
+---
+
+*This article was originally created in commit [`30f72a95d251a3fe1bd5c3b679f0fcf166e691b7`](https://github.com/frison/agentt/commit/30f72a95d251a3fe1bd5c3b679f0fcf166e691b7), prompted by commit [`c787599e42baaf6e5cc677fa308c252ce0e0eac3`](https://github.com/frison/agentt/commit/c787599e42baaf6e5cc677fa308c252ce0e0eac3).*
