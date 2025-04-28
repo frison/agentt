@@ -1,0 +1,22 @@
+<header class="bg-brand-bg-light dark:bg-brand-bg-dark border-b border-brand-border-light dark:border-brand-border-dark shadow-sm sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 md:px-6 lg:px-8 flex justify-between items-center">
+    <a class="text-xl md:text-2xl font-bold text-brand-text-light dark:text-brand-text-dark hover:text-brand-primary dark:hover:text-brand-primary transition-colors duration-200" rel="author" href="{{ "/" | relative_url }}">
+      {{ site.title | escape }}
+    </a>
+
+    <nav class="flex items-center space-x-4 md:space-x-6">
+      {% assign page_paths = site.pages | map: "path" %}
+      {% if page_paths contains "about.md" or page_paths contains "about.markdown" %}
+        <a class="text-brand-secondary dark:text-brand-secondary hover:text-brand-primary dark:hover:text-brand-primary transition-colors duration-200 font-medium" href="{{ "/about/" | relative_url }}">About</a>
+      {% endif %}
+      <!-- Add other navigation links here if needed -->
+
+      <button id="theme-toggle" class="text-brand-secondary dark:text-brand-secondary hover:text-brand-primary dark:hover:text-brand-primary focus:outline-none transition-colors duration-200" aria-label="Toggle theme">
+        <span class="icon-moon text-lg">🌙</span>
+        <span class="icon-sun text-lg">☀️</span>
+        <!-- Icon visibility is now controlled by JS -->
+      </button>
+    </nav>
+
+  </div>
+</header>

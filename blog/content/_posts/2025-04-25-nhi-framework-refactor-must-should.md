@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: 🏗️ Refactoring the NHI Framework - MUST We Change? 🤔
 date: 2025-04-25 00:16:33 -0600
 categories:

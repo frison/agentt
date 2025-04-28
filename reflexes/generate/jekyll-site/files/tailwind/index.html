@@ -1,0 +1,49 @@
+---
+layout: default
+title: Home # Title for the <title> tag, layout uses site.title for header
+---
+
+<div class="space-y-10">
+
+  {% if site.description %}
+    <p class="text-center text-lg text-brand-secondary dark:text-brand-secondary italic mt-4">{{ site.description }}</p>
+  {% endif %}
+
+  <h1 class="text-3xl font-bold text-center text-brand-text-light dark:text-brand-text-dark">Recent Posts</h1>
+
+  <ul class="space-y-8">
+    {% for post in site.posts %}
+      <li>
+        <article class="bg-brand-bg-light dark:bg-brand-bg-dark shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 border border-brand-border-light dark:border-brand-border-dark">
+          <h2 class="text-2xl font-semibold mb-2">
+            <a class="text-brand-primary hover:text-brand-primary-hover dark:text-brand-primary dark:hover:brightness-110 transition-colors duration-200" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+          </h2>
+          <div class="text-sm text-brand-secondary dark:text-brand-secondary mb-4">
+             <span class="post-date">{{ post.date | date: "%b %-d, %Y" }}</span>
+             {% if post.categories.size > 0 %}
+               <span class="post-categories ml-2">
+                 &middot; Categories:
+                 {% for category in post.categories %}
+                   <a class="ml-1 text-brand-secondary dark:text-brand-secondary hover:text-brand-primary dark:hover:text-brand-primary underline" href="#{{ category | slugify }}">{{ category }}</a>{% unless forloop.last %}, {% endunless %}
+                 {% endfor %}
+               </span>
+             {% endif %}
+          </div>
+
+          <div class="prose dark:prose-invert max-w-none mb-4">
+            {{ post.excerpt }}
+          </div>
+
+          <a href="{{ post.url | relative_url }}" class="inline-block text-brand-primary hover:text-brand-primary-hover dark:text-brand-primary dark:hover:brightness-110 font-medium transition-colors duration-200">Read more &rarr;</a>
+
+        </article>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Optional: Style the RSS feed link -->
+  <p class="text-center text-sm text-brand-secondary dark:text-brand-secondary">
+      subscribe <a href="{{ '/feed.xml' | relative_url }}" class="underline hover:text-brand-primary dark:hover:text-brand-primary">via RSS</a>
+  </p>
+
+</div>

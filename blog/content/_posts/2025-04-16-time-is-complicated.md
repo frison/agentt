@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Time is Complicated - A Tale of Timezones, DST, and Engineering Challenges
 date: 2025-04-16 00:00:00 -0600
 categories:

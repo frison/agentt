@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Adding a Non-Human Intelligence User for Agent Interactions 🤖🧠
 date: 2025-04-17 10:30:00 -0600
 categories:

@@ -5,8 +5,8 @@ FROM reflexes--base-tools:latest AS tools
 FROM cortex/ruby:local AS base
 USER root
 
-# Install build dependencies
-RUN apk add --no-cache gcc g++ musl-dev make
+# Install build dependencies (Ruby, C, Node)
+RUN apk add --no-cache gcc g++ musl-dev make nodejs npm
 
 
 # Copy common tools from .base-tools image
@@ -16,6 +16,17 @@ WORKDIR /app
 
 # Copy reflex-specific files (scripts, theme, Gemfile)
 COPY files/Gemfile /app/
+
+# === Install Node.js dependencies for Tailwind ===
+# Copy the entire tailwind config directory into the image
+COPY files/tailwind /app/tailwind_build_config
+# Set build config directory as workdir
+WORKDIR /app/tailwind_build_config
+# Install npm dependencies (including devDependencies like Tailwind and typography plugin)
+RUN npm install
+# Go back to the main app directory for subsequent steps
+WORKDIR /app
+# =================================================
 
 # Install Jekyll and dependencies from Gemfile
 # Ensure bundler is installed and use it

@@ -3,19 +3,24 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% seo %}
-  <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}">
+  <link rel="stylesheet" href="{{ "/assets/tailwind.css" | relative_url }}">
   {% feed_meta %}
   {% if site.google_analytics %}
     {% include google-analytics.html %}
   {% endif %}
 
-  <!-- Add this script early to set initial theme and prevent FOUC -->
+  <!-- Set initial theme class on <html> to prevent FOUC with Tailwind dark mode -->
   <script>
     (function() {
       const storedTheme = localStorage.getItem('theme');
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const initialTheme = storedTheme ? storedTheme : (systemPrefersDark ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', initialTheme); // Set on <html> for earliest application
+      // Add the 'dark' class if dark mode, remove if light
+      if (initialTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     })();
   </script>
 

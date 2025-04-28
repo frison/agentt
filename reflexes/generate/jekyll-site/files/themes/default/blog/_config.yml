@@ -18,28 +18,35 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
+# Base Jekyll Config for Agentt Blog Reflex Theme
+
 # Build settings
-theme: minima
+markdown: kramdown
+permalink: /:year/:month/:day/:title.html
+
+# Default plugins required by the theme/layouts
 plugins:
   - jekyll-feed
+  - jekyll-seo-tag
 
-permalink: /:year/:month/:day/:title.html
-# Exclude from processing.
-# The following items will not be processed, by default.
-# Any item listed under the `exclude:` key here will be automatically added to
-# the internal "default list".
-#
-# Excluded items can be processed by explicitly listing the directories or
-# their entries' file path in the `include:` list.
-#
-# exclude:
-#   - .sass-cache/
-#   - .jekyll-cache/
-#   - gemfiles/
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules/
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+# Default excludes - User config can add to this list
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - index.markdown
+
+# Site settings below should generally be overridden by the user config
+# Defaults are provided only as placeholders if needed
+title: Agentt Blog Theme # Placeholder
+email: your-email@example.com # Placeholder
+description: "Default description" # Placeholder
+baseurl: "" # Placeholder
+url: "" # Placeholder

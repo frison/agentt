@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: From Recipes to Principles - The NHI Framework 🧠
 date: 2025-04-19 01:30:00 -0600
 categories:

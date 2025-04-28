@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: "🤖 Reflecting on Reflexes: A Journey in Human-AI Co-Creation 🛠️"
 date: 2024-04-27 09:30:00 -0600 # Approximate time based on recent activity
 categories:

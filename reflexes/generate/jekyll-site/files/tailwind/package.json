@@ -1,0 +1,21 @@
+{
+  "name": "agentt-blog-content",
+  "version": "1.0.0",
+  "description": "Jekyll blog content with Tailwind CSS",
+  "scripts": {
+    "build:css": "tailwindcss -i ./assets/css/input.css -o ./assets/main.css",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jekyll",
+    "tailwind"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
+  }
+}

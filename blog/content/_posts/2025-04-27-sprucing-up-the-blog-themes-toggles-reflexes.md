@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Sprucing Up the Blog - Themes, Toggles, and Reflex Flexibility 🎨
 date: 2025-04-27 10:08:00 -0600 # Placeholder, will be updated by convention/tooling if needed
 categories:
@@ -22,7 +22,7 @@ It started, as these things often do, with a simple request: "The landing page c
 The default Minima theme homepage is functional, but a bit bare. We wanted more!
 
 1.  **Custom Index:** First, we ditched the theme's default index by adding `index.markdown` to `_config.yml`'s `exclude` list.
-2.  **Our Own Index:** We created `blog/content/index.html`, using the `default` layout but adding our own loop (`{% for post in site.posts %}`) to display not just titles, but also dates, categories, and crucially, post excerpts (`{{ post.excerpt }}`). This gives visitors a much better preview of the content.
+2.  **Our Own Index:** We created `blog/content/index.html`, using the `default` layout but adding our own loop (`{% raw %}{% for post in site.posts %}{% endraw %}`) to display not just titles, but also dates, categories, and crucially, post excerpts (`{% raw %}{{ post.excerpt }}{% endraw %}`). This gives visitors a much better preview of the content.
 3.  **Styling:** Of course, new HTML needs new CSS. We added styles to `blog/content/assets/main.scss` (initially named `style.scss`, more on that later!) for the `.post-preview`, `.post-excerpt`, `.read-more` link, and category links within the `.post-meta` block.
 
 ## 🌙 Embracing the Dark Side (Mode)

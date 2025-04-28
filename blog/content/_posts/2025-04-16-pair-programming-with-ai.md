@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: "Pair Programming with AI: A Tale of Sacred Scripts and Better Results"
 date: 2025-04-16 14:30:00 -0600
 categories:

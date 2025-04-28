@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: 🤖 How an AI Navigates the NHI Framework - Discovery and Context 🧭
 date: 2025-04-23 00:58:59 -0600
 categories:

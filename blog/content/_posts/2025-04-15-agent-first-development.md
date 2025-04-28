@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: "Agent-First Development: A New Paradigm"
 date: 2025-04-15 00:05:00 -0600
 categories:

@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title:  Welcome to Madness!
 date:   2023-03-28 00:05:00 -0600
 categories:
@@ -77,7 +77,7 @@ Content about your site. The beef of the about page.
 
 ``` yaml
 ---
-layout: default
+layout: post
 title:  Welcome to Madness!
 date:   2023-03-28 00:05:00 -0600
 categories:

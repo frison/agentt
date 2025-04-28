@@ -1,0 +1,32 @@
+<footer class="bg-brand-bg-light dark:bg-brand-bg-dark border-t border-brand-border-light dark:border-brand-border-dark mt-12">
+  <div class="container mx-auto px-4 py-6 md:px-6 lg:px-8 text-center text-brand-secondary dark:text-brand-secondary text-sm">
+
+    <!-- Footer content simplified - Can add back columns if needed -->
+    <div class="space-y-2">
+      <div>
+        {% if site.author %}
+          {{ site.author | escape }}
+        {% else %}
+          {{ site.title | escape }}
+        {% endif %}
+        {% if site.email %}
+          &middot; <a class="hover:text-brand-primary dark:hover:text-brand-primary transition-colors duration-200" href="mailto:{{ site.email }}">{{ site.email }}</a>
+        {% endif %}
+      </div>
+      {% if site.description %}
+        <p>{{ site.description | escape }}</p>
+      {% endif %}
+      <!-- Social links could go here -->
+      {% comment %}
+        We include the empty social.html file to satisfy plugins
+        like jekyll-feed, even though it contains no visible output.
+      {% endcomment %}
+      {% include social.html %}
+    </div>
+
+  </div>
+
+  <!-- Theme toggle script injection remains -->
+  <script src="{{ '/assets/js/theme-toggle.js' | relative_url }}"></script>
+
+</footer>
