@@ -12,22 +12,29 @@ alwaysApply: true
 - Always process in order: MUST → SHOULD.
 - MUST requirements always override SHOULD recommendations in case of conflict.
 
-## Universal Discovery
+## Universal Discovery (MUST/SHOULD Tiers)
 ```bash
-# Discovery commands for all tiers
-.nhi/tools/discover.sh .nhi/must json
-.nhi/tools/discover.sh .nhi/should json
+# Discovery commands for NHI tiers
+.nhi/bin/discover.sh .nhi/must json
+.nhi/bin/discover.sh .nhi/should json
+```
+
+## Reflex Discovery (Capabilities/Implementations)
+Reflexes encapsulate specific functionalities or build processes within the system. To discover available reflexes and their capabilities (as defined in their `manifest.yml`):
+```bash
+# Discover available reflexes and output as JSON
+./reflexes/bin/discover-reflexes.sh json
 ```
 
 ## Tier 1: MUST Requirements (`.nhi/must/`)
-- STOP - Check `.nhi/tools/discover.sh .nhi/must json`  before proceeding.
+- STOP - Check `.nhi/bin/discover.sh .nhi/must json`  before proceeding.
 - These define **absolute requirements** (RFC 2119 **MUST**).
 - They must be followed without exception.
 - Read relevant MUST requirements completely, understand implications and interactions.
 - Ensure fundamental compliance before considering SHOULD recommendations.
 
 ## Tier 2: SHOULD Recommendations (`.nhi/should/`)
-- STOP - Check `.nhi/tools/discover.sh .nhi/should json` for task-relevant guidance after verifying MUST requirements.
+- STOP - Check `.nhi/bin/discover.sh .nhi/should json` for task-relevant guidance after verifying MUST requirements.
 - These provide **recommended** guidelines (RFC 2119 **SHOULD**).
 - Follow explicit rules and patterns relevant to the task unless a strong, documented justification exists and no MUST requirement is violated.
 - Apply by priority (lower number = higher priority).

@@ -1,23 +1,22 @@
 ---
-title: "NHI Needs & Practices Format Practice"
+title: "NHI MUST & SHOULD Guidance Format"
 priority: 102
-description: "Defines the standard structure and format for all NHI Needs (.nhn) and Practices (.nhp) files."
-tags: ["meta", "format", "structure", "needs", "practices", "nhi"]
+description: "Defines the standard structure and format for all NHI MUST Requirement and SHOULD Recommendation files."
+tags: ["meta", "format", "structure", "must", "should", "nhi"]
 ---
 
-# NHI Needs & Practices Format
+# NHI MUST & SHOULD Guidance Format
 
 ## Intent
-Define the standard structure, format, and metadata for all NHI Needs (`.nhn`) and Practices (`.nhp`) files to ensure consistency, discoverability, and appropriate application of guidance across the system.
+Define the standard structure, format, and metadata for all NHI MUST Requirement (`must/*.nhi`) and SHOULD Recommendation (`should/*.nhi`) files to ensure consistency, discoverability, and appropriate application of guidance across the system.
 
 ## Rules
-- Need files MUST use the `.nhn` extension.
-- Practice files MUST use the `.nhp` extension.
-- All Need and Practice files MUST begin with YAML frontmatter bounded by triple dashes (`---`).
+- All MUST Requirement and SHOULD Recommendation files MUST use the `.nhi` extension.
+- Filenames SHOULD use a concise, kebab-case name describing the content (e.g., `build-process.nhi`, `directive-format.nhi`).
+- All guidance files MUST begin with YAML frontmatter bounded by triple dashes (`---`).
 - Frontmatter MUST include these fields:
   - `title`: "Clear and Concise Title" (String)
   - `priority`: NNN (Numeric value, lower = higher importance)
-  - `tier`: `need` | `practice` (String, exactly 'need' or 'practice')
   - `description`: "A short (1-2 sentence) explanation." (String)
   - `tags`: `["list", "of", "relevant", "tags"]` (Array of strings)
 - Frontmatter fields MUST appear in the order specified above.
@@ -26,16 +25,16 @@ Define the standard structure, format, and metadata for all NHI Needs (`.nhn`) a
 
 ## Examples
 
-### Need Example (`.nhn`)
+### MUST Requirement Example (`must/*.nhi`)
 ```yaml
 ---
-title: "Example Core Need"
+title: "Example Core MUST Requirement"
 priority: 1
 description: "This is a fundamental, non-negotiable requirement for the system."
 tags: ["core", "example", "fundamental"]
 ---
 
-# Example Core Need
+# Example Core MUST Requirement
 
 ## Core Statement
 All systems must adhere to this fundamental principle X.
@@ -48,16 +47,16 @@ Why principle X is critical...
 - How X applies in scenario B...
 ```
 
-### Practice Example (`.nhp`)
+### SHOULD Recommendation Example (`should/*.nhi`)
 ```yaml
 ---
-title: "Example Implementation Practice"
+title: "Example Implementation Recommendation"
 priority: 201
 description: "Standard procedure for implementing feature Y according to our needs."
 tags: ["implementation", "workflow", "feature-y"]
 ---
 
-# Example Implementation Practice
+# Example Implementation Recommendation
 
 ## Intent
 Provide the standard steps for implementing Feature Y.
