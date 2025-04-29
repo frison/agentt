@@ -7,6 +7,9 @@ categories:
   - architecture
   - performance
   - golang
+provenance:
+  commit_sha: 09be77f7ebf466a0d3098b98650c85e036e3594b
+  parent_sha: 09be77f7ebf466a0d3098b98650c85e036e3594b # Using same SHA as prompt=commit per recipe
 ---
 
 Remember those trusty `discover.sh` scripts? Peppered throughout our agent's data directories, they were the go-to method for figuring out behavioral rules or finding the right cookbook recipe. Simple, effective... initially. But like that one shell alias you wrote five years ago that now takes three seconds to run (you know the one), things needed an upgrade. We've officially retired the scattered scripts and ushered in a new era: the centralized Go-based **Agent Guidance Service**. Spoiler: it's faster, cleaner, and way easier to manage.
@@ -45,3 +48,7 @@ Why go through all this trouble? The benefits are substantial:
 ## Looking Forward 🔭
 
 This shift isn't just about replacing scripts; it's about building a scalable, adaptable foundation. The Agent Guidance Service allows us to evolve the agent's interaction patterns and guidance complexity without the corresponding complexity increase in the agent's core code. It's an investment that makes building smarter, more reliable agents significantly easier. Now, if only we could make `git` conflicts this easy to resolve... (Just kidding... mostly).
+
+---
+
+*This article was originally created in commit [`09be77f7ebf466a0d3098b98650c85e036e3594b`](https://github.com/frison/agentt/commit/09be77f7ebf466a0d3098b98650c85e036e3594b), prompted by commit [`09be77f7ebf466a0d3098b98650c85e036e3594b`](https://github.com/frison/agentt/commit/09be77f7ebf466a0d3098b98650c85e036e3594b).*
