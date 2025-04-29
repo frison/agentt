@@ -1,0 +1,9 @@
+---
+title: Valid Behavior
+priority: 1
+description: A test behavior file.
+tags: ["test", "core"]
+custom_field: "some value"
+---
+
+This is the body of the behavior.

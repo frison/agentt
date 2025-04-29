@@ -51,7 +51,7 @@ Recipes are discovered by searching the `.agent/cookbook/` directory for `.rcp` 
 
 ```bash
 # Discover script (preferred):
-.agent/cookbook/bin/discover.sh json
+.agent/cookbook/bin/discover.sh
 
 # Manual alternative (basic):
 # find .agent/cookbook/ -name "*.rcp" -type f | cat

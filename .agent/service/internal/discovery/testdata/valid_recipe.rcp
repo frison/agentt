@@ -1,0 +1,9 @@
+---
+id: valid-recipe
+title: Valid Recipe
+priority: 10
+description: A test recipe file.
+tags: ["test", "recipe"]
+---
+
+Recipe body here.

@@ -30,17 +30,17 @@ func NewServer(cfg *config.ServiceConfig, store *store.GuidanceStore) *Server {
 func (s *Server) ListenAndServe() error {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", s.handleHealth)
-	mux.HandleFunc("/entityTypes", s.handleEntityTypes)
-	mux.HandleFunc("/discover/", s.handleDiscover) // Note the trailing slash for path parameters
-	mux.HandleFunc("/llm.txt", s.handleLLMGuidance)
+	mux.HandleFunc("/health", s.HandleHealth)
+	mux.HandleFunc("/entityTypes", s.HandleEntityTypes)
+	mux.HandleFunc("/discover/", s.HandleDiscover) // Note the trailing slash for path parameters
+	mux.HandleFunc("/llm.txt", s.HandleLLMGuidance)
 
 	log.Printf("Starting HTTP server on %s...", s.cfg.ListenAddress)
 	return http.ListenAndServe(s.cfg.ListenAddress, mux)
 }
 
-// handleHealth returns a simple 200 OK.
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+// HandleHealth returns a simple 200 OK.
+func (s *Server) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -49,8 +49,8 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-// handleEntityTypes returns the configured entity types.
-func (s *Server) handleEntityTypes(w http.ResponseWriter, r *http.Request) {
+// HandleEntityTypes returns the configured entity types.
+func (s *Server) HandleEntityTypes(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -58,8 +58,8 @@ func (s *Server) handleEntityTypes(w http.ResponseWriter, r *http.Request) {
 	s.writeJSONResponse(w, http.StatusOK, s.cfg.EntityTypes)
 }
 
-// handleDiscover returns discovered items, filtered by entity type and query params.
-func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
+// HandleDiscover returns discovered items, filtered by entity type and query params.
+func (s *Server) HandleDiscover(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -99,13 +99,13 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query the store
-	results := s.store.Query(filters)
+	results := s.store.Query(filters, nil)
 
 	s.writeJSONResponse(w, http.StatusOK, results)
 }
 
-// handleLLMGuidance serves the LLM guidance text file with replaced placeholders.
-func (s *Server) handleLLMGuidance(w http.ResponseWriter, r *http.Request) {
+// HandleLLMGuidance serves the LLM guidance text file with replaced placeholders.
+func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -121,8 +121,7 @@ func (s *Server) handleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 	// Build entity type documentation
 	var entityDocs strings.Builder
 	for _, et := range s.cfg.EntityTypes {
-		entityDocs.WriteString(fmt.Sprintf("*   **%s**: %s (Discover via `/discover/%s`)
-", et.Name, et.Description, et.Name))
+		entityDocs.WriteString(fmt.Sprintf("*   **%s**: %s (Discover via `/discover/%s`)\n", et.Name, et.Description, et.Name))
 	}
 
 	// Replace placeholder

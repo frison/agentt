@@ -26,7 +26,7 @@ func main() {
 
 	// --- Setup Dependencies ---
 	guidanceStore := store.NewGuidanceStore()
-	wchr, err := discovery.NewWatcher(cfg, guidanceStore)
+	wchr, err := discovery.NewWatcher(cfg, guidanceStore, *configPath)
 	if err != nil {
 		log.Fatalf("Error creating file watcher: %v", err)
 	}

@@ -1,19 +1,54 @@
-# LLM Guidance for Agent Service API
+# Agent Guidance Service Interaction Protocol
 
-This document describes how to interact with the Agent Guidance Service API.
+**STOP - CRITICAL INTERACTION SEQUENCE**
 
-## Available Entity Types:
+This document outlines the MANDATORY sequence for interacting with the project's guidance framework via the Agent Guidance Service API running on `localhost:8080`. Failure to follow this sequence violates core operational principles.
 
-{{ENTITY_TYPES_DOCUMENTATION}}
-# Example: Use /discover/behavior?tag=core to find core behaviors.
-# Example: Use /discover/recipe?id=git-commit-creation to get a specific recipe.
+**ALWAYS interact with the service using `curl` and parse the JSON output.**
 
-## Endpoints:
+## Phase 1: Behavior Domain Check (MUST then SHOULD)
+
+**STOP:** Do NOT proceed to Phase 2 or the main task until this phase is complete.
+
+The Behavior domain defines how work MUST or SHOULD be performed.
+
+1.  **Check MUST requirements:**
+    *   Execute: `curl http://localhost:8080/discover/behavior?tier=must`
+    *   Analyze the JSON output (an array of behavior items). Ensure your proposed action **fundamentally complies** with the intent described in ALL discovered MUST requirements (`description` and `body` fields). If not, STOP and re-evaluate the action.
+
+2.  **Check SHOULD recommendations:**
+    *   Execute: `curl http://localhost:8080/discover/behavior?tier=should`
+    *   Analyze the JSON output. Follow discovered recommendations according to their `priority` (lower number is higher priority), ensuring alignment with MUST requirements checked previously.
+
+**Common Behavior Failures:** Proceeding without checking both tiers; Checking in wrong order; Prioritizing task before understanding MUSTs; Assuming familiarity; Following SHOULDs that conflict with MUSTs. **If a failure is detected, STOP and restart from MUST check.**
+
+## Phase 2: Cookbook Domain Check (Recipes)
+
+**STOP:** Do NOT proceed to the main task until this phase is complete.
+
+The Cookbook domain contains procedural recipes for specific tasks.
+
+1.  **Discover Relevant Recipes:**
+    *   Execute: `curl http://localhost:8080/discover/recipe`
+    *   Analyze the JSON output (an array of recipe items). Look for recipes relevant to the current task by matching your task description against the recipe's `id`, `title`, `tags`, or `description`. Pay attention to `priority`.
+
+2.  **Recipe Handling:**
+    *   **If relevant recipes are found:**
+        *   Use the `body` field from the highest priority relevant recipe(s) in the JSON output.
+        *   **Follow the recipe completely.** Do not skip steps or modify sequence. The recipe body contains the procedural steps.
+    *   **If no relevant recipes are found** after analyzing the discovery output:
+        *   Document that no specific recipe was found for the task.
+        *   Proceed with the task (Phase 3), ensuring adherence to Behavior directives from Phase 1.
+
+**Common Cookbook Failures:** Proceeding without checking for recipes; Failing to parse JSON correctly; Skipping recipe steps; Modifying steps; Treating recipes as optional.
+
+## Phase 3: Proceed with Task
+
+Only after successfully completing Phase 1 (Behavior Check) and Phase 2 (Cookbook Check) may you proceed with the main task, guided by the discovered directives and recipes obtained via the service API.
+
+## Available Service Endpoints Summary:
 
 *   `/health`: Returns 200 OK if the service is running.
-*   `/entityTypes`: Returns a JSON array describing the configured entity types (names, descriptions, paths).
-*   `/discover/{entityType}`: Returns a JSON array of discovered and valid entities of the specified type.
-    *   Supports filtering by any frontmatter key present in the discovered entities using query parameters (e.g., `?tag=git&priority=high`).
-    *   Behavior-specific: Use `?tier=must` or `?tier=should` to filter behaviors.
-
-Use the information provided by `/entityTypes` and the `/discover` endpoints to retrieve relevant guidance before proceeding with tasks.
+*   `/entityTypes`: Returns a JSON array describing the configured entity types.
+*   `/discover/{entityType}`: Returns a JSON array of discovered and valid entities. Supports filtering by frontmatter keys (e.g., `?tag=core`) and behavior tier (`?tier=must`). Example entity types discovered via `/entityTypes`:
+{{ENTITY_TYPES_DOCUMENTATION}}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -15,14 +14,17 @@ import (
 
 var frontMatterSeparator = []byte("---")
 
-// parseFile reads, parses, and validates a single guidance file based on an entity type definition.
-func parseFile(filePath string, entityDef config.EntityTypeDefinition) (*content.Item, error) {
+// ParseFile reads, parses, and validates a single guidance file based on an entity type definition.
+// It returns the parsed content item, which might be marked as invalid if validation fails.
+// It returns a nil item and nil error if the file does not exist.
+// It returns a nil item and an error for file system or other fatal errors.
+func ParseFile(filePath string, entityDef config.EntityTypeDefinition) (*content.Item, error) {
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get absolute path for %s: %w", filePath, err)
 	}
 
-	fileData, err := os.ReadFile(tabsPath)
+	fileData, err := os.ReadFile(absPath)
 	if err != nil {
 		// Handle cases where file might disappear between discovery and read
 		if os.IsNotExist(err) {

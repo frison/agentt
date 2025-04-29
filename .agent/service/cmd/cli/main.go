@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
@@ -19,6 +18,14 @@ const (
 	cmdEntityTypes = "entity-types"
 	cmdValidate    = "validate"
 )
+
+// validationResult holds simplified validation info for output.
+type validationResult struct {
+	SourcePath       string   `json:"sourcePath"`
+	EntityType       string   `json:"entityType"`
+	IsValid          bool     `json:"isValid"`
+	ValidationErrors []string `json:"validationErrors,omitempty"`
+}
 
 func main() {
 	// --- Common Flags ---
@@ -46,11 +53,11 @@ func main() {
 
 	switch command {
 	case cmdDiscover:
-		executeDiscover(cfg, *outputFormat, remainingArgs)
+		executeDiscover(cfg, *outputFormat, remainingArgs, *configPath)
 	case cmdEntityTypes:
 		executeEntityTypes(cfg, *outputFormat, remainingArgs)
 	case cmdValidate:
-		executeValidate(cfg, *outputFormat, remainingArgs)
+		executeValidate(cfg, *outputFormat, remainingArgs, *configPath)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: Unknown command '%s'\n\n", command)
 		printUsage()
@@ -60,7 +67,7 @@ func main() {
 
 // --- Command Implementations ---
 
-func executeDiscover(cfg *config.ServiceConfig, format string, args []string) {
+func executeDiscover(cfg *config.ServiceConfig, format string, args []string, configPath string) {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "Error: %s command requires entity type (e.g., behavior, recipe)\n\n", cmdDiscover)
 		printUsage()
@@ -95,13 +102,13 @@ func executeDiscover(cfg *config.ServiceConfig, format string, args []string) {
 	}
 
 	// Perform scan & query
-	results, err := scanAndQuery(cfg, filters)
+	results, err := scanAndQuery(cfg, filters, configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during discovery: %v\n", err)
 		os.Exit(1)
 	}
 
-	printOutput(results, format)
+	printOutput(cmdDiscover, results, format)
 }
 
 func executeEntityTypes(cfg *config.ServiceConfig, format string, args []string) {
@@ -110,10 +117,10 @@ func executeEntityTypes(cfg *config.ServiceConfig, format string, args []string)
 		printUsage()
 		os.Exit(1)
 	}
-	printOutput(cfg.EntityTypes, format)
+	printOutput(cmdEntityTypes, cfg.EntityTypes, format)
 }
 
-func executeValidate(cfg *config.ServiceConfig, format string, args []string) {
+func executeValidate(cfg *config.ServiceConfig, format string, args []string, configPath string) {
 	if len(args) > 0 {
 		fmt.Fprintf(os.Stderr, "Error: %s command takes no arguments\n\n", cmdValidate)
 		printUsage()
@@ -121,35 +128,35 @@ func executeValidate(cfg *config.ServiceConfig, format string, args []string) {
 	}
 
 	// Perform scan, return all items (including invalid)
-	allItems, err := scanAndQuery(cfg, nil) // No filters, scan everything
+	allitems, err := scanAndQuery(cfg, nil, configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during validation scan: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Collect validation results
-	validationResults := make([]map[string]interface{}, 0, len(allItems))
-	for _, item := range allItems {
-		validationResults = append(validationResults, map[string]interface{}{
-			"sourcePath":       item.SourcePath,
-			"entityType":       item.EntityType,
-			"isValid":          item.IsValid,
-			"validationErrors": item.ValidationErrors,
+	// Collect validation results (uses package-level struct now)
+	validationResults := make([]validationResult, 0, len(allitems))
+	for _, item := range allitems {
+		validationResults = append(validationResults, validationResult{
+			SourcePath:       item.SourcePath,
+			EntityType:       item.EntityType,
+			IsValid:          item.IsValid,
+			ValidationErrors: item.ValidationErrors,
 		})
 	}
 
-	printOutput(validationResults, format)
+	printOutput(cmdValidate, validationResults, format)
 }
 
 // --- Helper Functions ---
 
 // scanAndQuery performs an initial scan and optional query.
 // If filters is nil or empty, returns all scanned items.
-func scanAndQuery(cfg *config.ServiceConfig, filters map[string]interface{}) ([]*content.Item, error) {
+func scanAndQuery(cfg *config.ServiceConfig, filters map[string]interface{}, configPath string) ([]*content.Item, error) {
 	guidanceStore := store.NewGuidanceStore()
 	// Use discovery package directly for one-off scan
 	// Create a temporary watcher just for the scan logic (or refactor scan logic out)
-	wchr, err := discovery.NewWatcher(cfg, guidanceStore)
+	wchr, err := discovery.NewWatcher(cfg, guidanceStore, configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize scanner: %w", err)
 	}
@@ -163,11 +170,11 @@ func scanAndQuery(cfg *config.ServiceConfig, filters map[string]interface{}) ([]
 	if filters == nil || len(filters) == 0 {
 		return guidanceStore.GetAll(), nil
 	}
-	return guidanceStore.Query(filters), nil
+	return guidanceStore.Query(filters, nil), nil
 }
 
-// printOutput prints data in the specified format.
-func printOutput(data interface{}, format string) {
+// printOutput prints data in the specified format, tailored by command.
+func printOutput(command string, data interface{}, format string) {
 	switch format {
 	case "json":
 		encoder := json.NewEncoder(os.Stdout)
@@ -177,31 +184,102 @@ func printOutput(data interface{}, format string) {
 			os.Exit(1)
 		}
 	case "text":
-		// Basic text output - needs refinement for different data types
-		fmt.Printf("%v\n", data) // TODO: Improve text formatting
+		printTextOutput(command, data)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: Unknown output format '%s'\n", format)
 		os.Exit(1)
 	}
 }
 
+// printTextOutput handles formatting for the 'text' output option.
+func printTextOutput(command string, data interface{}) {
+	switch command {
+	case cmdEntityTypes:
+		if types, ok := data.([]config.EntityTypeDefinition); ok {
+			fmt.Println("Configured Entity Types:")
+			for _, et := range types {
+				fmt.Printf("  - Name: %s\n", et.Name)
+				fmt.Printf("    Description: %s\n", et.Description)
+				fmt.Printf("    PathGlob: %s\n", et.PathGlob)
+				fmt.Printf("    Required: %v\n", et.RequiredFrontMatter)
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: Unexpected data type for text output of %s\n", command)
+		}
+	case cmdValidate:
+		// Uses the simplified validationResult struct defined in executeValidate
+		if results, ok := data.([]validationResult); ok {
+			fmt.Println("Validation Results:")
+			for _, res := range results {
+				status := "[VALID]"
+				if !res.IsValid {
+					status = "[INVALID]"
+				}
+				fmt.Printf("%s %s (%s)\n", status, res.SourcePath, res.EntityType)
+				if !res.IsValid {
+					for _, errMsg := range res.ValidationErrors {
+						fmt.Printf("    - Error: %s\n", errMsg)
+					}
+				}
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: Unexpected data type for text output of %s\n", command)
+		}
+	case cmdDiscover:
+		if items, ok := data.([]*content.Item); ok {
+			if len(items) == 0 {
+				fmt.Println("No matching items found.")
+				return
+			}
+			fmt.Printf("Discovered %d item(s):\n", len(items))
+			for _, item := range items {
+				title, _ := item.FrontMatter["title"].(string)
+				id, _ := item.FrontMatter["id"].(string)
+				identifier := title // Default to title
+				if item.EntityType == "recipe" && id != "" {
+					identifier = id
+				}
+				tierInfo := ""
+				if item.Tier != "" {
+					tierInfo = fmt.Sprintf(" [%s]", item.Tier)
+				}
+				fmt.Printf("- %s%s: %s\n", identifier, tierInfo, item.SourcePath)
+				// Optionally print more frontmatter details here
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: Unexpected data type for text output of %s\n", command)
+		}
+	default:
+		// Fallback for any unknown command passed (shouldn't happen)
+		fmt.Fprintf(os.Stderr, "Warning: Unknown command '%s' for text output. Defaulting to basic print.\n", command)
+		fmt.Printf("%v\n", data)
+	}
+}
+
 // printUsage prints CLI usage information in a structured way.
 func printUsage() {
-	fmt.Fprintf(os.Stderr, "== Agent Guidance CLI ==\n\n")
-	fmt.Fprintf(os.Stderr, "Purpose: Interact with agent guidance definitions (behaviors, recipes, etc.).\n\n")
-	fmt.Fprintf(os.Stderr, "Usage:\n  agent-guidance-cli [global options] <command> [command options]\n\n")
-	fmt.Fprintf(os.Stderr, "Global Options:\n")
+	// Use backticks for multi-line strings
+	fmt.Fprintf(os.Stderr, `== Agent Guidance CLI ==
+
+Purpose: Interact with agent guidance definitions (behaviors, recipes, etc.).
+
+Usage:
+  agent-guidance-cli [global options] <command> [command options]
+
+Global Options:
+`) // End first part
 	flag.PrintDefaults() // Prints flags defined above main
-	fmt.Fprintf(os.Stderr, "\nCommands:\n")
+	fmt.Fprintf(os.Stderr, `
+Commands:
+`) // Start next part
 	fmt.Fprintf(os.Stderr, "  %-15s Discover guidance items by type and filters.\n", cmdDiscover)
 	fmt.Fprintf(os.Stderr, "                  Args: <entityType> [filterKey=filterValue...]\n")
 	fmt.Fprintf(os.Stderr, "                  Example: discover behavior tier=must tag=core\n")
 	fmt.Fprintf(os.Stderr, "  %-15s List configured entity types.\n", cmdEntityTypes)
 	fmt.Fprintf(os.Stderr, "  %-15s Scan all configured paths and report validation status.\n", cmdValidate)
-	fmt.Fprintf(os.Stderr, "\nOutput Format (--format):
-")
-	fmt.Fprintf(os.Stderr, "  json: Output results as a JSON object/array (Default).
-")
-	fmt.Fprintf(os.Stderr, "  text: Output results in a basic text format (Structure varies by command).
-")
+	fmt.Fprintf(os.Stderr, `
+Output Format (--format):
+`) // Start next part
+	fmt.Fprintf(os.Stderr, "  json: Output results as a JSON object/array (Default).\n")
+	fmt.Fprintf(os.Stderr, "  text: Output results in a basic text format (Structure varies by command).\n")
 }

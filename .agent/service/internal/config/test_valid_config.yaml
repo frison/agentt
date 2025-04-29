@@ -1,0 +1,10 @@
+# Valid config for testing
+listenAddress: ":9090"
+llmGuidanceFile: "test_llm.txt"
+entityTypes:
+  - name: "test_entity"
+    description: "A test entity"
+    pathGlob: "/tmp/test_*.entity"
+    requiredFrontMatter:
+      - "id"
+      - "tags"

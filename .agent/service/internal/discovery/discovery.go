@@ -11,31 +11,39 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
 
 // Watcher manages the discovery and watching of guidance files.
 type Watcher struct {
-	cfg    *config.ServiceConfig
-	store  *store.GuidanceStore
-	watcher *fsnotify.Watcher
-	mu     sync.Mutex // Protects access to watchedDirs
+	cfg         *config.ServiceConfig
+	store       *store.GuidanceStore
+	watcher     *fsnotify.Watcher
+	mu          sync.Mutex // Protects access to watchedDirs
 	watchedDirs map[string]bool
+	configDir string // Store the directory containing the config file
 }
 
 // NewWatcher creates a new file watcher and discovery manager.
-func NewWatcher(cfg *config.ServiceConfig, store *store.GuidanceStore) (*Watcher, error) {
+func NewWatcher(cfg *config.ServiceConfig, store *store.GuidanceStore, cfgPath string) (*Watcher, error) {
 	fsWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file system watcher: %w", err)
 	}
+	// Ensure the config path is absolute before getting its directory
+	absCfgPath, err := filepath.Abs(cfgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path for config file %s: %w", cfgPath, err)
+	}
+	cfgDir := filepath.Dir(absCfgPath)
+
 	return &Watcher{
 		cfg:         cfg,
 		store:       store,
 		watcher:     fsWatcher,
 		watchedDirs: make(map[string]bool),
+		configDir:   cfgDir, // Store the directory
 	}, nil
 }
 
@@ -45,10 +53,14 @@ func (w *Watcher) InitialScan() error {
 	var initialScanWg sync.WaitGroup
 
 	for _, entityDef := range w.cfg.EntityTypes {
-		log.Printf("Scanning for %s entities using glob: %s", entityDef.Name, entityDef.PathGlob)
-		matches, err := filepath.Glob(entityDef.PathGlob)
+		// Construct glob relative to the config file's directory
+		// PathGlob is assumed to be relative to the config file's location
+		globPattern := filepath.Join(w.configDir, entityDef.PathGlob)
+		log.Printf("Scanning for %s entities using glob relative to config dir: %s", entityDef.Name, globPattern)
+
+		matches, err := filepath.Glob(globPattern)
 		if err != nil {
-			log.Printf("Warning: Error evaluating glob pattern '%s': %v", entityDef.PathGlob, err)
+			log.Printf("Warning: Error evaluating glob pattern '%s': %v", globPattern, err)
 			continue
 		}
 
@@ -67,7 +79,7 @@ func (w *Watcher) InitialScan() error {
 
 // processFile parses a file and updates the store, logging errors.
 func (w *Watcher) processFile(filePath string, entityDef config.EntityTypeDefinition) {
-	item, err := parseFile(filePath, entityDef)
+	item, err := ParseFile(filePath, entityDef)
 	if err != nil {
 		log.Printf("Error processing file %s: %v", filePath, err)
 		return

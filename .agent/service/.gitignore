@@ -1,7 +1,7 @@
 # Go build artifacts
 agent-guidance-service
-*.exe
-*.out
+agent-guidance-cli
+
 
 # Binaries for reflexes (if managed here eventually)
 bin/

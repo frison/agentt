@@ -1,0 +1,5 @@
+# Invalid config - missing entity name
+listenAddress: ":9090"
+entityTypes:
+  - description: "Missing name"
+    pathGlob: "/tmp/test_*.entity"

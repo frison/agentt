@@ -1,0 +1,9 @@
+# Invalid config - duplicate entity name
+listenAddress: ":9090"
+entityTypes:
+  - name: "duplicate"
+    pathGlob: "/tmp/test_*.entity"
+    requiredFrontMatter: ["id"]
+  - name: "duplicate"
+    pathGlob: "/tmp/other_*.entity"
+    requiredFrontMatter: ["id"]
