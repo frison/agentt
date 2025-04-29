@@ -1,0 +1,19 @@
+# LLM Guidance for Agent Service API
+
+This document describes how to interact with the Agent Guidance Service API.
+
+## Available Entity Types:
+
+{{ENTITY_TYPES_DOCUMENTATION}}
+# Example: Use /discover/behavior?tag=core to find core behaviors.
+# Example: Use /discover/recipe?id=git-commit-creation to get a specific recipe.
+
+## Endpoints:
+
+*   `/health`: Returns 200 OK if the service is running.
+*   `/entityTypes`: Returns a JSON array describing the configured entity types (names, descriptions, paths).
+*   `/discover/{entityType}`: Returns a JSON array of discovered and valid entities of the specified type.
+    *   Supports filtering by any frontmatter key present in the discovered entities using query parameters (e.g., `?tag=git&priority=high`).
+    *   Behavior-specific: Use `?tier=must` or `?tier=should` to filter behaviors.
+
+Use the information provided by `/entityTypes` and the `/discover` endpoints to retrieve relevant guidance before proceeding with tasks.

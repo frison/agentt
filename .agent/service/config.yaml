@@ -1,0 +1,43 @@
+listenAddress: ":8080"
+llmGuidanceFile: ".agent/service/llm_guidance.txt"
+
+entityTypes:
+  - name: "behavior"
+    description: "Defines behavioral directives (MUSTs and SHOULDs) for the agent."
+    pathGlob: ".agent/behavior/**/*.bhv" # Assumes running service from repo root
+    fileExtensionHint: ".bhv"
+    requiredFrontMatter:
+      - "title"
+      - "priority"
+      - "description"
+      - "tags"
+      # Tier (must/should) will be inferred from path later
+
+  - name: "recipe"
+    description: "Provides procedural steps for specific tasks."
+    pathGlob: ".agent/cookbook/**/*.rcp"
+    fileExtensionHint: ".rcp"
+    requiredFrontMatter:
+      - "id"
+      - "title"
+      - "priority"
+      - "description"
+      - "tags"
+
+  # Add persona here later, e.g.:
+  # - name: "persona"
+  #   description: "Defines agent personas or modes of operation."
+  #   pathGlob: ".agent/personas/**/*.prs"
+  #   requiredFrontMatter:
+  #     - "id"
+  #     - "name"
+  #     - "tags"
+
+  # Add reflex manifest here later, e.g.:
+  # - name: "reflex"
+  #   description: "Manifest describing a reflex (containerized tool)."
+  #   pathGlob: ".agent/reflexes/**/*.yaml"
+  #   requiredFrontMatter:
+  #     - "id"
+  #     - "image"
+  #     - "tags"

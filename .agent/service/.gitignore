@@ -1,0 +1,7 @@
+# Go build artifacts
+agent-guidance-service
+*.exe
+*.out
+
+# Binaries for reflexes (if managed here eventually)
+bin/
