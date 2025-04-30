@@ -4,7 +4,6 @@ import (
 	"agentt/internal/content"
 	"fmt"
 	"sync"
-	"testing"
 )
 
 // GuidanceStore holds the discovered and parsed guidance items in memory.
@@ -63,21 +62,11 @@ func (s *GuidanceStore) GetByPath(sourcePath string) (*content.Item, bool) {
 // Query performs filtering on the items in the store.
 // Filters is a map where key is the field name (e.g., "entityType", "tier", or any key in FrontMatter)
 // and value is the desired value.
-// NOTE: This version includes t.Logf calls for debugging and requires a *testing.T.
-// This is NOT suitable for production, only for debugging this test failure.
-func (s *GuidanceStore) Query(filters map[string]interface{}, t *testing.T) []*content.Item {
+func (s *GuidanceStore) Query(filters map[string]interface{}) []*content.Item {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	results := make([]*content.Item, 0)
-	// Add t argument if not present
-	if t == nil {
-		// This prevents panics if called without a *testing.T, but logs won't appear.
-		// In a real scenario, adjust the design or pass t properly.
-		fmt.Println("Warning: Query called without *testing.T, logs disabled.")
-		// Dummy logger to avoid nil panics
-		t = new(testing.T)
-	}
 
 itemLoop:
 	for _, item := range s.items {
@@ -85,9 +74,8 @@ itemLoop:
 			continue
 		}
 
-		// 2. Check if the item matches ALL provided filters
+		// Check if the item matches ALL provided filters
 		for filterKey, expectedFilterValue := range filters {
-
 			match := false
 
 			switch filterKey {

@@ -164,7 +164,7 @@ func TestQuery_FilterByEntityType(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			results := s.Query(tc.filters, t)
+			results := s.Query(tc.filters)
 			resultPaths := make([]string, len(results))
 			for i, item := range results {
 				resultPaths[i] = item.SourcePath
@@ -218,7 +218,7 @@ func TestQuery_FilterByTier(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			results := s.Query(tc.filters, t)
+			results := s.Query(tc.filters)
 			resultPaths := make([]string, len(results))
 			for i, item := range results {
 				resultPaths[i] = item.SourcePath
@@ -279,8 +279,7 @@ func TestQuery_FilterByFrontMatterSimple(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Re-add fmt import temporarily if needed for this test's Sprintf calls
-			results := s.Query(tc.filters, t)
+			results := s.Query(tc.filters)
 			resultPaths := make([]string, len(results))
 			for i, item := range results {
 				resultPaths[i] = item.SourcePath
@@ -344,7 +343,7 @@ func TestQuery_FilterByTag(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			results := s.Query(tc.filters, t)
+			results := s.Query(tc.filters)
 			resultPaths := make([]string, len(results))
 			for i, item := range results {
 				resultPaths[i] = item.SourcePath

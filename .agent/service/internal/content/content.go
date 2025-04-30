@@ -24,3 +24,13 @@ type Item struct {
 	// Tier is specific to 'behavior' types, inferred from the path ("must" or "should").
 	Tier string `json:"tier,omitempty"` // Only populated for behaviors
 }
+
+// ItemSummary provides a minimal overview of a guidance item.
+// Used for initial discovery before fetching full details.
+type ItemSummary struct {
+	ID          string   `json:"id"`                    // Unique ID (from frontmatter 'id', or generated if missing?)
+	Type        string   `json:"type"`                  // Entity type (e.g., "behavior", "recipe")
+	Tier        string   `json:"tier,omitempty"`        // "must" or "should" (for behaviors)
+	Tags        []string `json:"tags,omitempty"`        // Tags from frontmatter
+	Description string   `json:"description,omitempty"` // Description from frontmatter
+}

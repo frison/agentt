@@ -170,7 +170,7 @@ func scanAndQuery(cfg *config.ServiceConfig, filters map[string]interface{}, con
 	if filters == nil || len(filters) == 0 {
 		return guidanceStore.GetAll(), nil
 	}
-	return guidanceStore.Query(filters, nil), nil
+	return guidanceStore.Query(filters), nil
 }
 
 // printOutput prints data in the specified format, tailored by command.

@@ -65,10 +65,12 @@ func TestHandlers(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", srv.HandleHealth)
 	mux.HandleFunc("/entityTypes", srv.HandleEntityTypes)
-	mux.HandleFunc("/discover/", srv.HandleDiscover) // Use exported handler
+	// mux.HandleFunc("/discover/", srv.HandleDiscover) // REMOVED handler registration
 	mux.HandleFunc("/llm.txt", srv.HandleLLMGuidance)
+	mux.HandleFunc("/summary", srv.HandleSummary)
+	mux.HandleFunc("/details", srv.HandleDetails)
 
-	testServer := httptest.NewServer(mux) // Pass mux to test server
+	testServer := httptest.NewServer(mux)
 	defer testServer.Close()
 
 	// --- Test /health ---
@@ -132,96 +134,133 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
-	// --- Test /discover ---
+	/* // --- Test /discover --- // REMOVED
 	t.Run("DiscoverBehaviorsNoFilter", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/behavior")
-		if err != nil {
-			t.Fatalf("GET /discover/behavior failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", res.StatusCode)
-		}
-		var items []*content.Item
-		json.NewDecoder(res.Body).Decode(&items)
-		if len(items) != 2 {
-			t.Errorf("Expected 2 valid behaviors, got %d", len(items))
-		}
+		// ... removed test ...
 	})
 
 	t.Run("DiscoverRecipesTagCore", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/recipe?tag=core")
-		if err != nil {
-			t.Fatalf("GET /discover/recipe?tag=core failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", res.StatusCode)
-		}
-		var items []*content.Item
-		json.NewDecoder(res.Body).Decode(&items)
-		if len(items) != 1 {
-			t.Fatalf("Expected 1 recipe with tag 'core', got %d", len(items))
-		}
-		if items[0].SourcePath != "/test/r1.rcp" {
-			t.Errorf("Expected recipe r1, got %s", items[0].SourcePath)
-		}
+		// ... removed test ...
 	})
 
 	t.Run("DiscoverBehaviorsTierMust", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/behavior?tier=must")
-		if err != nil {
-			t.Fatalf("GET /discover/behavior?tier=must failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", res.StatusCode)
-		}
-		var items []*content.Item
-		json.NewDecoder(res.Body).Decode(&items)
-		if len(items) != 1 {
-			t.Fatalf("Expected 1 behavior with tier 'must', got %d", len(items))
-		}
-		if items[0].SourcePath != "/test/b1.bhv" {
-			t.Errorf("Expected behavior b1, got %s", items[0].SourcePath)
-		}
+		// ... removed test ...
 	})
 
 	t.Run("DiscoverInvalidEntityType", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/unknown")
-		if err != nil {
-			t.Fatalf("GET /discover/unknown failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusNotFound {
-			t.Errorf("Expected status 404 Not Found for invalid entity type, got %d", res.StatusCode)
-		}
+		// ... removed test ...
 	})
 
 	t.Run("DiscoverMissingEntityType", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/")
-		if err != nil {
-			t.Fatalf("GET /discover/ failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status 400 Bad Request for missing entity type, got %d", res.StatusCode)
-		}
+		// ... removed test ...
 	})
 
 	t.Run("DiscoverNoMatch", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/discover/behavior?tag=nonexistent")
+		// ... removed test ...
+	})
+	*/ // END REMOVED /discover tests
+
+	// --- Test /summary ---
+	t.Run("SummaryEndpoint", func(t *testing.T) {
+		res, err := http.Get(testServer.URL + "/summary")
 		if err != nil {
-			t.Fatalf("GET /discover/behavior?tag=nonexistent failed: %v", err)
+			t.Fatalf("GET /summary failed: %v", err)
 		}
 		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200, got %d", res.StatusCode)
+			t.Errorf("Expected status 200 OK for /summary, got %d", res.StatusCode)
 		}
-		var items []*content.Item
-		json.NewDecoder(res.Body).Decode(&items)
-		if len(items) != 0 {
-			t.Errorf("Expected 0 items for non-matching tag, got %d", len(items))
+
+		var summaries []content.ItemSummary
+		if err := json.NewDecoder(res.Body).Decode(&summaries); err != nil {
+			t.Fatalf("Failed to decode /summary response: %v", err)
+		}
+
+		// Expect 3 valid items (b1, b2, r1)
+		if len(summaries) != 3 {
+			t.Errorf("Expected 3 summaries, got %d", len(summaries))
+		}
+
+		// Basic check for one item
+		foundR1 := false
+		for _, s := range summaries {
+			if s.ID == "r1" && s.Type == "recipe" {
+				foundR1 = true
+				if len(s.Tags) != 2 || s.Tags[0] != "core" || s.Tags[1] != "git" {
+					t.Errorf("Recipe r1 summary has incorrect tags: %v", s.Tags)
+				}
+				break
+			}
+		}
+		if !foundR1 {
+			t.Error("Did not find summary for recipe r1")
+		}
+	})
+
+	// --- Test /details ---
+	t.Run("DetailsEndpoint_Found", func(t *testing.T) {
+		// Request details for b1 (using title as ID) and r1
+		requestBody := `{"ids": ["B1", "r1"]}`
+		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
+		if err != nil {
+			t.Fatalf("POST /details failed: %v", err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("Expected status 200 OK for /details, got %d", res.StatusCode)
+		}
+
+		var details []*content.Item
+		if err := json.NewDecoder(res.Body).Decode(&details); err != nil {
+			t.Fatalf("Failed to decode /details response: %v", err)
+		}
+
+		if len(details) != 2 {
+			t.Errorf("Expected 2 detail items, got %d", len(details))
+		}
+
+		// Check types
+		foundB1 := false
+		foundR1 := false
+		for _, item := range details {
+			if item.SourcePath == "/test/b1.bhv" && item.EntityType == "behavior" {
+				foundB1 = true
+			}
+			if item.SourcePath == "/test/r1.rcp" && item.EntityType == "recipe" {
+				foundR1 = true
+			}
+		}
+		if !foundB1 || !foundR1 {
+			t.Errorf("Did not find expected items in details response. Found B1: %t, Found R1: %t", foundB1, foundR1)
+		}
+	})
+
+	t.Run("DetailsEndpoint_NotFound", func(t *testing.T) {
+		requestBody := `{"ids": ["nonexistent"]}`
+		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
+		if err != nil {
+			t.Fatalf("POST /details failed: %v", err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("Expected status 200 OK, got %d", res.StatusCode)
+		}
+		var details []*content.Item
+		json.NewDecoder(res.Body).Decode(&details)
+		if len(details) != 0 {
+			t.Errorf("Expected 0 detail items for non-existent ID, got %d", len(details))
+		}
+	})
+
+	t.Run("DetailsEndpoint_BadRequest", func(t *testing.T) {
+		requestBody := `{"wrong_key": []}`
+		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
+		if err != nil {
+			t.Fatalf("POST /details failed: %v", err)
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status 400 Bad Request for invalid body, got %d", res.StatusCode)
 		}
 	})
 }

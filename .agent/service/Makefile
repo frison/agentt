@@ -1,22 +1,19 @@
 # Basic Makefile for Agent Guidance Service
 
-.PHONY: all build server cli test fmt lint clean
+.PHONY: all build test fmt lint clean
 
 BINARY_NAME=agentt
 
 all: build
 
-build: server cli
+build: fmt lint
+	@echo "Building $(BINARY_NAME)..."
+	go build -o $(BINARY_NAME) .
+	@echo "Binary: $(BINARY_NAME)"
 
-server: fmt lint
-	@echo "Building server (will become part of agentt)..."
-	go build -o $(BINARY_NAME)-server-tmp ./cmd/server # Temporary name
-	@echo "Server binary (temp): $(BINARY_NAME)-server-tmp"
-
-cli: fmt lint
-	@echo "Building cli (will become part of agentt)..."
-	go build -o $(BINARY_NAME)-cli-tmp ./cmd/cli # Temporary name
-	@echo "CLI binary (temp): $(BINARY_NAME)-cli-tmp"
+# Remove old server and cli targets
+# server: fmt lint ...
+# cli: fmt lint ...
 
 test:
 	@echo "Running tests..."
@@ -32,5 +29,6 @@ lint:
 
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f $(BINARY_NAME) $(BINARY_NAME)-server-tmp $(BINARY_NAME)-cli-tmp # Update clean target
+	rm -f $(BINARY_NAME) $(BINARY_NAME)-server-tmp $(BINARY_NAME)-cli-tmp # Keep cleaning old temp files just in case
+	rm -f $(BINARY_NAME) # Clean the new binary
 	go clean
