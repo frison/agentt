@@ -103,15 +103,20 @@ func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 
 // HandleSummary returns a JSON array of ItemSummary for all valid items.
 func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received request for /summary")
 	if r.Method != http.MethodGet {
+		log.Printf("Method Not Allowed for /summary: %s", r.Method)
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	allValidItems := s.store.Query(map[string]interface{}{}) // Fix Query call
+	allValidItems := s.store.Query(map[string]interface{}{})
+	log.Printf("Retrieved %d valid items from store for /summary", len(allValidItems))
 
 	summaries := make([]content.ItemSummary, 0, len(allValidItems))
 	for _, item := range allValidItems {
+		// No need to re-check IsValid here as Query should only return valid items
+
 		// Extract common fields
 		id := ""
 		if idVal, ok := item.FrontMatter["id"].(string); ok {
@@ -120,6 +125,8 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 			// Fallback to title for behaviors if no ID
 			id = titleVal // Or generate a more unique one?
 		}
+
+		// >>> Phase 5 TODO: Add ID prefixing here <<<
 
 		description := ""
 		if descVal, ok := item.FrontMatter["description"].(string); ok {
@@ -144,6 +151,7 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	log.Printf("Prepared %d summaries for /summary response", len(summaries))
 	s.writeJSONResponse(w, http.StatusOK, summaries)
 }
 

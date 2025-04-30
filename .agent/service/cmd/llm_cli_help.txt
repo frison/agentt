@@ -1,0 +1,44 @@
+# Agent Interaction via agentt CLI
+
+This CLI tool allows interaction with the agent guidance definitions
+without needing the HTTP server.
+
+## Standard Interaction Flow:
+
+1.  **Fetch Summary:**
+    Run the command:
+    ```bash
+    agentt summary
+    ```
+    This will output a JSON array containing summaries for all available
+    behaviors and recipes. Each summary includes:
+    - id: Unique identifier (e.g., "bhv-safety-first", "rcp-git-commit-creation")
+    - type: "behavior" or "recipe"
+    - tier: "must" or "should" (for behaviors)
+    - tags: Associated tags
+    - description: A brief description
+
+2.  **Identify Relevant IDs:**
+    Analyze the JSON output from step 1. Based on the current task or
+    context, identify the IDs of the behaviors and recipes that are relevant.
+
+3.  **Fetch Full Details:**
+    Run the command, providing the relevant IDs using the --id flag
+    (repeat the flag for multiple IDs):
+    ```bash
+    agentt details --id <relevant_id_1> --id <relevant_id_2> ...
+    ```
+    Example:
+    ```bash
+    agentt details --id bhv-safety-first --id rcp-git-commit-creation
+    ```
+    This will output a JSON array containing the full details (including
+    the body/content) for only the specified entities.
+
+4.  **Proceed with Task:**
+    Use the full details obtained in step 3 to guide the execution of
+    the task, adhering to the MUST behaviors and considering SHOULD
+    behaviors and relevant recipes.
+
+This two-step process (summary first, then specific details) is designed
+to be more efficient than fetching all details upfront.

@@ -1,7 +1,5 @@
 # Go build artifacts
-agent-guidance-service
-agent-guidance-cli
-
+agentt
 
 # Binaries for reflexes (if managed here eventually)
 bin/
