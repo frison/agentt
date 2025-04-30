@@ -22,9 +22,6 @@ func TestLoadConfig_Valid(t *testing.T) {
 	if cfg.ListenAddress != ":9090" {
 		t.Errorf("Expected ListenAddress :9090, got %s", cfg.ListenAddress)
 	}
-	if cfg.LLMGuidanceFile != "test_llm.txt" {
-		t.Errorf("Expected LLMGuidanceFile test_llm.txt, got %s", cfg.LLMGuidanceFile)
-	}
 	if len(cfg.EntityTypes) != 1 {
 		t.Fatalf("Expected 1 entity type, got %d", len(cfg.EntityTypes))
 	}
@@ -64,12 +61,6 @@ entityTypes:
 	// Check defaults
 	if cfg.ListenAddress != ":8080" {
 		t.Errorf("Expected default ListenAddress :8080, got %s", cfg.ListenAddress)
-	}
-	// Assuming the default path requires the test to be run from a specific root,
-	// or the default path needs adjustment based on test location.
-	// Let's check it's not empty, acknowledging potential path issues in tests.
-	if cfg.LLMGuidanceFile == "" {
-		t.Error("Expected default LLMGuidanceFile to be set, but it was empty")
 	}
 }
 

@@ -65,31 +65,14 @@ Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default sea
 			if !item.IsValid {
 				continue
 			}
-			// Extract base ID from frontmatter
-			baseID := ""
-			if idVal, ok := item.FrontMatter["id"].(string); ok {
-				baseID = idVal
-			} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
-				// Fallback to title for behaviors if no ID
-				baseID = titleVal
-			}
-			if baseID == "" {
-				// Item has no identifiable ID, cannot match it
+			// Use the new utility function to get the prefixed ID for comparison
+			prefixedItemID, err := content.GetPrefixedID(item)
+			if err != nil {
+				// Cannot generate an ID for this item, so cannot match it.
 				continue
 			}
 
-			// Add Prefix based on type for comparison
-			prefixedItemID := ""
-			switch item.EntityType {
-			case "behavior":
-				prefixedItemID = "bhv-" + baseID
-			case "recipe":
-				prefixedItemID = "rcp-" + baseID
-			default:
-				prefixedItemID = baseID
-			}
-
-			// Check if this prefixed ID was requested
+			// Check if this generated prefixed ID was requested
 			if _, found := requestedIDMap[prefixedItemID]; found { // Check map lookup directly
 				foundItems = append(foundItems, item)
 			}

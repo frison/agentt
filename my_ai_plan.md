@@ -117,6 +117,28 @@ Reduce the number of initial API calls and data transfer required by the agent i
     *   Test configuration using default search paths (placing `config.yaml` in different locations relative to CWD).
     *   Test precedence (e.g., ensure flag overrides environment variable).
 
+### Phase 7: Testing & Refinement
+1.  **Server Endpoint Testing:**
+    *   Start the server (`agentt server start`).
+    *   Verify `curl localhost:8080/health` returns `OK`.
+    *   Verify `curl localhost:8080/summary` returns valid JSON summary with prefixed IDs (`bhv-`, `rcp-`).
+    *   Verify `curl -X POST -H "Content-Type: application/json" -d '{"ids": ["bhv-ID", "rcp-ID"]}' localhost:8080/details` returns correct full details for valid prefixed IDs.
+    *   Verify the `/details` endpoint returns an empty array `[]` for invalid or non-existent IDs.
+    *   Verify `curl localhost:8080/llm.txt` serves the embedded server protocol text.
+    *   Verify `curl localhost:8080/entityTypes` returns the types defined in `config.yaml`.
+2.  **CLI Command Testing:**
+    *   Test `agentt summary` using the `--config` flag, `AGENTT_CONFIG` environment variable, and default path config loading. Verify JSON output and prefixed IDs.
+    *   Test `agentt details --id <prefixed-id>` using the `--config` flag, `AGENTT_CONFIG` environment variable, and default path config loading. Verify JSON output for valid and invalid IDs.
+    *   Test `agentt llm` output.
+3.  **Unit/Integration Tests:**
+    *   Run existing tests (`go test ./...` within `.agent/service`).
+    *   Analyze code coverage / identify areas needing tests (e.g., `config.FindAndLoadConfig`, ID prefixing logic, specific command logic in `cmd/`, server handlers in `internal/server/`).
+    *   Add missing unit/integration tests.
+4.  **DRY Refactoring:**
+    *   Identify duplicated code blocks (focus on ID extraction/prefixing logic used in `cmd/summary.go`, `cmd/details.go`, `internal/server/server.go`).
+    *   Refactor duplication into shared helper functions (e.g., create `internal/util/id.go` or add helpers to `internal/content/content.go`).
+5.  **Final Build & Commit:** Ensure all tests pass after refactoring, build the final binary, and commit the changes.
+
 ## How this was done (Meta - Ignore for plan execution)
 
 *   **User:** Alright, so a part of using llm.txt results in a couple things:
@@ -167,3 +189,6 @@ Reduce the number of initial API calls and data transfer required by the agent i
 *   **AI:** Captured final embedding discussion for server help text. Provided updated text for user to apply to agent-interaction-framework rule.
 *   **User:** Noted lack of user documentation for configuration and suggested improvements (env var, search paths).
 *   **AI:** Proposed configuration handling improvements (flag, env var, search paths, precedence, documentation) and added Phase 6 to the plan.
+*   **AI:** Implemented and tested Phase 6. Committed changes.
+*   **User:** Requested final round of testing and DRY refactoring (Phase 7).
+*   **AI:** Defined Phase 7 in the plan.

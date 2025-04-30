@@ -83,30 +83,14 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 			continue // Skip invalid items for summary
 		}
 
-		// Extract base ID (without prefix)
-		baseID := getStringFromFrontMatter(item.FrontMatter, "id", "")
-		if baseID == "" && item.EntityType == "behavior" {
-			// Fallback to title for behaviors if no ID
-			baseID = getStringFromFrontMatter(item.FrontMatter, "title", "")
-		}
-		if baseID == "" {
-			// If still no ID, maybe skip or log warning? Let's skip for summary.
-			// Alternatively, use SourcePath as absolute fallback?
-			log.Printf("Warning: Skipping item for summary due to missing ID/Title: %s", item.SourcePath)
+		// Use the new utility function to get the prefixed ID
+		prefixedID, err := content.GetPrefixedID(item)
+		if err != nil {
+			log.Printf("Warning: Skipping item for summary: %v", err)
 			continue
 		}
 
-		// Add Prefix based on type
-		prefixedID := ""
-		switch item.EntityType {
-		case "behavior":
-			prefixedID = "bhv-" + baseID
-		case "recipe":
-			prefixedID = "rcp-" + baseID
-		default:
-			prefixedID = baseID // Or handle unknown types differently?
-		}
-
+		// Description and Tags logic remains the same
 		description := getStringFromFrontMatter(item.FrontMatter, "description", "")
 		var tags []string
 		if tagsInterface, ok := item.FrontMatter["tags"].([]interface{}); ok {

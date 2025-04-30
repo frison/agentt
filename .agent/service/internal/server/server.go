@@ -11,10 +11,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time" // Add time package
 )
 
 //go:embed llm_server_help.txt
-var llmServerHelpContent string // Embedded server protocol/help text
+var LLMServerHelpContent string // Embedded server protocol/help text (Exported for testing)
 
 // Server wraps the HTTP server dependencies and handlers.
 type Server struct {
@@ -48,8 +49,47 @@ func (s *Server) ListenAndServe() error {
 	mux.HandleFunc("/details", s.HandleDetails)
 
 	log.Printf("Starting HTTP server on %s...", s.cfg.ListenAddress)
-	return http.ListenAndServe(s.cfg.ListenAddress, mux)
+	// Wrap the mux with the logging middleware before starting the server
+	loggedMux := LoggingMiddleware(mux)
+	return http.ListenAndServe(s.cfg.ListenAddress, loggedMux)
 }
+
+// --- Middleware ---
+
+// responseWriter wraps http.ResponseWriter to capture status code
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func newResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{w, http.StatusOK} // Default to 200 OK
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+// LoggingMiddleware logs request details.
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Use custom response writer to capture status code
+		rw := newResponseWriter(w)
+
+		// Process request
+		next.ServeHTTP(rw, r)
+
+		// Log request details after processing
+		duration := time.Since(start)
+		log.Printf("Request: %s %s | Status: %d | Duration: %s | Source: %s",
+			r.Method, r.URL.Path, rw.statusCode, duration, r.RemoteAddr)
+	})
+}
+
+// --- Handlers ---
 
 // HandleHealth returns a simple 200 OK.
 func (s *Server) HandleHealth(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +124,7 @@ func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use embedded content directly
-	contentBytes := []byte(llmServerHelpContent)
+	contentBytes := []byte(LLMServerHelpContent)
 
 	// Build entity type documentation
 	var entityDocs strings.Builder
@@ -116,32 +156,14 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 
 	summaries := make([]content.ItemSummary, 0, len(allValidItems))
 	for _, item := range allValidItems {
-		// No need to re-check IsValid here as Query should only return valid items
-
-		// Extract base ID (without prefix)
-		baseID := ""
-		if idVal, ok := item.FrontMatter["id"].(string); ok {
-			baseID = idVal
-		} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
-			// Fallback to title for behaviors if no ID
-			baseID = titleVal
-		}
-		if baseID == "" {
-			log.Printf("Warning: Skipping item for summary due to missing ID/Title: %s", item.SourcePath)
+		// Use the new utility function to get the prefixed ID
+		prefixedID, err := content.GetPrefixedID(item)
+		if err != nil {
+			log.Printf("Warning: Skipping item for summary: %v", err)
 			continue
 		}
 
-		// Add Prefix based on type
-		prefixedID := ""
-		switch item.EntityType {
-		case "behavior":
-			prefixedID = "bhv-" + baseID
-		case "recipe":
-			prefixedID = "rcp-" + baseID
-		default:
-			prefixedID = baseID // Or handle unknown types differently?
-		}
-
+		// Description and Tags logic remains the same
 		description := ""
 		if descVal, ok := item.FrontMatter["description"].(string); ok {
 			description = descVal
@@ -157,7 +179,7 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 		}
 
 		summaries = append(summaries, content.ItemSummary{
-			ID:          prefixedID, // Use the prefixed ID
+			ID:          prefixedID,
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior or not inferred
 			Tags:        tags,
@@ -176,6 +198,9 @@ type DetailsRequest struct {
 }
 
 // HandleDetails returns full details for requested item IDs.
+// NOTE: This uses POST instead of GET for pragmatic reasons. While GET is semantically
+// correct for data retrieval, sending a potentially large list of IDs is cleaner
+// and avoids potential URL length limits when passed in the request body.
 func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -205,31 +230,14 @@ func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, item := range allValidItemsForDetails { // Use the fresh list
-		// Extract base ID from frontmatter
-		baseID := ""
-		if idVal, ok := item.FrontMatter["id"].(string); ok {
-			baseID = idVal
-		} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
-			// Use title as fallback ID for behaviors, consistent with /summary
-			baseID = titleVal
-		}
-		if baseID == "" {
-			// Item has no identifiable ID, cannot match it
+		// Use the new utility function to get the prefixed ID for comparison
+		prefixedItemID, err := content.GetPrefixedID(item)
+		if err != nil {
+			// Cannot generate an ID for this item, so cannot match it.
 			continue
 		}
 
-		// Add Prefix based on type for comparison
-		prefixedItemID := ""
-		switch item.EntityType {
-		case "behavior":
-			prefixedItemID = "bhv-" + baseID
-		case "recipe":
-			prefixedItemID = "rcp-" + baseID
-		default:
-			prefixedItemID = baseID
-		}
-
-		// Check if this prefixed ID was requested
+		// Check if this generated prefixed ID was requested
 		if _, found := requestedIDsSet[prefixedItemID]; found { // Check map lookup directly
 			foundItems = append(foundItems, item)
 			delete(requestedIDsSet, prefixedItemID) // Mark the prefixed ID as found

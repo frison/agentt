@@ -9,8 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -24,14 +22,18 @@ func setupTestServer() *server.Server {
 			{Name: "behavior", Description: "Test Behavior", PathGlob: "*.bhv", RequiredFrontMatter: []string{"title", "tags"}},
 			{Name: "recipe", Description: "Test Recipe", PathGlob: "*.rcp", RequiredFrontMatter: []string{"id", "tags"}},
 		},
-		LLMGuidanceFile: createMockLLMFile(), // Create a temporary LLM file
+		// LLMGuidanceFile: createMockLLMFile(), // REMOVED: Create a temporary LLM file
 	}
 
 	// Mock Store
 	mockStore := store.NewGuidanceStore()
-	itemB1 := &content.Item{SourcePath: "/test/b1.bhv", EntityType: "behavior", IsValid: true, Tier: "must", FrontMatter: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}}
-	itemB2 := &content.Item{SourcePath: "/test/b2.bhv", EntityType: "behavior", IsValid: true, Tier: "should", FrontMatter: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}}
-	itemR1 := &content.Item{SourcePath: "/test/r1.rcp", EntityType: "recipe", IsValid: true, FrontMatter: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}}
+	// IDs in FrontMatter should NOT have prefixes; the prefixing happens during summary/details generation.
+	// However, the tests currently EXPECT prefixed IDs in the output.
+	// The Query function relies on FrontMatter fields for filtering.
+	// Let's adjust the items to have the ID/Title fields that the prefixing logic uses.
+	itemB1 := &content.Item{SourcePath: "/test/b1.bhv", EntityType: "behavior", IsValid: true, Tier: "must", FrontMatter: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}} // Use title as base ID for behavior
+	itemB2 := &content.Item{SourcePath: "/test/b2.bhv", EntityType: "behavior", IsValid: true, Tier: "should", FrontMatter: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}} // Use title as base ID for behavior
+	itemR1 := &content.Item{SourcePath: "/test/r1.rcp", EntityType: "recipe", IsValid: true, FrontMatter: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}}     // Use id as base ID for recipe
 	itemInvalid := &content.Item{SourcePath: "/test/invalid.bhv", EntityType: "behavior", IsValid: false, FrontMatter: map[string]interface{}{"title": "Invalid"}}
 	mockStore.AddOrUpdate(itemB1)
 	mockStore.AddOrUpdate(itemB2)
@@ -41,6 +43,7 @@ func setupTestServer() *server.Server {
 	return server.NewServer(mockConfig, mockStore)
 }
 
+/* // REMOVED Mock LLM File helper
 // Helper to create a temporary LLM guidance file for testing
 var mockLLMFilePath string
 
@@ -56,10 +59,11 @@ func createMockLLMFile() string {
 	os.WriteFile(mockLLMFilePath, content, 0644)
 	return mockLLMFilePath
 }
+*/
 
 func TestHandlers(t *testing.T) {
 	srv := setupTestServer()
-	defer os.Remove(mockLLMFilePath) // Clean up mock file
+	// defer os.Remove(mockLLMFilePath) // REMOVED: Clean up mock file
 
 	// Setup mux manually for testing specific handlers
 	mux := http.NewServeMux()
@@ -126,12 +130,22 @@ func TestHandlers(t *testing.T) {
 		body, _ := io.ReadAll(res.Body)
 		bodyStr := string(body)
 
+		// Construct expected output using embedded text and mock config
+		// Note the extra newline added by the loop in the handler
+		expectedEntityTypeDocs := "*   **behavior**: Test Behavior \n*   **recipe**: Test Recipe \n"
+		expectedOutput := strings.Replace(server.LLMServerHelpContent, "{{ENTITY_TYPES_DOCUMENTATION}}", expectedEntityTypeDocs, 1)
+
+		if bodyStr != expectedOutput {
+			t.Errorf("LLM guidance mismatch.\nExpected:\n%s\nGot:\n%s", expectedOutput, bodyStr)
+		}
+		/* // REMOVED old check
 		if !strings.Contains(bodyStr, "*   **behavior**: Test Behavior") {
 			t.Errorf("LLM guidance missing expected behavior description. Got:\n%s", bodyStr)
 		}
 		if !strings.Contains(bodyStr, "*   **recipe**: Test Recipe") {
 			t.Errorf("LLM guidance missing expected recipe description. Got:\n%s", bodyStr)
 		}
+		*/
 	})
 
 	/* // --- Test /discover --- // REMOVED
@@ -184,7 +198,7 @@ func TestHandlers(t *testing.T) {
 		// Basic check for one item
 		foundR1 := false
 		for _, s := range summaries {
-			if s.ID == "r1" && s.Type == "recipe" {
+			if s.ID == "rcp-r1" && s.Type == "recipe" {
 				foundR1 = true
 				if len(s.Tags) != 2 || s.Tags[0] != "core" || s.Tags[1] != "git" {
 					t.Errorf("Recipe r1 summary has incorrect tags: %v", s.Tags)
@@ -200,7 +214,7 @@ func TestHandlers(t *testing.T) {
 	// --- Test /details ---
 	t.Run("DetailsEndpoint_Found", func(t *testing.T) {
 		// Request details for b1 (using title as ID) and r1
-		requestBody := `{"ids": ["B1", "r1"]}`
+		requestBody := `{"ids": ["bhv-B1", "rcp-r1"]}`
 		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
 		if err != nil {
 			t.Fatalf("POST /details failed: %v", err)
