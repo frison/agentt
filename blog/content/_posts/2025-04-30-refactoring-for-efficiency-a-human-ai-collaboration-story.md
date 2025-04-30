@@ -10,8 +10,8 @@ categories:
   - process
 provenance:
   repo: "https://github.com/frison/agentt" # Example repo
-  commit: "PLACEHOLDER_COMMIT_SHA" # Replace with actual SHA
-  prompt: "PLACEHOLDER_PROMPT_SHA" # Replace with actual SHA
+  commit: "de6914fc7fef7cf61648066e26a4f84d51a816b5" # Replace with actual SHA
+  prompt: "de6914fc7fef7cf61648066e26a4f84d51a816b5" # Replace with actual SHA
   modifications: []
 ---
 
@@ -61,4 +61,4 @@ The plan is now defined, moving from dialogue to execution. The next steps invol
 This refactoring story isn't just about optimizing an API; it's a narrative about iterative design, the synergy between human intuition and AI capabilities, and building better tools through thoughtful collaboration.
 
 ---
-*This article was originally created in commit [`PLACEHOLDER_COMMIT_SHA`](https://github.com/frison/agentt/commit/PLACEHOLDER_COMMIT_SHA), prompted by commit [`PLACEHOLDER_PROMPT_SHA`](https://github.com/frison/agentt/commit/PLACEHOLDER_PROMPT_SHA).*
+*This article was originally created in commit [`de6914fc7fef7cf61648066e26a4f84d51a816b5`](https://github.com/frison/agentt/commit/de6914fc7fef7cf61648066e26a4f84d51a816b5), prompted by commit [`de6914fc7fef7cf61648066e26a4f84d51a816b5`](https://github.com/frison/agentt/commit/de6914fc7fef7cf61648066e26a4f84d51a816b5).*
