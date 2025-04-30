@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"agent-guidance-service/internal/config"
+	"agentt/internal/config"
 	"os"
 	"path/filepath"
 	"testing"

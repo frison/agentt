@@ -1,10 +1,10 @@
 package server_test
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/content"
-	"agent-guidance-service/internal/server"
-	"agent-guidance-service/internal/store"
+	"agentt/internal/config"
+	"agentt/internal/content"
+	"agentt/internal/server"
+	"agentt/internal/store"
 	"encoding/json"
 	"io"
 	"net/http"

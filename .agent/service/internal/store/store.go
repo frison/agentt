@@ -1,7 +1,7 @@
 package store
 
 import (
-	"agent-guidance-service/internal/content"
+	"agentt/internal/content"
 	"fmt"
 	"sync"
 	"testing"

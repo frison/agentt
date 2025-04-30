@@ -1,8 +1,8 @@
 package discovery_test
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/discovery"
+	"agentt/internal/config"
+	"agentt/internal/discovery"
 	"path/filepath"
 	"reflect"
 	"strings"

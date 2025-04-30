@@ -1,10 +1,10 @@
 package main
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/discovery"
-	"agent-guidance-service/internal/server"
-	"agent-guidance-service/internal/store"
+	"agentt/internal/config"
+	"agentt/internal/discovery"
+	"agentt/internal/server"
+	"agentt/internal/store"
 	"context"
 	"flag"
 	"log"

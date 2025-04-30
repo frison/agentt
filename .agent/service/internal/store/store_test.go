@@ -1,8 +1,8 @@
 package store_test
 
 import (
-	"agent-guidance-service/internal/content"
-	"agent-guidance-service/internal/store"
+	"agentt/internal/content"
+	"agentt/internal/store"
 	"reflect"
 	"sort"
 	"testing"

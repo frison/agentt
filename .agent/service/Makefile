@@ -2,22 +2,21 @@
 
 .PHONY: all build server cli test fmt lint clean
 
-BINARY_SERVER=agent-guidance-service
-BINARY_CLI=agent-guidance-cli
+BINARY_NAME=agentt
 
 all: build
 
 build: server cli
 
 server: fmt lint
-	@echo "Building server..."
-	go build -o $(BINARY_SERVER) ./cmd/server
-	@echo "Server binary: $(BINARY_SERVER)"
+	@echo "Building server (will become part of agentt)..."
+	go build -o $(BINARY_NAME)-server-tmp ./cmd/server # Temporary name
+	@echo "Server binary (temp): $(BINARY_NAME)-server-tmp"
 
 cli: fmt lint
-	@echo "Building cli..."
-	go build -o $(BINARY_CLI) ./cmd/cli
-	@echo "CLI binary: $(BINARY_CLI)"
+	@echo "Building cli (will become part of agentt)..."
+	go build -o $(BINARY_NAME)-cli-tmp ./cmd/cli # Temporary name
+	@echo "CLI binary (temp): $(BINARY_NAME)-cli-tmp"
 
 test:
 	@echo "Running tests..."
@@ -33,5 +32,5 @@ lint:
 
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f $(BINARY_SERVER) $(BINARY_CLI)
+	rm -f $(BINARY_NAME) $(BINARY_NAME)-server-tmp $(BINARY_NAME)-cli-tmp # Update clean target
 	go clean

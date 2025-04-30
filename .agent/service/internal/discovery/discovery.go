@@ -1,8 +1,8 @@
 package discovery
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/store"
+	"agentt/internal/config"
+	"agentt/internal/store"
 	"context"
 	"fmt"
 	"io/fs"
@@ -22,7 +22,7 @@ type Watcher struct {
 	watcher     *fsnotify.Watcher
 	mu          sync.Mutex // Protects access to watchedDirs
 	watchedDirs map[string]bool
-	configDir string // Store the directory containing the config file
+	configDir   string // Store the directory containing the config file
 }
 
 // NewWatcher creates a new file watcher and discovery manager.

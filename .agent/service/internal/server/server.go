@@ -1,8 +1,8 @@
 package server
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/store"
+	"agentt/internal/config"
+	"agentt/internal/store"
 	"bytes"
 	"encoding/json"
 	"fmt"

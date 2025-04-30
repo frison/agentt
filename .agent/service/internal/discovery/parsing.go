@@ -1,8 +1,8 @@
 package discovery
 
 import (
-	"agent-guidance-service/internal/config"
-	"agent-guidance-service/internal/content"
+	"agentt/internal/config"
+	"agentt/internal/content"
 	"bytes"
 	"fmt"
 	"os"
