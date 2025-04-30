@@ -32,26 +32,28 @@ related_guidance:
 ```yaml
 ---
 layout: post
-title: Example Blog Post Title - With Hyphenated Subtitle 🚀
+title: "Example Blog Post Title - With Hyphenated Subtitle: Like This 🚀"
 date: YYYY-MM-DD HH:MM:SS -0600 # Derived from system time & formatted to CST/CDT per Time Awareness Directive
 categories:
   - category1
   - category2
   - category3
 provenance:
-  commit_sha: FULL_GIT_SHA_OF_INITIAL_COMMIT # Replace with actual SHA
-  parent_sha: FULL_GIT_SHA_OF_PARENT_COMMIT # Replace with actual SHA
+  repo: "https://github.com/frison/agentt" # Example repo
+  commit: "FULL_GIT_SHA_OF_INITIAL_COMMIT" # Replace with actual SHA
+  prompt: "FULL_GIT_SHA_OF_PROMPT_COMMIT" # Replace with actual SHA (often same as commit)
+  modifications: []
 ---
 ```
 
 Notes on frontmatter:
 - Use `post` for the layout.
 - Title can contain hyphens and optionally relevant emojis (🚀).
+- **IMPORTANT:** Enclose the `title` (and any other string value) in double quotes if it contains special YAML characters like a colon (`:`).
 - Date includes time and timezone (standardized to -0600), derived from system time. Check relevant Time directives for updates.
 - Categories are listed as YAML array items with hyphens.
 - Category names use hyphens instead of spaces.
-- No quotes around any values.
-- `provenance` block is added *after* the first commit (see [Article Provenance Recipe](201-blog-_RU_-article-provenance.mdc) and Creation Process below).
+- `provenance` block is added *after* the first commit (see [Article Provenance Recipe](blog-article-provenance.rcp) and Creation Process below).
 
 ## Content Structure
 1. **Introduction**

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Level Up Your AI Agent: From Scripts to Service 🚀
+title: "Level Up Your AI Agent: From Scripts to Service 🚀"
 date: 2025-04-29 12:00:00 -0600 # Placeholder time, recipe asks for CST/CDT - using -0600
 categories:
   - agent-framework
@@ -8,8 +8,10 @@ categories:
   - performance
   - golang
 provenance:
-  commit_sha: 09be77f7ebf466a0d3098b98650c85e036e3594b
-  parent_sha: 09be77f7ebf466a0d3098b98650c85e036e3594b # Using same SHA as prompt=commit per recipe
+  repo: "https://github.com/frison/agentt"
+  commit: "09be77f7ebf466a0d3098b98650c85e036e3594b"
+  prompt: "09be77f7ebf466a0d3098b98650c85e036e3594b"
+  modifications: []
 ---
 
 Remember those trusty `discover.sh` scripts? Peppered throughout our agent's data directories, they were the go-to method for figuring out behavioral rules or finding the right cookbook recipe. Simple, effective... initially. But like that one shell alias you wrote five years ago that now takes three seconds to run (you know the one), things needed an upgrade. We've officially retired the scattered scripts and ushered in a new era: the centralized Go-based **Agent Guidance Service**. Spoiler: it's faster, cleaner, and way easier to manage.
