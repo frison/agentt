@@ -78,21 +78,31 @@ Start the HTTP server:
 ./agentt server start [-c path/to/config.yaml]
 ```
 
+The server logs basic information about each incoming request (method, path, status, duration, source) to standard output.
+
+#### API Endpoints
+
+*   `GET /health`: Returns `200 OK` if the server is running.
+*   `GET /entityTypes`: Returns a JSON array of configured entity type definitions from `config.yaml`.
+*   `GET /summary`: Returns a JSON array of summaries for all valid guidance entities. Each summary includes a prefixed ID (`bhv-`, `rcp-`), type, tier (for behaviors), tags, and description.
+*   `POST /details`: Expects a JSON body `{"ids": ["prefixed-id-1", "prefixed-id-2"]}`. Returns a JSON array containing the full details for the requested valid prefixed IDs.
+*   `GET /llm.txt`: Returns the embedded agent interaction protocol text.
+
 ### CLI
 
-Get summaries:
+Get summaries (outputs JSON):
 ```bash
 ./agentt summary [-c path/to/config.yaml]
 ```
 
-Get specific details:
+Get specific details (outputs JSON):
 ```bash
 ./agentt details --id bhv-some-id --id rcp-other-id [-c path/to/config.yaml]
 ```
 
-Show agent interaction help:
+Show agent interaction help (outputs text):
 ```bash
-./agentt llm
+./agentt llm | cat
 ```
 
 *(Ensure `./agentt` refers to the built binary)*

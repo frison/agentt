@@ -192,3 +192,8 @@ Reduce the number of initial API calls and data transfer required by the agent i
 *   **AI:** Implemented and tested Phase 6. Committed changes.
 *   **User:** Requested final round of testing and DRY refactoring (Phase 7).
 *   **AI:** Defined Phase 7 in the plan.
+*   **User:** Requested improved server logging and questioned use of POST for /details.
+*   **AI:** Agreed logging should be improved. Defended POST for /details based on practical concerns (passing many IDs), added comment to handler. Implemented logging middleware. Fixed resulting test failures (mock data, ID prefixing logic in tests, unused imports). Fixed cmd/cli build error (deleted duplicate main.go). Committed Phase 7 changes.
+*   **User:** Requested review of agent interaction framework rule.
+*   **AI:** Reviewed rule against current `agentt llm` output and found it up-to-date.
+*   **AI:** Cleaned up remaining cmd/cli structural issues and updated README.
