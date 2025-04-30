@@ -3,20 +3,26 @@ description:
 globs:
 alwaysApply: true
 ---
-# Agent Interaction Framework (Service-Based)
+# Agent Interaction Framework (CLI-Based)
 
 ## Intent
-Ensure mandatory interaction with the Agent Guidance Service before proceeding with tasks.
+Ensure mandatory interaction with the Agent Guidance definitions via the `agentt` CLI before proceeding with tasks.
 
 ## Rules
-1.  **STOP:** Before undertaking *any* task (coding, analysis, planning, etc.), you MUST first fetch and process the guidance protocol from the running Agent Guidance Service.
-2.  **Fetch Protocol:** Execute the following command to retrieve the protocol:
+1.  **STOP:** Before undertaking *any* task (coding, analysis, planning, etc.), you MUST first fetch and process the guidance protocol using the `agentt` CLI tool.
+2.  **Fetch Protocol Explanation:** Execute the following command to understand the CLI interaction flow:
     ```bash
-    curl http://localhost:8080/llm.txt | cat
+    # Ensure agentt is built and in PATH or use relative path e.g., ./.agent/service/agentt
+    agentt llm | cat
     ```
-3.  **Adhere Strictly:** Carefully read the **ENTIRE** content retrieved from `/llm.txt`. Follow the sequence, instructions, and API interactions defined within that document **EXACTLY**. Do not deviate or skip steps. The content of `/llm.txt` is the authoritative source for the interaction framework.
-4.  **Proceed Only After Compliance:** Only proceed with the main task after fully completing the protocol described in the fetched `/llm.txt` content.
+3.  **Execute Interaction Flow:** Follow the steps described in the output of `agentt llm` **EXACTLY**:
+    *   **Step 1: Fetch Summary:** Use `agentt summary` to get a JSON array of all entity summaries.
+    *   **Step 2: Identify Relevant IDs:** Analyze the summary JSON and identify relevant prefixed IDs (`bhv-...`, `rcp-...`) based on the task.
+    *   **Step 3: Fetch Full Details:** Use `agentt details --id <id1> --id <id2> ...` to retrieve the full JSON details for the relevant IDs.
+    *   **Step 4: Process Guidance:** Analyze the fetched details, paying strict attention to MUST behaviors, SHOULD behaviors (considering priority), and relevant Recipes.
+4.  **Adhere Strictly:** Follow the sequence and instructions precisely. The process described by `agentt llm` and the content retrieved via `agentt details` are the authoritative sources for the interaction framework. Do not deviate or skip steps.
+5.  **Proceed Only After Compliance:** Only proceed with the main task after fully completing the protocol steps (fetching summary, identifying IDs, fetching details, processing guidance).
 
 ## Notes
-- This rule delegates the detailed framework steps to the content served by the `/llm.txt` endpoint.
-- Ensure the Agent Guidance Service is running locally on `localhost:8080`.
+- This rule delegates the detailed framework steps to the guidance retrieved via the `agentt` CLI.
+- Ensure the `agentt` binary is built and accessible in your environment.

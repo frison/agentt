@@ -14,6 +14,7 @@ import (
 
 var (
 	detailsIDs []string // Slice to store the IDs passed via flags
+	// detailsConfigPath string // REMOVED - Use rootConfigPath from root.go
 )
 
 // detailsCmd represents the details command
@@ -22,23 +23,24 @@ var detailsCmd = &cobra.Command{
 	Short: "Outputs the full JSON details for specific guidance entities by ID.",
 	Long: `Outputs the full JSON details for one or more specified guidance entities (behaviors or recipes).
 Provide the entity IDs using the --id flag (can be repeated). IDs should match those
-returned by the 'summary' command (including prefixes like 'bhv-' or 'rcp-' once implemented).`,
+returned by the 'summary' command (including prefixes like 'bhv-' or 'rcp-' once implemented).
+Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(detailsIDs) == 0 {
 			return fmt.Errorf("at least one --id flag must be provided")
 		}
 
 		// --- Configuration ---
-		// TODO: Use flag for config path if added to summaryCmd
-		configPath := "config.yaml" // Reusing const from summary.go for consistency (MANUALLY UPDATED)
-		cfg, err := config.LoadConfig(configPath)
+		// Use rootConfigPath directly from root.go
+		cfg, loadedPath, err := config.FindAndLoadConfig(rootConfigPath)
 		if err != nil {
-			return fmt.Errorf("failed to load configuration from %s: %w", configPath, err)
+			return fmt.Errorf("configuration error: %w", err)
 		}
+		log.Printf("Using configuration file: %s", loadedPath) // Log which config was used
 
 		// --- Setup Dependencies & Load ---
 		guidanceStore := store.NewGuidanceStore()
-		watcher, err := discovery.NewWatcher(cfg, guidanceStore, configPath)
+		watcher, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath) // Use loadedPath
 		if err != nil {
 			return fmt.Errorf("failed to create discovery watcher: %w", err)
 		}
@@ -63,11 +65,32 @@ returned by the 'summary' command (including prefixes like 'bhv-' or 'rcp-' once
 			if !item.IsValid {
 				continue
 			}
-			// Extract ID from frontmatter (using helper from summary.go logic)
-			// >>> Phase 5 TODO: Apply prefixing *before* lookup OR handle it here <<<
-			itemID := getStringFromFrontMatter(item.FrontMatter, "id", item.SourcePath) // Fallback needed?
+			// Extract base ID from frontmatter
+			baseID := ""
+			if idVal, ok := item.FrontMatter["id"].(string); ok {
+				baseID = idVal
+			} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
+				// Fallback to title for behaviors if no ID
+				baseID = titleVal
+			}
+			if baseID == "" {
+				// Item has no identifiable ID, cannot match it
+				continue
+			}
 
-			if requestedIDMap[itemID] {
+			// Add Prefix based on type for comparison
+			prefixedItemID := ""
+			switch item.EntityType {
+			case "behavior":
+				prefixedItemID = "bhv-" + baseID
+			case "recipe":
+				prefixedItemID = "rcp-" + baseID
+			default:
+				prefixedItemID = baseID
+			}
+
+			// Check if this prefixed ID was requested
+			if _, found := requestedIDMap[prefixedItemID]; found { // Check map lookup directly
 				foundItems = append(foundItems, item)
 			}
 		}
@@ -102,6 +125,6 @@ func init() {
 
 	// Define the repeatable --id flag
 	detailsCmd.Flags().StringSliceVar(&detailsIDs, "id", []string{}, "Entity ID to get details for (repeatable)")
-	// Mark the flag as required? Cobra doesn't easily support *requiring* repeatable flags.
-	// We added a check in RunE instead.
+	// REMOVED config flag definition - Now persistent on root
+	// detailsCmd.Flags().StringVarP(&detailsConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
 }

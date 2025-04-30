@@ -5,13 +5,16 @@ import (
 	"agentt/internal/content"
 	"agentt/internal/store"
 	"bytes"
+	_ "embed" // Import embed
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 )
+
+//go:embed llm_server_help.txt
+var llmServerHelpContent string // Embedded server protocol/help text
 
 // Server wraps the HTTP server dependencies and handlers.
 type Server struct {
@@ -73,24 +76,22 @@ func (s *Server) HandleDiscover(w http.ResponseWriter, r *http.Request) {
 }
 */
 
-// HandleLLMGuidance serves the LLM guidance text file with replaced placeholders.
+// HandleLLMGuidance serves the embedded LLM guidance text file with replaced placeholders.
 func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	contentBytes, err := os.ReadFile(s.cfg.LLMGuidanceFile)
-	if err != nil {
-		log.Printf("Error reading LLM guidance file '%s': %v", s.cfg.LLMGuidanceFile, err)
-		http.Error(w, "Internal Server Error: Could not load LLM guidance", http.StatusInternalServerError)
-		return
-	}
+	// Use embedded content directly
+	contentBytes := []byte(llmServerHelpContent)
 
 	// Build entity type documentation
 	var entityDocs strings.Builder
 	for _, et := range s.cfg.EntityTypes {
-		entityDocs.WriteString(fmt.Sprintf("*   **%s**: %s (Discover via `/discover/%s`)\n", et.Name, et.Description, et.Name))
+		// Note: This placeholder replacement logic might become obsolete or need rethinking
+		// if the server help text no longer needs dynamic parts.
+		entityDocs.WriteString(fmt.Sprintf("*   **%s**: %s \n", et.Name, et.Description))
 	}
 
 	// Replace placeholder
@@ -117,16 +118,29 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 	for _, item := range allValidItems {
 		// No need to re-check IsValid here as Query should only return valid items
 
-		// Extract common fields
-		id := ""
+		// Extract base ID (without prefix)
+		baseID := ""
 		if idVal, ok := item.FrontMatter["id"].(string); ok {
-			id = idVal
+			baseID = idVal
 		} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
 			// Fallback to title for behaviors if no ID
-			id = titleVal // Or generate a more unique one?
+			baseID = titleVal
+		}
+		if baseID == "" {
+			log.Printf("Warning: Skipping item for summary due to missing ID/Title: %s", item.SourcePath)
+			continue
 		}
 
-		// >>> Phase 5 TODO: Add ID prefixing here <<<
+		// Add Prefix based on type
+		prefixedID := ""
+		switch item.EntityType {
+		case "behavior":
+			prefixedID = "bhv-" + baseID
+		case "recipe":
+			prefixedID = "rcp-" + baseID
+		default:
+			prefixedID = baseID // Or handle unknown types differently?
+		}
 
 		description := ""
 		if descVal, ok := item.FrontMatter["description"].(string); ok {
@@ -143,7 +157,7 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 		}
 
 		summaries = append(summaries, content.ItemSummary{
-			ID:          id,
+			ID:          prefixedID, // Use the prefixed ID
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior or not inferred
 			Tags:        tags,
@@ -191,17 +205,34 @@ func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, item := range allValidItemsForDetails { // Use the fresh list
-		itemID := ""
+		// Extract base ID from frontmatter
+		baseID := ""
 		if idVal, ok := item.FrontMatter["id"].(string); ok {
-			itemID = idVal
+			baseID = idVal
 		} else if titleVal, ok := item.FrontMatter["title"].(string); ok && item.EntityType == "behavior" {
 			// Use title as fallback ID for behaviors, consistent with /summary
-			itemID = titleVal
+			baseID = titleVal
+		}
+		if baseID == "" {
+			// Item has no identifiable ID, cannot match it
+			continue
 		}
 
-		if itemID != "" && requestedIDsSet[itemID] {
+		// Add Prefix based on type for comparison
+		prefixedItemID := ""
+		switch item.EntityType {
+		case "behavior":
+			prefixedItemID = "bhv-" + baseID
+		case "recipe":
+			prefixedItemID = "rcp-" + baseID
+		default:
+			prefixedItemID = baseID
+		}
+
+		// Check if this prefixed ID was requested
+		if _, found := requestedIDsSet[prefixedItemID]; found { // Check map lookup directly
 			foundItems = append(foundItems, item)
-			delete(requestedIDsSet, itemID) // Mark as found
+			delete(requestedIDsSet, prefixedItemID) // Mark the prefixed ID as found
 		}
 	}
 

@@ -52,3 +52,21 @@ Only after successfully completing Phase 1 (Behavior Check) and Phase 2 (Cookboo
 *   `/entityTypes`: Returns a JSON array describing the configured entity types.
 *   `/discover/{entityType}`: Returns a JSON array of discovered and valid entities. Supports filtering by frontmatter keys (e.g., `?tag=core`) and behavior tier (`?tier=must`). Example entity types discovered via `/entityTypes`:
 {{ENTITY_TYPES_DOCUMENTATION}}
+
+1.  **Fetch All Summaries:**
+    *   Execute: `curl http://localhost:8080/summary`
+    *   Analyze the JSON output (an array of summary items: `{id, type, tier?, tags, description}`).
+        *   Note: The `id` field will be prefixed (e.g., `bhv-some-behavior`, `rcp-some-recipe`).
+
+## Phase 2: Identify Relevant Items & Fetch Details
+
+**STOP:** Do NOT proceed to Phase 3 or the main task until this phase is complete.
+
+1.  **Identify Relevant IDs:**
+    *   Based on the current task and the summaries fetched in Phase 1, identify the list of relevant entity IDs (these will already include prefixes like `bhv-` and `rcp-`).
+
+2.  **Fetch Full Details for Relevant IDs:**
+    *   Execute: `curl -X POST -H "Content-Type: application/json" -d '{"ids": ["<relevant_id_1>", "<relevant_id_2>"]}' http://localhost:8080/details`
+        *   Replace `<relevant_id_1>`, `<relevant_id_2>`, etc., with the actual prefixed IDs identified in the previous step.
+
+*   `/details`: (POST) Expects JSON `{ "ids": ["id1", "id2", ...] }` where IDs include prefixes (`bhv-`/`rcp-`). Returns a JSON array of full details for the requested entity IDs.

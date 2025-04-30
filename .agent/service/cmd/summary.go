@@ -12,7 +12,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultSummaryConfigPath = "config.yaml"
+var (
+	// summaryConfigPath string // REMOVED - Use rootConfigPath from root.go
+)
 
 // summaryCmd represents the summary command
 var summaryCmd = &cobra.Command{
@@ -20,31 +22,28 @@ var summaryCmd = &cobra.Command{
 	Short: "Outputs a JSON summary of all guidance entities (behaviors and recipes).",
 	Long: `Outputs a JSON summary of all guidance entities (behaviors and recipes).
 This includes minimal information like ID, type, tags, and description,
-suitable for initial discovery by an agent.`,
+suitable for initial discovery by an agent.
+Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// --- Configuration ---
-		// TODO: Add a flag for config path, using default for now
-		configPath := defaultSummaryConfigPath
-		cfg, err := config.LoadConfig(configPath)
+		// Use rootConfigPath directly from root.go
+		cfg, loadedPath, err := config.FindAndLoadConfig(rootConfigPath)
 		if err != nil {
-			return fmt.Errorf("failed to load configuration from %s: %w", configPath, err)
+			return fmt.Errorf("configuration error: %w", err)
 		}
+		log.Printf("Using configuration file: %s", loadedPath) // Log which config was used
 
 		// --- Setup Dependencies ---
 		guidanceStore := store.NewGuidanceStore()
-		// The watcher needs the config path to resolve relative globs correctly
-		watcher, err := discovery.NewWatcher(cfg, guidanceStore, configPath)
+		// Pass the *loaded* config path to the watcher for correct relative glob resolution
+		watcher, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
 		if err != nil {
-			// Log fatal similar to server? Or return error for CLI?
-			// For CLI, returning error is usually better.
 			return fmt.Errorf("failed to create discovery watcher: %w", err)
 		}
 
 		// --- Load Entities via Initial Scan ---
 		err = watcher.InitialScan() // Populates the guidanceStore
 		if err != nil {
-			// Log potentially non-fatal errors from scan? Or just return?
-			// Let's return the error for now, signifies loading failed.
 			log.Printf("Warning during initial scan: %v", err) // Log it as well
 			return fmt.Errorf("error during initial scan of guidance files: %w", err)
 		}
@@ -72,8 +71,8 @@ func init() {
 	// Add summaryCmd directly to the rootCmd.
 	rootCmd.AddCommand(summaryCmd)
 
-	// TODO: Add flag for --config path
-	// summaryCmd.Flags().StringVarP(&configPath, "config", "c", defaultSummaryConfigPath, "Path to the configuration file.")
+	// REMOVED flag definition - Now persistent on root
+	// summaryCmd.Flags().StringVarP(&summaryConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
 }
 
 // prepareSummary converts a slice of full content Items into ItemSummary structs.
@@ -84,8 +83,30 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 			continue // Skip invalid items for summary
 		}
 
-		// Extract common fields
-		id := getStringFromFrontMatter(item.FrontMatter, "id", item.SourcePath) // Use SourcePath as fallback ID?
+		// Extract base ID (without prefix)
+		baseID := getStringFromFrontMatter(item.FrontMatter, "id", "")
+		if baseID == "" && item.EntityType == "behavior" {
+			// Fallback to title for behaviors if no ID
+			baseID = getStringFromFrontMatter(item.FrontMatter, "title", "")
+		}
+		if baseID == "" {
+			// If still no ID, maybe skip or log warning? Let's skip for summary.
+			// Alternatively, use SourcePath as absolute fallback?
+			log.Printf("Warning: Skipping item for summary due to missing ID/Title: %s", item.SourcePath)
+			continue
+		}
+
+		// Add Prefix based on type
+		prefixedID := ""
+		switch item.EntityType {
+		case "behavior":
+			prefixedID = "bhv-" + baseID
+		case "recipe":
+			prefixedID = "rcp-" + baseID
+		default:
+			prefixedID = baseID // Or handle unknown types differently?
+		}
+
 		description := getStringFromFrontMatter(item.FrontMatter, "description", "")
 		var tags []string
 		if tagsInterface, ok := item.FrontMatter["tags"].([]interface{}); ok {
@@ -97,16 +118,8 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 			}
 		}
 
-		// >>> Phase 5 TODO: Add ID prefixing here <<<
-		// Example (Needs refinement):
-		// if item.EntityType == "behavior" {
-		// 	id = "bhv-" + id
-		// } else if item.EntityType == "recipe" {
-		// 	id = "rcp-" + id
-		// }
-
 		summaries = append(summaries, content.ItemSummary{
-			ID:          id,
+			ID:          prefixedID, // Use the prefixed ID
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior
 			Tags:        tags,

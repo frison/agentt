@@ -7,18 +7,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Used for flags.
-	cfgFile string
+// Used for flags.
+// var cfgFile string // Replaced by rootConfigPath
 
+// Package variable to hold the value from the persistent flag
+var rootConfigPath string
+
+var (
 	rootCmd = &cobra.Command{
 		Use:   "agentt",
-		Short: "Agent Guidance Service and CLI",
+		Short: "Agent Guidance Service and CLI (config: flag > env > defaults)",
 		Long: `Agentt provides an HTTP server for agent guidance discovery
-and a command-line interface for interacting with the same definitions.`,
-		// Uncomment the following line if your bare application
-		// has an action associated with it:
-		// Run: func(cmd *cobra.Command, args []string) { },
+and a command-line interface for interacting with the same definitions.
+
+Configuration is loaded using the --config flag, the AGENTT_CONFIG environment
+variable, or by searching default paths (./config.yaml, ./.agent/service/config.yaml, etc.)
+relative to the current directory, in that order of precedence.`,
 	}
 )
 
@@ -28,18 +32,14 @@ func Execute() error {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agentt.yaml)")
+	// Define persistent --config flag on the root command
+	// The value will be stored in the rootConfigPath package variable.
+	rootCmd.PersistentFlags().StringVarP(&rootConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Subcommands add themselves via their own init() functions.
 
-	// Add subcommands here (e.g., serverCmd, validateCmd)
-	// Example: rootCmd.AddCommand(serverCmd)
-	// Example: rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(serverCmd)
+	serverCmd.AddCommand(serverStartCmd)
 }
 
 // Helper function for handling errors

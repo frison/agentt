@@ -1,5 +1,6 @@
 listenAddress: ":8080"
-llmGuidanceFile: "llm_guidance.txt"
+
+# llmGuidanceFile: "llm_guidance.txt" # REMOVED - Now embedded
 
 entityTypes:
   - name: "behavior"

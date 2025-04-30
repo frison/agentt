@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	configPath string
+	// configPath string // REMOVED - Use rootConfigPath from root.go
 
 	serverCmd = &cobra.Command{
 		Use:   "server",
@@ -27,7 +27,8 @@ var (
 	serverStartCmd = &cobra.Command{
 		Use:   "start",
 		Short: "Start the Agent Guidance HTTP server",
-		Long:  `Starts the Agent Guidance HTTP server and the file watcher.`,
+		Long:  `Starts the Agent Guidance HTTP server and the file watcher.
+Uses the configuration specified via --config flag, AGENTT_CONFIG env var, or default search paths.`,
 		Run:   startServer,
 	}
 )
@@ -36,20 +37,22 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.AddCommand(serverStartCmd)
 
-	// Add flags specific to the server start command
-	serverStartCmd.Flags().StringVarP(&configPath, "config", "c", ".agent/service/config.yaml", "Path to the configuration file.")
+	// REMOVED flag definition - Now persistent on root
+	// serverStartCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
 }
 
 func startServer(cmd *cobra.Command, args []string) {
 	// --- Configuration ---
-	cfg, err := config.LoadConfig(configPath)
+	// Use rootConfigPath directly from root.go
+	cfg, loadedPath, err := config.FindAndLoadConfig(rootConfigPath)
 	if err != nil {
-		log.Fatalf("Error loading configuration from %s: %v", configPath, err)
+		log.Fatalf("Configuration error: %v", err)
 	}
+	log.Printf("Using configuration file: %s", loadedPath)
 
 	// --- Setup Dependencies ---
 	guidanceStore := store.NewGuidanceStore()
-	wchr, err := discovery.NewWatcher(cfg, guidanceStore, configPath)
+	wchr, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
 	if err != nil {
 		log.Fatalf("Error creating file watcher: %v", err)
 	}
