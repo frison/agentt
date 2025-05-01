@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"agentt/internal/config"
+	// "agentt/internal/config" // Unused after refactor
 	"agentt/internal/content" // Import content package
-	"agentt/internal/discovery"
-	"agentt/internal/store"
+	// "agentt/internal/discovery" // Unused after refactor
+	// "agentt/internal/store" // Unused after refactor
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	// summaryConfigPath string // REMOVED - Use rootConfigPath from root.go
+// summaryConfigPath string // REMOVED - Use rootConfigPath from root.go
 )
 
 // summaryCmd represents the summary command
@@ -25,37 +25,21 @@ This includes minimal information like ID, type, tags, and description,
 suitable for initial discovery by an agent.
 Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// --- Configuration ---
-		// Use rootConfigPath directly from root.go
-		cfg, loadedPath, err := config.FindAndLoadConfig(rootConfigPath)
+		// --- Use common setup ---
+		setupRes, err := setupDiscovery(rootConfigPath)
 		if err != nil {
-			return fmt.Errorf("configuration error: %w", err)
-		}
-		log.Printf("Using configuration file: %s", loadedPath) // Log which config was used
-
-		// --- Setup Dependencies ---
-		guidanceStore := store.NewGuidanceStore()
-		// Pass the *loaded* config path to the watcher for correct relative glob resolution
-		watcher, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
-		if err != nil {
-			return fmt.Errorf("failed to create discovery watcher: %w", err)
-		}
-
-		// --- Load Entities via Initial Scan ---
-		err = watcher.InitialScan() // Populates the guidanceStore
-		if err != nil {
-			log.Printf("Warning during initial scan: %v", err) // Log it as well
-			return fmt.Errorf("error during initial scan of guidance files: %w", err)
+			return err // Errors already formatted by helper
 		}
 
 		// --- Retrieve All Items from Store ---
-		allItems := guidanceStore.GetAll()
+		allItems := setupRes.Store.GetAll()
+		log.Printf("Retrieved %d items from store", len(allItems))
 
 		// --- Prepare Summary Data ---
-		summaryData := prepareSummary(allItems)
+		summaries := prepareSummary(allItems)
 
 		// --- Marshal to JSON ---
-		outputJSON, err := json.MarshalIndent(summaryData, "", "  ")
+		outputJSON, err := json.MarshalIndent(summaries, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal summary to JSON: %w", err)
 		}
@@ -71,8 +55,7 @@ func init() {
 	// Add summaryCmd directly to the rootCmd.
 	rootCmd.AddCommand(summaryCmd)
 
-	// REMOVED flag definition - Now persistent on root
-	// summaryCmd.Flags().StringVarP(&summaryConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
+	// Config flag is now persistent on root command
 }
 
 // prepareSummary converts a slice of full content Items into ItemSummary structs.
@@ -83,10 +66,10 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 			continue // Skip invalid items for summary
 		}
 
-		// Use the new utility function to get the prefixed ID
-		prefixedID, err := content.GetPrefixedID(item)
+		// Use the utility function to get the canonical ID
+		itemID, err := content.GetItemID(item)
 		if err != nil {
-			log.Printf("Warning: Skipping item for summary: %v", err)
+			log.Printf("Warning: Skipping item for summary: could not get ID for %s: %v", item.SourcePath, err)
 			continue
 		}
 
@@ -103,7 +86,7 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 		}
 
 		summaries = append(summaries, content.ItemSummary{
-			ID:          prefixedID, // Use the prefixed ID
+			ID:          itemID,
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior
 			Tags:        tags,

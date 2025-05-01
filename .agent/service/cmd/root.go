@@ -23,6 +23,9 @@ and a command-line interface for interacting with the same definitions.
 Configuration is loaded using the --config flag, the AGENTT_CONFIG environment
 variable, or by searching default paths (./config.yaml, ./.agent/service/config.yaml, etc.)
 relative to the current directory, in that order of precedence.`,
+		// Silence errors and usage so main.go can handle them and exit non-zero.
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 )
 

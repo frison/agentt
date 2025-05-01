@@ -196,6 +196,5 @@ func TestParseFile_NotFound(t *testing.T) {
 }
 
 // TODO: Add tests for Watcher InitialScan and event handling
-func TestWatcher(t *testing.T) {
-	t.Skip("Test not implemented")
-}
+// These would require more setup (creating temp dirs/files, triggering events)
+// and potentially mocking the store or filesystem interactions.

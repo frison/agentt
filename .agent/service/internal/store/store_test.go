@@ -3,6 +3,7 @@ package store_test
 import (
 	"agentt/internal/content"
 	"agentt/internal/store"
+	"errors"
 	"reflect"
 	"sort"
 	"testing"
@@ -358,3 +359,37 @@ func TestQuery_FilterByTag(t *testing.T) {
 }
 
 // TODO: Add TestQuery_FilterCombined
+// This test would involve querying based on multiple criteria (e.g., type AND tag)
+// to ensure the filtering logic combines conditions correctly.
+
+func TestGuidanceStore_AddOrUpdate_DuplicateID(t *testing.T) {
+	s := store.NewGuidanceStore()
+	// Item 1: uses filename fallback for ID "duplicate-id"
+	item1 := createItem("/path/to/duplicate-id.bhv", "behavior", true, map[string]interface{}{}) // NEW: No title, should use filename
+
+	// Item 2: uses frontmatter 'id' for ID "duplicate-id"
+	item2 := createItem("/path/other/different-name.rcp", "recipe", true, map[string]interface{}{"id": "duplicate-id"})
+
+	// Add first item - should succeed
+	s.AddOrUpdate(item1)
+	if len(s.GetAll()) != 1 {
+		t.Fatal("Store should have 1 item after adding item1")
+	}
+
+	// Add second item with the same ID but different path - should return ErrDuplicateID
+	err2 := s.AddOrUpdate(item2)
+	if err2 == nil {
+		t.Error("AddOrUpdate should have returned an error for duplicate ID, but returned nil")
+	} else if !errors.Is(err2, store.ErrDuplicateID) {
+		t.Errorf("AddOrUpdate returned wrong error type for duplicate ID. Got: %v, Want wrapped: %v", err2, store.ErrDuplicateID)
+	}
+
+	// Check that the store state wasn't corrupted (still has only the first item)
+	if len(s.GetAll()) != 1 {
+		t.Errorf("Store should still have 1 item after duplicate add attempt, but has %d", len(s.GetAll()))
+	}
+	itemCheck, found := s.GetByID("duplicate-id")
+	if !found || itemCheck.SourcePath != item1.SourcePath {
+		t.Errorf("Item with ID 'duplicate-id' is not item1 after duplicate attempt")
+	}
+}

@@ -26,6 +26,7 @@ Establish consistent, readable, and maintainable code standards across all proje
 - Follow language-specific idioms and best practices
 - Remove all debugging code, console logs, and commented-out code
 - Use semantic variable and function names that clearly indicate purpose
+- **Modification Hygiene:** After refactoring, fixing bugs, or adding features, perform a thorough cleanup pass. Remove *all* temporary artifacts (e.g., commented-out "dead" code), eliminate unused variables and imports, ensure tests pass, and verify no build errors or linter warnings remain (within reason). Aim to leave the code cleaner than you found it.
 - Don't repeat yourself
 - Use the Single Responsibility Principle
 - Use the Open-Closed Principle

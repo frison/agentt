@@ -1,0 +1,35 @@
+---
+title: "AI Data Transfer Optimization Practice"
+description: "Design data structures and interactions for AI consumption to minimize data transfer and optimize processing."
+priority: 404
+tags:
+  - scope:ai-interaction
+  - data:optimization
+  - performance:tokens
+  - performance:round-trips
+  - format:structured
+  - design:api
+  - design:cli
+tier: should
+---
+
+# AI Data Transfer Optimization Practice
+
+## Core Statement
+
+Design interactions providing data to AI agents to minimize irrelevant or excessive data transfer, optimizing for token limits, cost, and processing time.
+
+## Rationale
+
+LLMs have input constraints and processing costs. Sending only necessary, structured information reduces cost, improves response time, avoids context limits, and increases focus.
+
+## Applications
+
+- **Selective Retrieval:** Enable requesting data subsets via flags/parameters.
+- **Filtering:** Implement effective filtering (e.g., by tags) for relevance.
+- **Structure:** Prefer structured formats (JSON) over unstructured text.
+- **Conciseness:** Avoid verbose text intended for AI consumption.
+- **Summarization:** Provide summaries; allow requesting details on demand.
+- **Minimize Redundancy:** Avoid repeating information within a response.
+- **Balance Round Trips:** Weigh response size vs. number of interactions.
+- **Design for Purpose:** Tailor data structure/content to the AI task.

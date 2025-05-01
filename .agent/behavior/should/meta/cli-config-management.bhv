@@ -1,0 +1,39 @@
+---
+title: "CLI Configuration Management Practice"
+description: "Standardize configuration loading for CLI tools using a defined precedence order."
+priority: 402
+tags:
+  - scope:cli
+  - config:loading
+  - config:precedence
+  - standard:convention
+  - usability:predictable
+tier: should
+---
+
+# CLI Configuration Management Practice
+
+## Core Statement
+
+CLI tool configuration must follow a standard precedence order, distinguishing it from static data or service configuration.
+
+## Rationale
+
+Predictable loading simplifies CLI use, debugging, and deployment. Scoping this to CLIs avoids confusion with other configuration types (e.g., service discovery, SaaS settings).
+
+## Scope
+
+Applies only to runtime configuration of self-contained CLI tools.
+
+## Applications
+
+- **Implement Precedence Order (Highest First):**
+    1.  Command-line flags (e.g., `--config ...`).
+    2.  Environment variables (e.g., `TOOL_CONFIG=...`).
+    3.  User config files (e.g., `~/.config/tool/config.yaml`).
+    4.  Project config files (e.g., `.tool.yaml`).
+    5.  Internal defaults.
+- **Document:** Clearly document options, flags, env vars, precedence, and default paths.
+- **Distinguish:** Use flags/env/files for user/environment settings; use code constants for static application data.
+- **Validate:** Validate loaded configuration early; provide clear errors.
+- **Format:** Use standard, readable file formats (YAML, TOML) with logical structure.

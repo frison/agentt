@@ -157,9 +157,9 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 	summaries := make([]content.ItemSummary, 0, len(allValidItems))
 	for _, item := range allValidItems {
 		// Use the new utility function to get the prefixed ID
-		prefixedID, err := content.GetPrefixedID(item)
+		itemID, err := content.GetItemID(item)
 		if err != nil {
-			log.Printf("Warning: Skipping item for summary: %v", err)
+			log.Printf("Warning: Skipping item for summary: could not get ID for %s: %v", item.SourcePath, err)
 			continue
 		}
 
@@ -179,7 +179,7 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 		}
 
 		summaries = append(summaries, content.ItemSummary{
-			ID:          prefixedID,
+			ID:          itemID,
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior or not inferred
 			Tags:        tags,
@@ -219,35 +219,47 @@ func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch all valid items to search through (could optimize if store supports direct ID lookup)
-	// allValidItems := s.store.Query(map[string]interface{}{}) // Get all valid items - Already fetched above, remove redundant call?
-	// Let's reuse the existing allValidItems fetched for HandleSummary for efficiency, assuming HandleDetails might be called closely. Or fetch fresh? Fetch fresh for isolation.
-	allValidItemsForDetails := s.store.Query(map[string]interface{}{}) // Fetch fresh for details
-	foundItems := make([]*content.Item, 0)
-	requestedIDsSet := make(map[string]bool)
+	// Fetch items directly by ID using the optimized store method
+	foundItems := make([]*content.Item, 0, len(req.IDs))
 	for _, id := range req.IDs {
-		requestedIDsSet[id] = true
-	}
-
-	for _, item := range allValidItemsForDetails { // Use the fresh list
-		// Use the new utility function to get the prefixed ID for comparison
-		prefixedItemID, err := content.GetPrefixedID(item)
-		if err != nil {
-			// Cannot generate an ID for this item, so cannot match it.
-			continue
-		}
-
-		// Check if this generated prefixed ID was requested
-		if _, found := requestedIDsSet[prefixedItemID]; found { // Check map lookup directly
-			foundItems = append(foundItems, item)
-			delete(requestedIDsSet, prefixedItemID) // Mark the prefixed ID as found
+		if item, found := s.store.GetByID(id); found {
+			// Optionally double-check IsValid here, although GetByID fetches directly
+			// if item.IsValid { // Query already filters by IsValid, GetByID does not implicitly
+			// Let's check IsValid status before adding to results, as GetByID bypasses Query filters
+			if item.IsValid {
+				foundItems = append(foundItems, item)
+			} else {
+				log.Printf("Warning: Requested ID '%s' found but corresponds to an invalid item ('%s'). Skipping.", id, item.SourcePath)
+			}
+		} else {
+			// Log IDs that were requested but not found (optional)
+			log.Printf("Warning: Requested ID '%s' not found in store.", id)
 		}
 	}
 
-	// Log IDs that were requested but not found (optional)
-	// for id := range requestedIDsSet {
-	// 	log.Printf("Warning: Requested ID '%s' not found in store.", id)
+	// --- Old Iteration Logic (Removed) ---
+	// allValidItemsForDetails := s.store.Query(map[string]interface{}{}) // Fetch fresh for details
+	// foundItems := make([]*content.Item, 0)
+	// requestedIDsSet := make(map[string]bool)
+	// for _, id := range req.IDs {
+	// 	requestedIDsSet[id] = true
 	// }
+	//
+	// for _, item := range allValidItemsForDetails { // Use the fresh list
+	// 	itemDetailID, err := content.GetItemID(item) // Use the canonical ID function
+	// 	if err != nil {
+	// 		// Cannot generate an ID for this item, so cannot match it.
+	// 		log.Printf("Warning: Skipping item for details: could not get ID for %s: %v", item.SourcePath, err)
+	// 		continue
+	// 	}
+	//
+	// 	// Check if this generated canonical ID was requested
+	// 	if _, found := requestedIDsSet[itemDetailID]; found { // Check map lookup directly
+	// 		foundItems = append(foundItems, item)
+	// 		delete(requestedIDsSet, itemDetailID) // Mark the canonical ID as found
+	// 	}
+	// }
+	// --- End Old Logic ---
 
 	s.writeJSONResponse(w, http.StatusOK, foundItems)
 }

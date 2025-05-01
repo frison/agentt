@@ -27,9 +27,9 @@ var (
 	serverStartCmd = &cobra.Command{
 		Use:   "start",
 		Short: "Start the Agent Guidance HTTP server",
-		Long:  `Starts the Agent Guidance HTTP server and the file watcher.
+		Long: `Starts the Agent Guidance HTTP server and the file watcher.
 Uses the configuration specified via --config flag, AGENTT_CONFIG env var, or default search paths.`,
-		Run:   startServer,
+		Run: startServer,
 	}
 )
 

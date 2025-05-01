@@ -31,9 +31,9 @@ func setupTestServer() *server.Server {
 	// However, the tests currently EXPECT prefixed IDs in the output.
 	// The Query function relies on FrontMatter fields for filtering.
 	// Let's adjust the items to have the ID/Title fields that the prefixing logic uses.
-	itemB1 := &content.Item{SourcePath: "/test/b1.bhv", EntityType: "behavior", IsValid: true, Tier: "must", FrontMatter: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}} // Use title as base ID for behavior
+	itemB1 := &content.Item{SourcePath: "/test/b1.bhv", EntityType: "behavior", IsValid: true, Tier: "must", FrontMatter: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}}  // Use title as base ID for behavior
 	itemB2 := &content.Item{SourcePath: "/test/b2.bhv", EntityType: "behavior", IsValid: true, Tier: "should", FrontMatter: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}} // Use title as base ID for behavior
-	itemR1 := &content.Item{SourcePath: "/test/r1.rcp", EntityType: "recipe", IsValid: true, FrontMatter: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}}     // Use id as base ID for recipe
+	itemR1 := &content.Item{SourcePath: "/test/r1.rcp", EntityType: "recipe", IsValid: true, FrontMatter: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}}              // Use id as base ID for recipe
 	itemInvalid := &content.Item{SourcePath: "/test/invalid.bhv", EntityType: "behavior", IsValid: false, FrontMatter: map[string]interface{}{"title": "Invalid"}}
 	mockStore.AddOrUpdate(itemB1)
 	mockStore.AddOrUpdate(itemB2)
@@ -198,7 +198,7 @@ func TestHandlers(t *testing.T) {
 		// Basic check for one item
 		foundR1 := false
 		for _, s := range summaries {
-			if s.ID == "rcp-r1" && s.Type == "recipe" {
+			if s.ID == "r1" && s.Type == "recipe" {
 				foundR1 = true
 				if len(s.Tags) != 2 || s.Tags[0] != "core" || s.Tags[1] != "git" {
 					t.Errorf("Recipe r1 summary has incorrect tags: %v", s.Tags)
@@ -213,8 +213,8 @@ func TestHandlers(t *testing.T) {
 
 	// --- Test /details ---
 	t.Run("DetailsEndpoint_Found", func(t *testing.T) {
-		// Request details for b1 (using title as ID) and r1
-		requestBody := `{"ids": ["bhv-B1", "rcp-r1"]}`
+		// Request details for b1 (using title as ID 'B1') and r1 (using id 'r1')
+		requestBody := `{"ids": ["B1", "r1"]}`
 		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
 		if err != nil {
 			t.Fatalf("POST /details failed: %v", err)

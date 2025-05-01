@@ -2,8 +2,11 @@ package discovery
 
 import (
 	"agentt/internal/config"
+	// "agentt/internal/content" // Unused
 	"agentt/internal/store"
+	// "bytes" // Unused
 	"context"
+	"errors" // Re-add import
 	"fmt"
 	"io/fs"
 	"log"
@@ -92,7 +95,18 @@ func (w *Watcher) processFile(filePath string, entityDef config.EntityTypeDefini
 	if !item.IsValid {
 		log.Printf("Warning: Invalid content detected in %s: %v", item.SourcePath, item.ValidationErrors)
 	}
-	w.store.AddOrUpdate(item)
+	if err := w.store.AddOrUpdate(item); err != nil {
+		// Handle potential duplicate ID error - Treat as FATAL during discovery
+		if errors.Is(err, store.ErrDuplicateID) {
+			log.Fatalf("FATAL: Configuration error: %v", err) // Make it fatal here
+		} else {
+			// Log other unexpected errors from AddOrUpdate
+			log.Printf("ERROR: Unexpected error adding/updating item %s: %v", item.SourcePath, err)
+		}
+		// Don't log success message or watch dir if there was an error
+		return
+	}
+
 	log.Printf("Processed: %s (Type: %s, Valid: %t)", item.SourcePath, item.EntityType, item.IsValid)
 
 	// Ensure directory is watched
@@ -192,7 +206,7 @@ func (w *Watcher) Start(ctx context.Context) {
 						}(absPath)
 					}
 					// If a dir is removed, fsnotify might remove the watch automatically, but cleanup watchedDirs?
-					// TODO: Handle directory removal from watcher more robustly if needed.
+					// Directory might have been removed while processing, ignore error
 				}
 
 			case err, ok := <-w.watcher.Errors:

@@ -1,0 +1,35 @@
+---
+title: "Guidance Tagging Conventions Practice"
+description: "Defines standard key:value format and semantics for guidance tags to ensure effective filtering."
+priority: 405
+tags:
+  - scope:guidance
+  - metadata:tags
+  - format:key-value
+  - standard:convention
+  - filtering:effectiveness
+  - discovery:reliable
+tier: should
+---
+
+# Guidance Tagging Conventions Practice
+
+## Core Statement
+
+Guidance entity tags must use a consistent `key:value` format and semantic approach for reliable discovery and filtering.
+
+## Rationale
+
+Consistent tagging enables effective filtering mechanisms. Clear conventions aid human and AI understanding and retrieval of relevant guidance.
+
+## Applications
+
+- **Format:** Use `key:value` structure (e.g., `domain:git`, `status:draft`).
+- **Syntax:** Keys/values are lowercase alphanumeric + hyphens (`-`). Single colon (`:`) separator. No spaces.
+- **Matching:** Filtering is case-insensitive.
+- **Semantics:**
+    *   Use predefined keys (`domain`, `scope`, `status`, etc.) where possible.
+    *   Values must be concise and descriptive for the key.
+    *   Choose clear, relevant, and consistent key:value pairs.
+- **Usage:** List tags as array under `tags:` key in YAML frontmatter.
+- **Review:** Periodically review tag usage for consistency and potential improvements.

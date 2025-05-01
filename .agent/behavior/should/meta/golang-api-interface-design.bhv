@@ -1,0 +1,32 @@
+---
+title: "Internal Interface Design Practice"
+description: "Design internal Go interfaces for clarity, testability, and refactorability over premature stability."
+priority: 401
+tags:
+  - api:internal
+  - interface:go
+  - design:refactor-friendly
+  - testing:unit
+  - stability:low-priority # Clarifies stance
+tier: should
+---
+
+# Internal Interface Design Practice
+
+## Core Statement
+
+Design internal Go interfaces for current clarity, testability, and ease of refactoring, not premature stability.
+
+## Rationale
+
+Internal needs evolve. Prioritizing stability hinders refactoring and adaptation. Clear, testable, changeable interfaces support iteration and velocity, especially when consumers (like AI) can adapt easily.
+
+## Applications
+
+- Define interfaces from *current* usage; keep minimal.
+- Prefer small, focused interfaces.
+- Design explicitly for testability (mocking/stubbing).
+- Refactor interfaces and implementations together when designs improve.
+- Use clear, intent-revealing names for interfaces and methods.
+- Minimize surface area; expose only necessary methods.
+- Use interfaces to decouple modules/packages.
