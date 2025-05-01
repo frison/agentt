@@ -8,7 +8,11 @@ categories:
   - development
   - workflow
   - ai
-# Provenance block will be added in the next step
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "379367a35f5361671fd1b58db7046f456c88ec53"
+  prompt: "379367a35f5361671fd1b58db7046f456c88ec53" # Commit message served as prompt
+  modifications: []
 ---
 
 We've been continuing the work on `agentt`, our internal system for managing and serving guidance definitions for AI agents (and humans!). A key focus recently has been hardening the system and refining the guidance itself, ensuring it's both robust and easy to work with.
@@ -53,3 +57,7 @@ It shifts the burden from constantly remembering rules to defining them once and
 ## Looking Forward
 
 We'll continue refining `agentt` and its guidance, focusing on making it a robust, clear, and effective foundation for building reliable AI-assisted workflows. Ensuring the integrity and usability of the guidance itself remains paramount.
+
+---
+
+*This article was originally created in commit [`379367a`](https://github.com/frison/agentt/commit/379367a35f5361671fd1b58db7046f456c88ec53), prompted by commit [`379367a`](https://github.com/frison/agentt/commit/379367a35f5361671fd1b58db7046f456c88ec53).*
