@@ -10,7 +10,11 @@ categories:
   - ai
   - architecture
   - context
-# Provenance block will be added in the next step
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "5c677c700687f79be4b8ac3fcabd65ee6a0f0eb8"
+  prompt: "5c677c700687f79be4b8ac3fcabd65ee6a0f0eb8" # Commit message served as prompt
+  modifications: []
 ---
 
 When we task an AI agent with modifying a complex software project, we're essentially asking it to perform delicate surgery in an unfamiliar operating room, or perhaps more aptly, navigate a bustling, unfamiliar city. Just as a driver needs to understand the map, the one-way streets, and the local traffic patterns *before* pulling into traffic, an agent **MUST** understand the context before making changes.
@@ -48,3 +52,7 @@ This focus on context and codified guidance might seem like overhead, but it's t
 Investing in building and maintaining these reliable maps, and enforcing the MUST requirement for agents to consult them, is crucial for enabling safe, effective, and ultimately faster AI-assisted development.
 
 We'll keep refining these maps and ensuring our agents know: when in Rome, understand the map before you move.
+
+---
+
+*This article was originally created in commit [`5c677c7`](https://github.com/frison/agentt/commit/5c677c700687f79be4b8ac3fcabd65ee6a0f0eb8), prompted by commit [`5c677c7`](https://github.com/frison/agentt/commit/5c677c700687f79be4b8ac3fcabd65ee6a0f0eb8).*
