@@ -9,7 +9,11 @@ categories:
   - workflow
   - ai
   - architecture
-# Provenance block will be added in the next step
+provenance:
+  repo: "https://github.com/frison/agentt"
+  commit: "a63ce147773fbc73950f14a3ffa1eb5d4c73a861"
+  prompt: "a63ce147773fbc73950f14a3ffa1eb5d4c73a861" # Commit message served as prompt
+  modifications: []
 ---
 
 When deploying AI agents into complex software development environments, we essentially ask them to navigate an unfamiliar city. To operate effectively and safely, they need reliable maps. These maps aren't just nice-to-haves; they are fundamental requirements. Our `agentt` system is our way of building and maintaining these crucial maps – the codified guidance defining the local customs, rules, and expected behaviors.
@@ -42,3 +46,7 @@ These map improvements often start with observing the territory. A human best pr
 Investing in clear, unambiguous, and well-maintained guidance maps (`agentt`'s behaviors and recipes) is an investment in acceleration. It allows agents (and humans) to navigate the development landscape faster, more safely, and more consistently by providing a trustworthy source of truth for *how* things should be done here. Ambiguous or incorrect maps lead to wasted journeys and potential accidents; reliable maps enable confident and efficient progress.
 
 We'll keep refining these maps, ensuring they provide the clearest possible guidance for navigating our development Rome.
+
+---
+
+*This article was originally created in commit [`a63ce14`](https://github.com/frison/agentt/commit/a63ce147773fbc73950f14a3ffa1eb5d4c73a861), prompted by commit [`a63ce14`](https://github.com/frison/agentt/commit/a63ce147773fbc73950f14a3ffa1eb5d4c73a861).*
