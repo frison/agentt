@@ -4,7 +4,7 @@ package cmd
 // "agentt/internal/discovery" // Unused after refactor
 // "agentt/internal/store" // Unused after refactor
 import (
-	"agentt/internal/content"
+	// "agentt/internal/guidance/backend" // REMOVED - Unused
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -39,25 +39,23 @@ Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default sea
 			return err // Errors already formatted by helper
 		}
 
-		// --- Retrieve Details using GetByID ---
-		results := make([]*content.Item, 0, len(requestedIDs))
-		for _, requestedID := range requestedIDs {
-			item, found := setupRes.Store.GetByID(requestedID)
-			if !found {
-				slog.Warn("ID not found in store", "id", requestedID)
-				continue // Skip IDs not found
-			}
-			// Optionally: Check if the found item is valid if needed, although GetByID fetches directly.
-			// if !item.IsValid { ... }
-			results = append(results, item)
+		// --- Retrieve Details from Backend ---
+		// Use setupRes.Backend instead of setupRes.Store
+		// Call GetDetails once with all requested IDs
+		entities, err := setupRes.Backend.GetDetails(requestedIDs)
+		if err != nil {
+			slog.Error("Failed to retrieve details from backend", "error", err)
+			return fmt.Errorf("failed to retrieve details: %w", err)
 		}
-		// Use slog.Info
-		slog.Info("Retrieved details for requested IDs", "found_count", len(results), "requested_count", len(requestedIDs))
+		// Update log message
+		slog.Info("Retrieved details from backend", "found_count", len(entities), "requested_count", len(requestedIDs))
 
 		// --- Marshal to JSON ---
-		// Output the full item details
-		outputJSON, err := json.MarshalIndent(results, "", "  ")
+		// Use the entities slice directly returned by the backend
+		// The backend.Entity struct matches the desired output format
+		outputJSON, err := json.MarshalIndent(entities, "", "  ")
 		if err != nil {
+			slog.Error("Failed to marshal details data to JSON", "error", err)
 			return fmt.Errorf("failed to marshal details to JSON: %w", err)
 		}
 
@@ -74,6 +72,6 @@ func init() {
 
 	// Define the repeatable --id flag
 	detailsCmd.Flags().StringSliceVar(&detailsIDs, "id", []string{}, "Entity ID to get details for (repeatable)")
-	// REMOVED config flag definition - Now persistent on root
+	// Config flag is persistent on root
 	// detailsCmd.Flags().StringVarP(&detailsConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
 }

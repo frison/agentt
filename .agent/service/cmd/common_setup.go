@@ -2,26 +2,25 @@ package cmd
 
 import (
 	"agentt/internal/config"
-	"agentt/internal/discovery"
-	"agentt/internal/store"
+	"agentt/internal/guidance/backend"
+	"agentt/internal/guidance/backend/localfs"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 )
 
 // setupResult holds the results of the common setup process.
 // Using a struct allows returning multiple values cleanly.
 type setupResult struct {
 	Cfg        *config.ServiceConfig
-	Store      *store.GuidanceStore
+	Backend    backend.GuidanceBackend
 	ConfigPath string
 }
 
 // setupDiscovery performs the common steps needed by CLI commands:
 // 1. Load configuration.
-// 2. Initialize the guidance store.
-// 3. Create the discovery watcher.
-// 4. Perform the initial scan to populate the store.
-// It returns the loaded config, the populated store, the path of the loaded config, or an error.
+// 2. Initialize the appropriate guidance backend based on config.
+// It returns the loaded config, the initialized backend, the config path, or an error.
 func setupDiscovery(configPath string) (*setupResult, error) {
 	// --- Configuration ---
 	cfg, loadedPath, err := config.FindAndLoadConfig(configPath)
@@ -31,30 +30,53 @@ func setupDiscovery(configPath string) (*setupResult, error) {
 	// Use slog.Info (level check is handled by the default logger config)
 	slog.Info("Using configuration file", "path", loadedPath)
 
-	// --- Setup Dependencies & Load ---
-	guidanceStore := store.NewGuidanceStore()
-	watcher, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
-	if err != nil {
-		// No need to close watcher here as it likely wasn't fully created
-		return nil, fmt.Errorf("failed to create discovery watcher: %w", err)
-	}
-	// We are not running the watcher loop in CLI mode, so no need to defer Close()
+	// --- Backend Initialization ---
+	var selectedBackend backend.GuidanceBackend
+	var backendInitErr error
 
-	// --- Load Entities via Initial Scan ---
-	// Use slog.Info
-	slog.Info("Performing initial scan of guidance files...")
+	backendType := cfg.Backend.Type
+	slog.Info("Attempting to initialize guidance backend", "type", backendType)
 
-	err = watcher.InitialScan() // Populates the guidanceStore
-	if err != nil {
-		slog.Warn("During initial scan", "error", err) // Use slog.Warn
-		return nil, fmt.Errorf("error during initial scan of guidance files: %w", err)
+	switch backendType {
+	case "localfs":
+		localBackend := localfs.NewLocalFilesystemBackend()
+
+		// Prepare backend-specific config map for Initialize
+		// Pass necessary info: RootDir (relative to config), EntityTypeDefs, etc.
+		backendConfigMap := make(map[string]interface{})
+		if cfg.Backend.Settings != nil {
+			backendConfigMap = cfg.Backend.Settings // Start with settings from config.yaml
+		}
+		// Add required info derived from main config
+		var absoluteRootDir string
+		if filepath.IsAbs(cfg.Backend.RootDir) {
+			absoluteRootDir = cfg.Backend.RootDir
+			slog.Debug("Using absolute rootDir from config", "path", absoluteRootDir)
+		} else {
+			absoluteRootDir = filepath.Join(cfg.LoadedFromDir, cfg.Backend.RootDir)
+			slog.Debug("Resolved relative rootDir", "configDir", cfg.LoadedFromDir, "relativeRootDir", cfg.Backend.RootDir, "absolutePath", absoluteRootDir)
+		}
+		backendConfigMap["rootDir"] = absoluteRootDir     // Use the calculated absolute path
+		backendConfigMap["entityTypes"] = cfg.EntityTypes // Pass the definitions
+		// Add other potential global settings if needed
+		// backendConfigMap["requireExplicitID"] = true // Example
+
+		backendInitErr = localBackend.Initialize(backendConfigMap)
+		selectedBackend = localBackend
+
+	default:
+		backendInitErr = fmt.Errorf("unsupported backend type specified in configuration: '%s'", backendType)
 	}
-	// Use slog.Info
-	slog.Info("Initial scan complete.")
+
+	if backendInitErr != nil {
+		slog.Error("Failed to initialize guidance backend", "type", backendType, "error", backendInitErr)
+		return nil, fmt.Errorf("failed to initialize guidance backend (type: %s): %w", backendType, backendInitErr)
+	}
+	slog.Info("Guidance backend initialized successfully", "type", backendType)
 
 	return &setupResult{
 		Cfg:        cfg,
-		Store:      guidanceStore,
+		Backend:    selectedBackend,
 		ConfigPath: loadedPath,
 	}, nil
 }

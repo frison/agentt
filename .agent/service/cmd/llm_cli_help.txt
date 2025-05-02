@@ -12,7 +12,7 @@ without needing the HTTP server.
     ```
     This will output a JSON array containing summaries for all available
     behaviors and recipes. Each summary includes:
-    - id: Unique identifier (e.g., "bhv-safety-first", "rcp-git-commit-creation")
+    - id: Unique identifier (e.g., "safety-first", "git-commit-creation")
     - type: "behavior" or "recipe"
     - tier: "must" or "should" (for behaviors)
     - tags: Associated tags

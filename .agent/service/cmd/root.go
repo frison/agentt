@@ -33,7 +33,6 @@ relative to the current directory, in that order of precedence.`,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Configure logging level based on -q and -v flags
-			// configureLogging(quiet, verbosity) // REMOVE old configuration call
 
 			// --- Configure slog ---
 			var logLevel slog.Level
