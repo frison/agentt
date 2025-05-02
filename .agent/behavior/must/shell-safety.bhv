@@ -1,6 +1,7 @@
 ---
 title: "Non-Interactive Command Safety"
-priority: 2
+id: shell-safety
+priority: 10
 description: "Shell commands in automated environments must be non-interactive and have clear directory context."
 tags: ["shell", "automation", "safety", "system-interaction", "ai"]
 ---

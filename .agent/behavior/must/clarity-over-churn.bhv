@@ -1,6 +1,7 @@
 ---
 title: "Clarity Over Churn (Agent Framework)"
-priority: 1
+id: clarity-over-churn
+priority: 200
 description: "Ensures the Agent framework prioritizes clarity over avoiding rework."
 tags: ["meta", "clarity", "usability", "evolution", "agent-framework", "core"]
 ---

@@ -7,7 +7,7 @@ import (
 	// "agentt/internal/store" // Unused after refactor
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,8 @@ Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default sea
 
 		// --- Retrieve All Items from Store ---
 		allItems := setupRes.Store.GetAll()
-		log.Printf("Retrieved %d items from store", len(allItems))
+		// Use slog.Info
+		slog.Info("Retrieved items from store", "count", len(allItems))
 
 		// --- Prepare Summary Data ---
 		summaries := prepareSummary(allItems)
@@ -59,6 +60,8 @@ func init() {
 }
 
 // prepareSummary converts a slice of full content Items into ItemSummary structs.
+// It requires items to have an explicit, non-empty "id" field in their frontmatter.
+// Items without a valid "id" are skipped, and a warning is logged.
 func prepareSummary(items []*content.Item) []content.ItemSummary {
 	summaries := make([]content.ItemSummary, 0, len(items))
 	for _, item := range items {
@@ -66,12 +69,20 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 			continue // Skip invalid items for summary
 		}
 
-		// Use the utility function to get the canonical ID
-		itemID, err := content.GetItemID(item)
-		if err != nil {
-			log.Printf("Warning: Skipping item for summary: could not get ID for %s: %v", item.SourcePath, err)
-			continue
+		// --- CHANGE: Require explicit 'id' in frontmatter ---
+		var itemID string
+		if item.FrontMatter != nil {
+			if idVal, ok := item.FrontMatter["id"].(string); ok && idVal != "" {
+				itemID = idVal // Use the explicit ID
+			} else {
+				slog.Warn("Skipping item for summary: missing or invalid 'id' field", "path", item.SourcePath) // Use slog.Warn
+				continue                                                                                       // Skip item if 'id' is missing or not a non-empty string
+			}
+		} else {
+			slog.Warn("Skipping item for summary: missing frontmatter (required for 'id' field)", "path", item.SourcePath) // Use slog.Warn
+			continue                                                                                                       // Skip item if frontmatter is missing
 		}
+		// --- END CHANGE ---
 
 		// Description and Tags logic remains the same
 		description := getStringFromFrontMatter(item.FrontMatter, "description", "")
@@ -86,7 +97,7 @@ func prepareSummary(items []*content.Item) []content.ItemSummary {
 		}
 
 		summaries = append(summaries, content.ItemSummary{
-			ID:          itemID,
+			ID:          itemID, // Use the validated explicit ID
 			Type:        item.EntityType,
 			Tier:        item.Tier, // Will be empty if not a behavior
 			Tags:        tags,

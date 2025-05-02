@@ -1,6 +1,7 @@
 ---
 title: "Shell Command Structure Practice"
-priority: 105
+id: shell-commands
+priority: 151
 description: "Rules for safe, predictable shell command execution in automated environments."
 tags: ["shell", "automation", "commands", "safety", "scripting"]
 ---

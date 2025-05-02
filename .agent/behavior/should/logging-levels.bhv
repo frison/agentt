@@ -1,0 +1,35 @@
+---
+id: logging-levels
+title: Standardized CLI/App Logging Levels
+priority: 500
+tags: [logging, cli, application, verbosity, standard, behavior, convention, slog]
+description: Defines standard logging levels and corresponding CLI flags for consistent output verbosity in command-line tools and applications using slog.
+---
+
+# Behavior: Standardized Logging Levels for CLIs and Applications (using slog)
+
+## Intent
+Ensure consistent and predictable logging output across command-line tools and applications based on standard verbosity flags, leveraging the standard `log/slog` package.
+
+## Rules
+
+1.  **Log Levels:** Utilize the standard `slog.Level` constants:
+    *   `slog.LevelError`: Critical errors preventing command completion or causing significant malfunction.
+    *   `slog.LevelWarn`: Potential issues, unexpected conditions, or skipped items (e.g., file not found, default value used). Use `slog.Warn()`.
+    *   `slog.LevelInfo`: High-level informational messages about major operation progress (e.g., configuration loaded, operation started/completed). Use `slog.Info()`.
+    *   `slog.LevelDebug`: Fine-grained details useful for developers diagnosing internal operations. Use `slog.Debug()`.
+
+2.  **Flags/Configuration and Default Behavior (CLI Example):**
+    *   **Default (no flags):** Configure `slog` handler with level `slog.LevelWarn`. Only `WARN` and `ERROR` messages are displayed.
+    *   `-q` or `--quiet` (or similar): Configure `slog` handler with level `slog.LevelError`.
+    *   `-v` or `--verbose` (or similar): Configure `slog` handler with level `slog.LevelInfo`.
+    *   `-vv` (or more `v`'s, or `--debug`): Configure `slog` handler with level `slog.LevelDebug`.
+
+3.  **Implementation:**
+    *   Configure and set the default `slog` logger early in the application/CLI startup (e.g., in `main.go` or a `PersistentPreRunE` in Cobra).
+    *   Use the appropriate level functions (`slog.Debug()`, `slog.Info()`, `slog.Warn()`, `slog.Error()`) on the default logger.
+    *   For structured data, provide key-value pairs (e.g., `slog.Info("Processed file", "path", filePath, "count", itemCount)`).
+    *   For errors that should halt command execution, return an `error` from the command's `RunE` function. Cobra/main can handle logging this final error.
+    *   Use a human-readable handler (e.g., `slog.TextHandler`) writing to `stderr` for standard CLI tools. Consider `slog.JSONHandler` if the primary audience is machine consumption.
+
+4.  **Consistency:** Apply these levels and mechanisms consistently within any given tool or application.

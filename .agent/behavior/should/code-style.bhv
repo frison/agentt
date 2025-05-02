@@ -1,6 +1,7 @@
 ---
 title: "Code Style Requirements Practice"
-priority: 103
+id: code-style
+priority: 400
 description: "Establishes consistent, readable, and maintainable code standards."
 tags: ["code", "style", "formatting", "convention", "readability", "maintainability"]
 ---

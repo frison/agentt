@@ -7,7 +7,7 @@ import (
 	"agentt/internal/content"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 )
@@ -23,9 +23,15 @@ var detailsCmd = &cobra.Command{
 	Short: "Outputs the full JSON details for specific guidance entities by ID.",
 	Long: `Outputs the full JSON details for one or more specific guidance entities, identified by their unique IDs.
 Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
-	Args: cobra.MinimumNArgs(1), // Require at least one ID
+	// Args: cobra.MinimumNArgs(1), // REMOVE: We are using flags, not positional args for IDs
 	RunE: func(cmd *cobra.Command, args []string) error {
-		requestedIDs := args // IDs are passed as arguments
+		// requestedIDs := args // OLD: IDs were passed as arguments
+		requestedIDs := detailsIDs // NEW: Use the slice populated by --id flags
+
+		// --- Add check for empty IDs from flags ---
+		if len(requestedIDs) == 0 {
+			return fmt.Errorf("at least one --id flag must be provided")
+		}
 
 		// --- Use common setup ---
 		setupRes, err := setupDiscovery(rootConfigPath)
@@ -38,14 +44,15 @@ Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default sea
 		for _, requestedID := range requestedIDs {
 			item, found := setupRes.Store.GetByID(requestedID)
 			if !found {
-				log.Printf("Warning: ID '%s' not found in store.", requestedID)
+				slog.Warn("ID not found in store", "id", requestedID)
 				continue // Skip IDs not found
 			}
 			// Optionally: Check if the found item is valid if needed, although GetByID fetches directly.
 			// if !item.IsValid { ... }
 			results = append(results, item)
 		}
-		log.Printf("Retrieved details for %d/%d requested IDs", len(results), len(requestedIDs))
+		// Use slog.Info
+		slog.Info("Retrieved details for requested IDs", "found_count", len(results), "requested_count", len(requestedIDs))
 
 		// --- Marshal to JSON ---
 		// Output the full item details

@@ -1,6 +1,7 @@
 ---
 title: "Safe Shell Command Execution Practice"
-priority: 503
+id: shell-command-execution
+priority: 150
 description: "Patterns for executing shell commands safely in scripts and automation."
 tags: ["shell", "scripting", "automation", "safety", "execution", "commands"]
 ---

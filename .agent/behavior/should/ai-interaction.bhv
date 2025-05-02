@@ -1,6 +1,7 @@
 ---
 title: "AI Interaction Guidelines Practice"
-priority: 101
+id: ai-interaction
+priority: 1000 # Lower priority, applies broadly
 description: "Establishes ethical, responsible, and effective patterns for AI interaction."
 tags: ["ai", "interaction", "safety", "ethics", "prompting", "llm"]
 ---

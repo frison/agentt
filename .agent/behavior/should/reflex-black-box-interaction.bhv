@@ -1,5 +1,6 @@
 ---
 title: "Reflex Interaction: Black-Box Principle"
+id: reflex-black-box-interaction
 priority: 510 # Mid-range priority, adjust as needed
 description: "Guidance on interacting with reflexes as black boxes via their defined interfaces, without inspecting internals."
 tags: ["reflex", "interface", "interaction", "docker", "abstraction", "bin"]

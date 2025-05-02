@@ -1,6 +1,7 @@
 ---
 title: "Git Commit Message Format Practice"
-priority: 104
+id: git-commit-format
+priority: 500
 description: "Specifies the required structure and content for git commit messages."
 tags: ["git", "version-control", "documentation", "format", "standard"]
 ---

@@ -1,6 +1,7 @@
 ---
-title: "Git Commit Quality"
-priority: 3
+title: Git Commit Quality
+id: git-commit-quality
+priority: 501
 description: "Commits must clearly document what changed and why, using consistent structure and context."
 tags: ["version-control", "git", "collaboration", "documentation", "core"]
 ---

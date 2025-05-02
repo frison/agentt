@@ -5,7 +5,7 @@ import (
 	"agentt/internal/discovery"
 	"agentt/internal/store"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 // setupResult holds the results of the common setup process.
@@ -28,7 +28,8 @@ func setupDiscovery(configPath string) (*setupResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("configuration error: %w", err)
 	}
-	log.Printf("Using configuration file: %s", loadedPath)
+	// Use slog.Info (level check is handled by the default logger config)
+	slog.Info("Using configuration file", "path", loadedPath)
 
 	// --- Setup Dependencies & Load ---
 	guidanceStore := store.NewGuidanceStore()
@@ -40,11 +41,16 @@ func setupDiscovery(configPath string) (*setupResult, error) {
 	// We are not running the watcher loop in CLI mode, so no need to defer Close()
 
 	// --- Load Entities via Initial Scan ---
+	// Use slog.Info
+	slog.Info("Performing initial scan of guidance files...")
+
 	err = watcher.InitialScan() // Populates the guidanceStore
 	if err != nil {
-		log.Printf("Warning during initial scan: %v", err)
+		slog.Warn("During initial scan", "error", err) // Use slog.Warn
 		return nil, fmt.Errorf("error during initial scan of guidance files: %w", err)
 	}
+	// Use slog.Info
+	slog.Info("Initial scan complete.")
 
 	return &setupResult{
 		Cfg:        cfg,

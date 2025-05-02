@@ -1,7 +1,8 @@
 ---
-title: "Contextual Awareness Before Modification"
+title: Understand Context Before Changing Things
+id: understand-context-first
 description: "Requires understanding the relevant context (code structure, build process, existing patterns) before making changes."
-priority: 5 # Very high priority, foundational for safe changes
+priority: 100 # High priority, must be done early
 tags:
   - scope:meta
   - process:analysis

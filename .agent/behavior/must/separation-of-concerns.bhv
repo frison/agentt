@@ -1,5 +1,6 @@
 ---
-title: "Separation of Concerns"
+title: Separation of Concerns
+id: separation-of-concerns
 priority: 1
 description: "Each component should have a single, well-defined responsibility."
 tags: ["architecture", "code-organization", "system-design", "core"]
