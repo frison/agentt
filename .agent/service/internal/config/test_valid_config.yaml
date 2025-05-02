@@ -1,6 +1,5 @@
-# Valid config for testing
+# Valid test config
 listenAddress: ":9090"
-llmGuidanceFile: "test_llm.txt"
 entityTypes:
   - name: "test_entity"
     description: "A test entity"
@@ -8,3 +7,7 @@ entityTypes:
     requiredFrontMatter:
       - "id"
       - "tags"
+    fileExtensionHint: ".entity"
+backend:
+  type: localfs
+  rootDir: "."

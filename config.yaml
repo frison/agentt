@@ -1,2 +1,0 @@
-llmGuidanceFile: "llm_guidance.txt" # Path relative to service CWD
-listenAddress: "localhost:8080"

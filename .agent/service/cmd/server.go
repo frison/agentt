@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"agentt/internal/config"
-	"agentt/internal/discovery"
+	// "agentt/internal/config" // REMOVED - Unused
 	"agentt/internal/server"
-	"agentt/internal/store"
-	"context"
+	// "agentt/internal/guidance/backend" // REMOVED - Unused
+	// "context" // REMOVED - Unused
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,7 +27,8 @@ var (
 	serverStartCmd = &cobra.Command{
 		Use:   "start",
 		Short: "Start the Agent Guidance HTTP server",
-		Long: `Starts the Agent Guidance HTTP server and the file watcher.
+		Long: `Starts the Agent Guidance HTTP server.
+Backend is initialized on startup based on config.
 Uses the configuration specified via --config flag, AGENTT_CONFIG env var, or default search paths.`,
 		Run: startServer,
 	}
@@ -36,67 +37,82 @@ Uses the configuration specified via --config flag, AGENTT_CONFIG env var, or de
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.AddCommand(serverStartCmd)
-
-	// REMOVED flag definition - Now persistent on root
-	// serverStartCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
+	// Config flag is persistent on root
 }
 
 func startServer(cmd *cobra.Command, args []string) {
-	// --- Configuration ---
-	// Use rootConfigPath directly from root.go
-	cfg, loadedPath, err := config.FindAndLoadConfig(rootConfigPath)
+	// --- Use common setup to get config and initialized backend ---
+	// Standard log will be replaced by slog via root PersistentPreRunE
+	setupRes, err := setupDiscovery(rootConfigPath)
 	if err != nil {
-		log.Fatalf("Configuration error: %v", err)
+		// Use Fatalf or equivalent with slog? Cobra handles printing errors, maybe just return.
+		// For now, stick to Fatal as it guarantees exit on setup failure.
+		// slog.Error("Server setup failed", "error", err) // Slog might not be configured yet if PersistentPreRunE fails?
+		log.Fatalf("Server setup failed: %v", err) // Keep standard log fatal here for now
 	}
-	log.Printf("Using configuration file: %s", loadedPath)
+	cfg := setupRes.Cfg
+	guidanceBackend := setupRes.Backend // Get the initialized backend
 
-	// --- Setup Dependencies ---
-	guidanceStore := store.NewGuidanceStore()
-	wchr, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
-	if err != nil {
-		log.Fatalf("Error creating file watcher: %v", err)
-	}
+	// --- REMOVED: Old Store/Watcher Setup ---
+	// guidanceStore := store.NewGuidanceStore()
+	// wchr, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
+	// ...
+	// err = wchr.InitialScan()
+	// ...
 
-	srv := server.NewServer(cfg, guidanceStore)
+	// --- Setup HTTP Server (passing backend) ---
+	srv := server.NewServer(cfg, guidanceBackend) // Pass backend instead of store
 
-	// --- Initial Scan & Start Watcher ---
-	err = wchr.InitialScan()
-	if err != nil {
-		// Log the error but attempt to start anyway, watcher might still work
-		log.Printf("Warning during initial scan: %v", err)
-	}
-
-	// Create context that can be cancelled
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	wchr.Start(ctx) // Start the watcher in the background
+	// --- REMOVED: Watcher Start ---
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+	// wchr.Start(ctx)
 
 	// --- Start HTTP Server ---
+	serverErrChan := make(chan error, 1)
 	go func() {
+		slog.Info("Starting HTTP server", "address", cfg.ListenAddress)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("HTTP server error: %v", err)
+			slog.Error("HTTP server error", "error", err)
+			serverErrChan <- err // Report error
 		}
+		close(serverErrChan) // Signal clean shutdown
 	}()
 
 	// --- Graceful Shutdown Handling ---
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	log.Println("Agent Guidance Service started. Press Ctrl+C to shutdown.")
+	slog.Info("Agent Guidance Service started. Press Ctrl+C to shutdown.")
 
-	<-quit // Wait for shutdown signal
-
-	log.Println("Shutting down server...")
-
-	// Cancel context for watcher
-	cancel()
-
-	// Close watcher
-	if err := wchr.Close(); err != nil {
-		log.Printf("Error closing watcher: %v", err)
+	select {
+	case <-quit: // Wait for shutdown signal
+		slog.Info("Received shutdown signal...")
+	case err := <-serverErrChan: // Wait for server error
+		if err != nil {
+			// Logged already, just exit.
+			// Consider returning error from startServer if Cobra handles exit codes well?
+			os.Exit(1) // Exit if server failed critically
+		}
+		// If channel closed without error, server shut down cleanly (maybe via a /shutdown endpoint later?)
+		slog.Info("Server stopped gracefully.")
+		return // Exit cleanly
 	}
 
-	// TODO: Add graceful HTTP server shutdown if needed
+	slog.Info("Shutting down server...")
 
-	log.Println("Server gracefully stopped.")
+	// --- REMOVED: Watcher Shutdown ---
+	// cancel()
+	// if err := wchr.Close(); err != nil {
+	// 	slog.Error("Error closing watcher", "error", err)
+	// }
+
+	// TODO: Implement graceful HTTP server shutdown (using context)
+	// Example:
+	// shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer shutdownCancel()
+	// if err := srv.Shutdown(shutdownCtx); err != nil {
+	// 	slog.Error("HTTP server graceful shutdown failed", "error", err)
+	// }
+
+	slog.Info("Server shutdown complete.")
 }

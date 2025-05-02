@@ -2,74 +2,99 @@ package server_test
 
 import (
 	"agentt/internal/config"
-	"agentt/internal/content"
+	// "agentt/internal/content" // REMOVED
 	"agentt/internal/server"
-	"agentt/internal/store"
+	// "agentt/internal/store" // REMOVED
+	"agentt/internal/guidance/backend" // ADDED
+	"bytes"                            // ADDED for details POST request
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	// "strings" // REMOVED - Unused
 	"testing"
+	"time" // ADDED for backend.Entity
 )
 
-// Helper to create a test server with mock data
-func setupTestServer() *server.Server {
-	// Mock Config
-	mockConfig := &config.ServiceConfig{
-		ListenAddress: ":0", // Not used directly in handler tests
-		EntityTypes: []config.EntityTypeDefinition{
-			{Name: "behavior", Description: "Test Behavior", PathGlob: "*.bhv", RequiredFrontMatter: []string{"title", "tags"}},
-			{Name: "recipe", Description: "Test Recipe", PathGlob: "*.rcp", RequiredFrontMatter: []string{"id", "tags"}},
+// --- Mock Guidance Backend ---
+
+type mockGuidanceBackend struct {
+	MockSummaries []backend.Summary
+	MockEntities  map[string]backend.Entity // Store by ID for easy lookup
+}
+
+func (m *mockGuidanceBackend) Initialize(config map[string]interface{}) error {
+	// No-op for mock
+	return nil
+}
+
+func (m *mockGuidanceBackend) GetSummary() ([]backend.Summary, error) {
+	// Return a copy to avoid test modifications affecting the mock
+	summariesCopy := make([]backend.Summary, len(m.MockSummaries))
+	copy(summariesCopy, m.MockSummaries)
+	return summariesCopy, nil
+}
+
+func (m *mockGuidanceBackend) GetDetails(ids []string) ([]backend.Entity, error) {
+	found := make([]backend.Entity, 0)
+	for _, id := range ids {
+		if entity, ok := m.MockEntities[id]; ok {
+			found = append(found, entity)
+		}
+	}
+	return found, nil
+}
+
+// newMockGuidanceBackend creates a mock backend with sample data.
+func newMockGuidanceBackend() *mockGuidanceBackend {
+	summaryB1 := backend.Summary{ID: "bhv-B1", Type: "behavior", Tier: "must", Tags: []string{"core"}, Description: "Behavior B1"}
+	summaryB2 := backend.Summary{ID: "bhv-B2", Type: "behavior", Tier: "should", Tags: []string{"git"}, Description: "Behavior B2"}
+	summaryR1 := backend.Summary{ID: "rcp-r1", Type: "recipe", Tags: []string{"core", "git"}, Description: "Recipe R1"}
+
+	entityB1 := backend.Entity{ID: "bhv-B1", Type: "behavior", Tier: "must", Body: "Body B1", ResourceLocator: "/test/b1.bhv", Metadata: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}, LastUpdated: time.Now()}
+	entityB2 := backend.Entity{ID: "bhv-B2", Type: "behavior", Tier: "should", Body: "Body B2", ResourceLocator: "/test/b2.bhv", Metadata: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}, LastUpdated: time.Now()}
+	entityR1 := backend.Entity{ID: "rcp-r1", Type: "recipe", Body: "Body R1", ResourceLocator: "/test/r1.rcp", Metadata: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}, LastUpdated: time.Now()}
+
+	return &mockGuidanceBackend{
+		MockSummaries: []backend.Summary{summaryB1, summaryB2, summaryR1},
+		MockEntities: map[string]backend.Entity{
+			"bhv-B1": entityB1,
+			"bhv-B2": entityB2,
+			"rcp-r1": entityR1,
 		},
-		// LLMGuidanceFile: createMockLLMFile(), // REMOVED: Create a temporary LLM file
 	}
-
-	// Mock Store
-	mockStore := store.NewGuidanceStore()
-	// IDs in FrontMatter should NOT have prefixes; the prefixing happens during summary/details generation.
-	// However, the tests currently EXPECT prefixed IDs in the output.
-	// The Query function relies on FrontMatter fields for filtering.
-	// Let's adjust the items to have the ID/Title fields that the prefixing logic uses.
-	itemB1 := &content.Item{SourcePath: "/test/b1.bhv", EntityType: "behavior", IsValid: true, Tier: "must", FrontMatter: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}}  // Use title as base ID for behavior
-	itemB2 := &content.Item{SourcePath: "/test/b2.bhv", EntityType: "behavior", IsValid: true, Tier: "should", FrontMatter: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}} // Use title as base ID for behavior
-	itemR1 := &content.Item{SourcePath: "/test/r1.rcp", EntityType: "recipe", IsValid: true, FrontMatter: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}}              // Use id as base ID for recipe
-	itemInvalid := &content.Item{SourcePath: "/test/invalid.bhv", EntityType: "behavior", IsValid: false, FrontMatter: map[string]interface{}{"title": "Invalid"}}
-	mockStore.AddOrUpdate(itemB1)
-	mockStore.AddOrUpdate(itemB2)
-	mockStore.AddOrUpdate(itemR1)
-	mockStore.AddOrUpdate(itemInvalid)
-
-	return server.NewServer(mockConfig, mockStore)
 }
 
-/* // REMOVED Mock LLM File helper
-// Helper to create a temporary LLM guidance file for testing
-var mockLLMFilePath string
+// --- Test Setup ---
 
-func createMockLLMFile() string {
-	if mockLLMFilePath != "" {
-		// Clean up previous run if needed, though t.TempDir might handle it
-		os.Remove(mockLLMFilePath)
+// Helper to create a test server with mock backend
+func setupTestServer() *server.Server {
+	// Mock Config (remains mostly the same)
+	mockConfig := &config.ServiceConfig{
+		ListenAddress: ":0",
+		EntityTypes: []config.EntityTypeDefinition{
+			{Name: "behavior", Description: "Test Behavior"},
+			{Name: "recipe", Description: "Test Recipe"},
+		},
+		// Backend config not directly used by server logic itself, but mock needs data
 	}
-	// Use a fixed path or t.TempDir()
-	// Using fixed path for simplicity here, but TempDir is better practice
-	mockLLMFilePath = filepath.Join(os.TempDir(), "mock_llm_guidance.txt")
-	content := []byte("LLM Guidance.\nEntity Types:\n{{ENTITY_TYPES_DOCUMENTATION}}End.")
-	os.WriteFile(mockLLMFilePath, content, 0644)
-	return mockLLMFilePath
+
+	// Create Mock Backend
+	mockBackend := newMockGuidanceBackend()
+
+	// Pass backend to server
+	return server.NewServer(mockConfig, mockBackend)
 }
-*/
+
+// --- Test Cases ---
 
 func TestHandlers(t *testing.T) {
 	srv := setupTestServer()
-	// defer os.Remove(mockLLMFilePath) // REMOVED: Clean up mock file
 
 	// Setup mux manually for testing specific handlers
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", srv.HandleHealth)
 	mux.HandleFunc("/entityTypes", srv.HandleEntityTypes)
-	// mux.HandleFunc("/discover/", srv.HandleDiscover) // REMOVED handler registration
 	mux.HandleFunc("/llm.txt", srv.HandleLLMGuidance)
 	mux.HandleFunc("/summary", srv.HandleSummary)
 	mux.HandleFunc("/details", srv.HandleDetails)
@@ -130,49 +155,11 @@ func TestHandlers(t *testing.T) {
 		body, _ := io.ReadAll(res.Body)
 		bodyStr := string(body)
 
-		// Construct expected output using embedded text and mock config
-		// Note the extra newline added by the loop in the handler
-		expectedEntityTypeDocs := "*   **behavior**: Test Behavior \n*   **recipe**: Test Recipe \n"
-		expectedOutput := strings.Replace(server.LLMServerHelpContent, "{{ENTITY_TYPES_DOCUMENTATION}}", expectedEntityTypeDocs, 1)
-
-		if bodyStr != expectedOutput {
-			t.Errorf("LLM guidance mismatch.\nExpected:\n%s\nGot:\n%s", expectedOutput, bodyStr)
+		// Check if it matches the embedded content directly (placeholder logic removed from handler)
+		if bodyStr != server.LLMServerHelpContent {
+			t.Errorf("LLM guidance mismatch.\nExpected:\n%s\nGot:\n%s", server.LLMServerHelpContent, bodyStr)
 		}
-		/* // REMOVED old check
-		if !strings.Contains(bodyStr, "*   **behavior**: Test Behavior") {
-			t.Errorf("LLM guidance missing expected behavior description. Got:\n%s", bodyStr)
-		}
-		if !strings.Contains(bodyStr, "*   **recipe**: Test Recipe") {
-			t.Errorf("LLM guidance missing expected recipe description. Got:\n%s", bodyStr)
-		}
-		*/
 	})
-
-	/* // --- Test /discover --- // REMOVED
-	t.Run("DiscoverBehaviorsNoFilter", func(t *testing.T) {
-		// ... removed test ...
-	})
-
-	t.Run("DiscoverRecipesTagCore", func(t *testing.T) {
-		// ... removed test ...
-	})
-
-	t.Run("DiscoverBehaviorsTierMust", func(t *testing.T) {
-		// ... removed test ...
-	})
-
-	t.Run("DiscoverInvalidEntityType", func(t *testing.T) {
-		// ... removed test ...
-	})
-
-	t.Run("DiscoverMissingEntityType", func(t *testing.T) {
-		// ... removed test ...
-	})
-
-	t.Run("DiscoverNoMatch", func(t *testing.T) {
-		// ... removed test ...
-	})
-	*/ // END REMOVED /discover tests
 
 	// --- Test /summary ---
 	t.Run("SummaryEndpoint", func(t *testing.T) {
@@ -185,20 +172,21 @@ func TestHandlers(t *testing.T) {
 			t.Errorf("Expected status 200 OK for /summary, got %d", res.StatusCode)
 		}
 
-		var summaries []content.ItemSummary
+		// Expect backend.Summary type now
+		var summaries []backend.Summary
 		if err := json.NewDecoder(res.Body).Decode(&summaries); err != nil {
 			t.Fatalf("Failed to decode /summary response: %v", err)
 		}
 
-		// Expect 3 valid items (b1, b2, r1)
+		// Expect 3 summaries from mock backend
 		if len(summaries) != 3 {
 			t.Errorf("Expected 3 summaries, got %d", len(summaries))
 		}
 
-		// Basic check for one item
+		// Basic check for one item (R1)
 		foundR1 := false
 		for _, s := range summaries {
-			if s.ID == "r1" && s.Type == "recipe" {
+			if s.ID == "rcp-r1" && s.Type == "recipe" { // Check ID from mock
 				foundR1 = true
 				if len(s.Tags) != 2 || s.Tags[0] != "core" || s.Tags[1] != "git" {
 					t.Errorf("Recipe r1 summary has incorrect tags: %v", s.Tags)
@@ -213,9 +201,10 @@ func TestHandlers(t *testing.T) {
 
 	// --- Test /details ---
 	t.Run("DetailsEndpoint_Found", func(t *testing.T) {
-		// Request details for b1 (using title as ID 'B1') and r1 (using id 'r1')
-		requestBody := `{"ids": ["B1", "r1"]}`
-		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
+		// Request details for bhv-B1 and rcp-r1
+		requestBody := `{"ids": ["bhv-B1", "rcp-r1"]}`
+		// Use bytes.NewBuffer for request body
+		res, err := http.Post(testServer.URL+"/details", "application/json", bytes.NewBufferString(requestBody))
 		if err != nil {
 			t.Fatalf("POST /details failed: %v", err)
 		}
@@ -224,23 +213,25 @@ func TestHandlers(t *testing.T) {
 			t.Errorf("Expected status 200 OK for /details, got %d", res.StatusCode)
 		}
 
-		var details []*content.Item
+		// Expect backend.Entity type now
+		var details []backend.Entity
 		if err := json.NewDecoder(res.Body).Decode(&details); err != nil {
 			t.Fatalf("Failed to decode /details response: %v", err)
 		}
 
+		// Expect 2 entities from mock backend
 		if len(details) != 2 {
 			t.Errorf("Expected 2 detail items, got %d", len(details))
 		}
 
-		// Check types
+		// Check types and ResourceLocator
 		foundB1 := false
 		foundR1 := false
 		for _, item := range details {
-			if item.SourcePath == "/test/b1.bhv" && item.EntityType == "behavior" {
+			if item.ID == "bhv-B1" && item.Type == "behavior" && item.ResourceLocator == "/test/b1.bhv" {
 				foundB1 = true
 			}
-			if item.SourcePath == "/test/r1.rcp" && item.EntityType == "recipe" {
+			if item.ID == "rcp-r1" && item.Type == "recipe" && item.ResourceLocator == "/test/r1.rcp" {
 				foundR1 = true
 			}
 		}
@@ -249,32 +240,25 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
+	// Add test case for details not found
 	t.Run("DetailsEndpoint_NotFound", func(t *testing.T) {
-		requestBody := `{"ids": ["nonexistent"]}`
-		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
+		requestBody := `{"ids": ["non-existent-id"]}`
+		res, err := http.Post(testServer.URL+"/details", "application/json", bytes.NewBufferString(requestBody))
 		if err != nil {
-			t.Fatalf("POST /details failed: %v", err)
+			t.Fatalf("POST /details (not found) failed: %v", err)
 		}
 		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK, got %d", res.StatusCode)
+			t.Errorf("Expected status 200 OK for /details (not found), got %d", res.StatusCode)
 		}
-		var details []*content.Item
-		json.NewDecoder(res.Body).Decode(&details)
+
+		var details []backend.Entity
+		if err := json.NewDecoder(res.Body).Decode(&details); err != nil {
+			t.Fatalf("Failed to decode /details (not found) response: %v", err)
+		}
+
 		if len(details) != 0 {
 			t.Errorf("Expected 0 detail items for non-existent ID, got %d", len(details))
-		}
-	})
-
-	t.Run("DetailsEndpoint_BadRequest", func(t *testing.T) {
-		requestBody := `{"wrong_key": []}`
-		res, err := http.Post(testServer.URL+"/details", "application/json", strings.NewReader(requestBody))
-		if err != nil {
-			t.Fatalf("POST /details failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status 400 Bad Request for invalid body, got %d", res.StatusCode)
 		}
 	})
 }

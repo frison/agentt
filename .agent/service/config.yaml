@@ -5,7 +5,7 @@ listenAddress: ":8080"
 entityTypes:
   - name: "behavior"
     description: "Defines behavioral directives (MUSTs and SHOULDs) for the agent."
-    pathGlob: "../behavior/**/*.bhv" # Assumes running service from repo root
+    pathGlob: "../behavior/**/*.bhv" # Path relative to this file
     fileExtensionHint: ".bhv"
     requiredFrontMatter:
       - "title"
@@ -16,7 +16,7 @@ entityTypes:
 
   - name: "recipe"
     description: "Provides procedural steps for specific tasks."
-    pathGlob: "../cookbook/**/*.rcp"
+    pathGlob: "../cookbook/**/*.rcp" # Path relative to this file
     fileExtensionHint: ".rcp"
     requiredFrontMatter:
       - "id"
@@ -42,3 +42,7 @@ entityTypes:
   #     - "id"
   #     - "image"
   #     - "tags"
+
+backend:
+  type: localfs
+  rootDir: "."

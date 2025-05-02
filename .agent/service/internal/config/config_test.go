@@ -29,6 +29,9 @@ entityTypes:
   - name: behavior
     pathGlob: "./behaviors/*.bhv"
 listenAddress: ":8081"
+backend:
+  type: localfs
+  rootDir: "."
 `
 	configPath := createTempConfig(t, content, "", "test-config.yaml")
 
@@ -48,7 +51,12 @@ listenAddress: ":8081"
 }
 
 func TestFindAndLoadConfig_EnvVar(t *testing.T) {
-	content := `entityTypes: [{name: recipe, pathGlob: "env-recipes/*.rcp"}]`
+	content := `
+entityTypes: [{name: recipe, pathGlob: "env-recipes/*.rcp"}]
+backend:
+  type: localfs
+  rootDir: "."
+`
 	configPath := createTempConfig(t, content, "", "env-config.yaml")
 
 	t.Setenv("AGENTT_CONFIG", configPath)
@@ -149,6 +157,9 @@ entityTypes:
   - name: "minimal"
     pathGlob: "*.minimal"
     requiredFrontMatter: ["title"]
+backend:
+  type: localfs
+  rootDir: "."
 `
 	tempDir := t.TempDir()
 	testFilePath := filepath.Join(tempDir, "minimal_config.yaml")
