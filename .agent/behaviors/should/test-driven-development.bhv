@@ -1,0 +1,36 @@
+---
+id: test-driven-development
+title: Test-Driven Development (TDD)
+tier: should
+priority: 150 # Higher priority than basic testing
+tags:
+  - process:development
+  - process:testing
+  - quality:robustness
+  - quality:maintainability
+  - scope:code
+description: >
+  Prioritize writing tests before or concurrently with writing implementation code.
+  This ensures testability, clarifies requirements, and prevents regressions.
+---
+
+# Test-Driven Development (TDD)
+
+## Core Statement
+Implementation of new features or significant refactoring should be driven by tests. Write tests that define the desired behavior or outcome *before* or *concurrently with* implementing the code that satisfies those tests.
+
+## Rationale
+TDD leads to more modular, decoupled, and testable code design. It provides rapid feedback during development, acts as living documentation of requirements, and builds a comprehensive regression suite, increasing confidence in future changes.
+
+## Applications
+- **New Features:** Before writing the feature code, write unit tests that specify how the feature should behave, including success cases, failure cases, and edge conditions.
+- **Bug Fixes:** Before fixing a bug, write a test that reproduces the bug. The fix is complete when this test passes.
+- **Refactoring:** Ensure existing tests cover the code being refactored. If coverage is insufficient, add tests first. Refactoring is complete when all tests pass without modification to the tests themselves.
+- **Parser/Evaluator Development:** When building components like language parsers or expression evaluators:
+    - Define test cases covering various syntax constructs, operators, precedence rules, and edge cases.
+    - Implement the parser/evaluator incrementally, ensuring tests pass for each added capability.
+- **Test Granularity:** Focus primarily on unit tests during the core TDD cycle. Integration tests can be added afterwards to verify component interactions.
+- **Red-Green-Refactor:** Follow the cycle:
+    1.  **Red:** Write a failing test for a small piece of desired functionality.
+    2.  **Green:** Write the simplest possible code to make the test pass.
+    3.  **Refactor:** Improve the code structure and remove duplication, ensuring tests still pass.

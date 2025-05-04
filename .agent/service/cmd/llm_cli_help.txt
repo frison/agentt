@@ -11,7 +11,16 @@ without needing the HTTP server.
     agentt summary
     ```
     This will output a JSON array containing summaries for all available
-    behaviors and recipes. Each summary includes:
+    behaviors and recipes.
+
+    *Alternatively, use the `--filter` flag to pre-filter the summaries:*
+    ```bash
+    # Example: Get only MUST behaviors with the 'scope:core' tag
+    agentt summary --filter "tier:must tag:scope:core"
+    ```
+    The filter uses a simple query syntax (key:value, -key:value, key:*, NOT, AND).
+
+    Each summary includes:
     - id: Unique identifier (e.g., "safety-first", "git-commit-creation")
     - type: "behavior" or "recipe"
     - tier: "must" or "should" (for behaviors)
@@ -19,8 +28,9 @@ without needing the HTTP server.
     - description: A brief description
 
 2.  **Identify Relevant IDs:**
-    Analyze the JSON output from step 1. Based on the current task or
-    context, identify the IDs of the behaviors and recipes that are relevant.
+    Analyze the JSON output from step 1 (either the full list or the filtered list).
+    Based on the current task or context, identify the IDs of the behaviors
+    and recipes that are relevant.
 
 3.  **Fetch Full Details:**
     Run the command, providing the relevant IDs using the --id flag
@@ -32,13 +42,20 @@ without needing the HTTP server.
     ```bash
     agentt details --id bhv-safety-first --id rcp-git-commit-creation
     ```
+    *Alternatively, if you used `--filter` in step 1 or want to filter directly,
+    you can use `--filter` with `details` instead of specific IDs:*
+    ```bash
+    # Example: Get details for all MUST behaviors tagged 'scope:core'
+    agentt details --filter "tier:must tag:scope:core"
+    ```
+
     This will output a JSON array containing the full details (including
-    the body/content) for only the specified entities.
+    the body/content) for only the specified entities (by ID or filter).
 
 4.  **Proceed with Task:**
     Use the full details obtained in step 3 to guide the execution of
     the task, adhering to the MUST behaviors and considering SHOULD
     behaviors and relevant recipes.
 
-This two-step process (summary first, then specific details) is designed
-to be more efficient than fetching all details upfront.
+This process (summary/filter first, then specific details) is designed
+to be efficient.

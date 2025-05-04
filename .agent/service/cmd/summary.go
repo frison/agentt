@@ -5,6 +5,7 @@ import (
 	// "agentt/internal/content" // REMOVED
 	// "agentt/internal/discovery" // Unused after refactor
 	// "agentt/internal/store" // Unused after refactor
+	"agentt/internal/filter" // Import the filter package
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -26,6 +27,12 @@ var summaryCmd = &cobra.Command{
 	Long: `Scans the configured backend(s) for guidance entities and outputs a JSON
 array summarizing each valid entity found.
 
+Use the --filter flag to apply specific criteria based on entity attributes.
+Examples:
+  agentt summary --filter "tier:must"
+  agentt summary --filter "tag:scope:core -tag:domain:ai"
+  agentt summary --filter "type:recipe priority:*"
+
 The summary includes the entity ID, type, tier (if applicable), description, and tags.
 Duplicate entity IDs found across different backends will be noted with a warning.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -34,6 +41,24 @@ Duplicate entity IDs found across different backends will be noted with a warnin
 			return fmt.Errorf("internal error: no backend service available")
 		}
 		slog.Info("Fetching summaries from initialized backends", "backend_count", len(globalBackendService))
+
+		// --- Parse Filter --- START ---
+		var parsedFilter filter.FilterNode
+		var err error
+		if filterQuery != "" {
+			slog.Debug("Parsing filter query", "query", filterQuery)
+			parsedFilter, err = filter.ParseFilter(filterQuery)
+			if err != nil {
+				slog.Error("Failed to parse filter query", "query", filterQuery, "error", err)
+				return fmt.Errorf("failed to parse filter query: %w", err)
+			}
+			if parsedFilter != nil {
+				slog.Info("Applying filter", "parsed", parsedFilter.String())
+			}
+		} else {
+			slog.Debug("No filter query provided")
+		}
+		// --- Parse Filter --- END ---
 
 		allSummaries := make([]backend.Summary, 0)
 		seenIDs := make(map[string]string) // Map ID -> source backend info (e.g., type/name)
@@ -60,13 +85,23 @@ Duplicate entity IDs found across different backends will be noted with a warnin
 					)
 					// Decide strategy: skip duplicate, merge, error? Skipping for now.
 				} else {
-					allSummaries = append(allSummaries, summary)
-					seenIDs[summary.ID] = fmt.Sprintf("backend %d", i) // Store source info
+					// --- Apply Filter --- START ---
+					passedFilter := true
+					if parsedFilter != nil {
+						passedFilter = parsedFilter.Evaluate(summary)
+						slog.Debug("Evaluated filter on summary", "id", summary.ID, "filter_result", passedFilter)
+					}
+					// --- Apply Filter --- END ---
+
+					if passedFilter {
+						allSummaries = append(allSummaries, summary)
+						seenIDs[summary.ID] = fmt.Sprintf("backend %d", i) // Store source info only if it passes filter
+					}
 				}
 			}
 		}
 
-		slog.Info("Total summaries collected", "count", len(allSummaries))
+		slog.Info("Total summaries collected after filtering", "count", len(allSummaries))
 
 		// Output the combined summary as JSON
 		encoder := json.NewEncoder(os.Stdout)
@@ -81,7 +116,8 @@ Duplicate entity IDs found across different backends will be noted with a warnin
 }
 
 func init() {
-	// No command-specific flags for summary currently
+	// Add the filter flag
+	summaryCmd.Flags().StringVar(&filterQuery, "filter", "", "Filter entities using a query. Supported syntax: key:value, key:*, -key:value. Implicit AND between terms. E.g., 'tier:must tag:scope:core -type:recipe'")
 	// rootCmd.AddCommand(summaryCmd) // AddCommand is now done in root.go's init
 }
 
