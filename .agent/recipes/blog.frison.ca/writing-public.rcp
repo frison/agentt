@@ -1,14 +1,18 @@
 ---
 id: writing-public
+type: recipe
+tags:
+  - topic:writing
+  - quality:style
+  - process:communication
+  - audience:public
+  - topic:blog
 title: "Writing for Public Consumption"
-priority: 900 # Was 900 before
-description: "Guidelines for writing clear, accessible, and appropriate content for a public audience."
-tags: ["writing", "style", "communication", "public", "blog"]
-domain: blog # Or maybe 'communication'? Setting as blog for now.
-
+priority: 900
+description: Guidelines for writing clear, accessible, and appropriate content for a public audience.
 ---
 
-# Recipe: Writing for Public Consumption
+# Recipe: Writing for a Public Audience
 
 ## Overview
 This recipe provides guidelines for crafting clear, effective, and personable content that will be publicly visible. Good writing serves as documentation, reflects the project's quality, and improves collaboration.

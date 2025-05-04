@@ -1,9 +1,15 @@
 ---
 id: blog-article-collaboration
+type: recipe
+tags:
+  - topic:blog
+  - process:collaboration
+  - tech:git
+  - tech:github
+  - process:workflow
 title: "Blog Article Collaboration Workflow"
 priority: 200
-description: "Defines the process for collaborating on blog articles using Git and GitHub."
-tags: ["blog", "collaboration", "git", "github", "workflow"]
+description: Defines the process for collaborating on blog articles using Git and GitHub.
 domain: blog
 related_guidance:
   behavior:

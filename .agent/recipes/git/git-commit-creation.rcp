@@ -1,9 +1,15 @@
 ---
 id: git-commit-creation
+type: recipe
+tags:
+  - tech:git
+  - tech:version_control
+  - process:workflow
+  - topic:git_commit
+  - topic:annotation
 title: "Git Commit Creation Recipe"
 priority: 502
-description: "Provides standard procedures for creating and annotating Git commits."
-tags: ["git", "version-control", "workflow", "commit", "annotation"]
+description: Provides standard procedures for creating and annotating Git commits.
 domain: git
 tools_required: ["git"]
 related_guidance:

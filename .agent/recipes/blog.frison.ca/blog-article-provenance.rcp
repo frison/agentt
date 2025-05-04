@@ -1,16 +1,21 @@
 ---
 id: blog-article-provenance
+type: recipe
+tags:
+  - topic:blog
+  - topic:provenance
+  - topic:metadata
+  - topic:authorship
 title: "Blog Article Provenance Tracking"
 priority: 201
-description: "Ensuring blog articles correctly track author and origin information."
-tags: ["blog", "provenance", "metadata", "authorship"]
+description: Ensuring blog articles correctly track author and origin information.
 domain: blog
 related_guidance:
   behavior:
     - behavior/should/git-commit-format.bhv
 ---
 
-# Add Git Commit Provenance to Blog Article
+# Recipe: Blog Article Provenance
 
 ## Prerequisites
 - Article committed to git in blog/content/

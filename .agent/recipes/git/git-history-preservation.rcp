@@ -1,9 +1,16 @@
 ---
 id: git-history-preservation
+type: recipe
+tags:
+  - tech:git
+  - tech:version_control
+  - topic:git_history
+  - action:git_rebase
+  - action:git_squash
+  - action:git_amend
 title: "Git History Preservation"
-priority: 850 # Was 850 before
-description: "Practices for preserving meaningful Git history using amend, rebase, and squash."
-tags: ["git", "version-control", "history", "rebase", "squash", "amend"]
+priority: 850
+description: Practices for preserving meaningful Git history using amend, rebase, and squash.
 domain: git
 related_guidance:
   behavior:

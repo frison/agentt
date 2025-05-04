@@ -1,9 +1,15 @@
 ---
 id: recipe-creation
+type: recipe
+tags:
+  - scope:meta
+  - tech:cookbook
+  - entity:recipe
+  - domain:agent
+  - process:creation
 title: "Cookbook Recipe Creation Recipe"
-priority: 11 # Meta rules are high priority
 description: "How to create a new Cookbook recipe (.rcp file) for procedural guidance."
-tags: ["meta", "cookbook", "recipe", "agent", "creation"]
+priority: 11 # Meta rules are high priority
 related_guidance: {}
 ---
 
@@ -79,3 +85,5 @@ related_guidance: {}
 - Remove outdated content
 - Combine related recipes
 - Split complex recipes
+
+# Recipe: Creating a New Cookbook Recipe

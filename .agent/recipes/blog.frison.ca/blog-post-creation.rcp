@@ -1,9 +1,14 @@
 ---
 id: blog-post-creation
-title: "Blog Post Creation Recipe"
+type: recipe
+tags:
+  - topic:blog
+  - process:content_creation
+  - process:workflow
+  - tech:markdown
+title: "Example Blog Post Title - With Hyphenated Subtitle: Like This 🚀"
 priority: 202
-description: "Steps for creating, formatting, and committing a new blog post."
-tags: ["blog", "content-creation", "workflow", "markdown"]
+description: Steps for creating, formatting, and committing a new blog post.
 domain: blog
 applies_to_paths: ["content/_posts/*.md"]
 tools_required: ["git"]
