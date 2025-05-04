@@ -75,6 +75,7 @@ func init() {
 	rootCmd.AddCommand(summaryCmd) // Ensure these are still added
 	rootCmd.AddCommand(detailsCmd)
 	rootCmd.AddCommand(llmCmd)
+	rootCmd.AddCommand(idsCmd)
 	rootCmd.AddCommand(serverCmd)
 	// serverCmd adds its own subcommands (like start) in its init
 }

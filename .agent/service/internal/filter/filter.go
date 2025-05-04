@@ -3,6 +3,7 @@ package filter
 import (
 	"agentt/internal/guidance/backend"
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -51,13 +52,35 @@ func (n *TermNode) Evaluate(summary backend.Summary) bool {
 		if n.Key == "tier" {
 			match = strings.EqualFold(summary.Tier, n.Value)
 		} else if n.IsTagKey { // Key is "tag"
-			// Check if any tag matches n.Value (case-insensitive)
+			// --- Handle Tag Matching (Exact + Wildcard) ---
+			pattern := n.Value
+			hasWildcard := strings.Contains(pattern, "*") // Quick check to maybe skip Match
+
 			for _, tag := range summary.Tags {
-				if strings.EqualFold(tag, n.Value) {
+				var currentMatch bool
+				if !hasWildcard {
+					// Exact match only (case-insensitive)
+					currentMatch = strings.EqualFold(tag, pattern)
+				} else {
+					// Use filepath.Match for wildcard matching.
+					// Note: filepath.Match is case-sensitive on non-Windows by default.
+					// We want case-insensitive matching, so compare lowercased versions.
+					matched, err := filepath.Match(strings.ToLower(pattern), strings.ToLower(tag))
+					if err != nil {
+						// Bad pattern syntax according to filepath.Match
+						fmt.Printf("Warning: Invalid wildcard pattern '%s' for filepath.Match: %v\n", pattern, err) // TODO: Use logger
+						currentMatch = false                                                                        // Treat bad patterns as no match
+					} else {
+						currentMatch = matched
+					}
+				}
+
+				if currentMatch {
 					match = true
-					break
+					break // Found a matching tag, no need to check others
 				}
 			}
+			// --- End Tag Matching ---
 		} else if n.Key == "type" {
 			match = strings.EqualFold(summary.Type, n.Value)
 		} else if n.Key == "id" {

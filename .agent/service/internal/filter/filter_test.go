@@ -274,6 +274,7 @@ func TestFilterNode_Evaluate(t *testing.T) {
 	summaryRecipeCore := makeSummary("r1", "recipe", "", []string{"scope:core", "tech:go"})
 	summaryNoTags := makeSummary("b4", "behavior", "must", []string{})
 	summaryNilTags := makeSummary("b5", "behavior", "must", nil)
+	summaryWildcard := makeSummary("w1", "behavior", "should", []string{"scope:core", "prefix:value", "value:suffix", "prefix:value:suffix", "subvalue"})
 
 	tests := []struct {
 		name    string
@@ -334,6 +335,22 @@ func TestFilterNode_Evaluate(t *testing.T) {
 		{"AND tier:* tag:scope:core", "tier:* tag:scope:core", summaryMustCore, true, false},
 		{"AND tier:* tag:scope:core recipe", "tier:* tag:scope:core", summaryRecipeCore, false, false}, // Has tag but tier:* fails
 		{"AND -tier:* tag:scope:core recipe", "-tier:* tag:scope:core", summaryRecipeCore, true, false},
+
+		// --- Wildcard Tag Tests (New - Expected to Fail Evaluation Initially) ---
+		{"Tag Wildcard Prefix Match", "tag:scope:*", summaryWildcard, true, false},
+		{"Tag Wildcard Prefix No Match", "tag:nomatch:*", summaryWildcard, false, false},
+		{"Tag Wildcard Suffix Match", "tag:*:core", summaryWildcard, true, false},
+		{"Tag Wildcard Suffix No Match", "tag:*:nomatch", summaryWildcard, false, false},
+		{"Tag Wildcard Substring Match 1", "tag:*value*", summaryWildcard, true, false}, // Matches prefix:value, value:suffix, prefix:value:suffix, subvalue
+		{"Tag Wildcard Substring Match 2", "tag:*fix*", summaryWildcard, true, false},   // Matches value:suffix, prefix:value:suffix
+		{"Tag Wildcard Substring No Match", "tag:*nomatch*", summaryWildcard, false, false},
+		{"Tag Wildcard Prefix+Suffix Match", "tag:prefix*:*suffix", summaryWildcard, true, false}, // Matches prefix:value:suffix
+		{"Tag Wildcard Prefix+Suffix No Match (Prefix)", "tag:nomatch*:*suffix", summaryWildcard, false, false},
+		{"Tag Wildcard Prefix+Suffix No Match (Suffix)", "tag:prefix*:*nomatch", summaryWildcard, false, false},
+		{"Tag Wildcard Exact Match Still Works", "tag:scope:core", summaryWildcard, true, false},
+		{"Tag Wildcard Negated Prefix", "-tag:scope:*", summaryWildcard, false, false},
+		{"Tag Wildcard Negated Suffix", "-tag:*:core", summaryWildcard, false, false},
+		{"Tag Wildcard Negated Substring", "-tag:*value*", summaryWildcard, false, false},
 
 		// Empty/Invalid Filters
 		{"Empty filter matches all", "", summaryMustCore, true, false},
