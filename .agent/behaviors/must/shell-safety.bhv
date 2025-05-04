@@ -1,9 +1,15 @@
 ---
-title: "Non-Interactive Command Safety"
 id: shell-safety
-priority: 10
-description: "Shell commands in automated environments must be non-interactive and have clear directory context."
-tags: ["shell", "automation", "safety", "system-interaction", "ai"]
+title: Shell Command Safety
+priority: 150
+description: Ensure all shell commands executed are safe, non-destructive, and handle potential errors gracefully.
+tier: must
+tags:
+  - tech:shell
+  - process:automation
+  - quality:safety
+  - domain:system_interaction
+  - domain:ai
 ---
 
 # Non-Interactive Command Safety

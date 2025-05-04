@@ -1,9 +1,14 @@
 ---
 title: Git Commit Quality
 id: git-commit-quality
-priority: 501
-description: "Commits must clearly document what changed and why, using consistent structure and context."
-tags: ["version-control", "git", "collaboration", "documentation", "core"]
+priority: 200
+description: "Ensures Git commits are atomic, well-described, and maintain a clean project history."
+tier: should
+tags:
+  - tech:git
+  - topic:git_commit
+  - quality:history
+  - process:collaboration
 ---
 
 # Git Commit Quality

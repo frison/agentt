@@ -1,270 +1,392 @@
-package config_test
+package config
 
 import (
-	"agentt/internal/config"
+	// "fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
 
-// Helper function to create a temporary config file
-func createTempConfig(t *testing.T, content string, dir string, filename string) string {
+// Helper function to create a temporary config directory structure for FindAndLoadConfig tests
+func createTestConfigDir(t *testing.T, path string, content string) (cleanupFunc func()) {
 	t.Helper()
-	tempDir := dir
-	if tempDir == "" {
-		tempDir = t.TempDir()
-	}
-	filePath := filepath.Join(tempDir, filename)
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	dir := filepath.Dir(path)
+	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		t.Fatalf("Failed to write temp config file %s: %v", filePath, err)
+		t.Fatalf("Failed to create test directory %s: %v", dir, err)
 	}
-	return filePath
-}
-
-func TestFindAndLoadConfig_ExplicitPath(t *testing.T) {
-	content := `
-entityTypes:
-  - name: behavior
-    pathGlob: "./behaviors/*.bhv"
-listenAddress: ":8081"
-backend:
-  type: localfs
-  rootDir: "."
-`
-	configPath := createTempConfig(t, content, "", "test-config.yaml")
-
-	cfg, loadedPath, err := config.FindAndLoadConfig(configPath)
+	err = os.WriteFile(path, []byte(content), 0644)
 	if err != nil {
-		t.Fatalf("FindAndLoadConfig failed with explicit path: %v", err)
+		os.RemoveAll(filepath.Dir(dir)) // Attempt cleanup on failure
+		t.Fatalf("Failed to write test config file %s: %v", path, err)
 	}
-	if loadedPath != configPath {
-		t.Errorf("Expected loaded path '%s', got '%s'", configPath, loadedPath)
-	}
-	if len(cfg.EntityTypes) != 1 || cfg.EntityTypes[0].PathGlob != "./behaviors/*.bhv" {
-		t.Errorf("Expected EntityTypes[0].PathGlob './behaviors/*.bhv', got '%+v'", cfg.EntityTypes)
-	}
-	if cfg.ListenAddress != ":8081" {
-		t.Errorf("Expected ListenAddress ':8081', got '%s'", cfg.ListenAddress)
-	}
-}
 
-func TestFindAndLoadConfig_EnvVar(t *testing.T) {
-	content := `
-entityTypes: [{name: recipe, pathGlob: "env-recipes/*.rcp"}]
-backend:
-  type: localfs
-  rootDir: "."
-`
-	configPath := createTempConfig(t, content, "", "env-config.yaml")
-
-	t.Setenv("AGENTT_CONFIG", configPath)
-
-	cfg, loadedPath, err := config.FindAndLoadConfig("") // No explicit path
-	if err != nil {
-		t.Fatalf("FindAndLoadConfig failed with env var: %v", err)
-	}
-	if loadedPath != configPath {
-		t.Errorf("Expected loaded path '%s', got '%s'", configPath, loadedPath)
-	}
-	if len(cfg.EntityTypes) != 1 || cfg.EntityTypes[0].PathGlob != "env-recipes/*.rcp" {
-		t.Errorf("Expected EntityTypes[0].PathGlob 'env-recipes/*.rcp', got '%+v'", cfg.EntityTypes)
-	}
-}
-
-func TestFindAndLoadConfig_NotFound(t *testing.T) {
-	// Change to a temporary directory where no config files exist
-	originalWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	baseDir := t.TempDir()
-	err = os.Chdir(baseDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Change back to the original directory
-	defer func() {
-		if err := os.Chdir(originalWD); err != nil {
-			t.Fatalf("Failed to change back to original directory: %v", err)
+	cleanupFunc = func() {
+		// Find the top-level directory created (e.g., "tmp_test_find_1")
+		parts := strings.Split(dir, string(os.PathSeparator))
+		if len(parts) > 0 {
+			os.RemoveAll(parts[0])
 		}
-	}()
-	t.Cleanup(func() {
-		t.Setenv("AGENTT_CONFIG", "") // Clean up env var
-	})
-
-	// Ensure no flag, no env var, and no default files exist IN the temp dir
-	// by pointing the env var to a specific non-existent path
-	nonExistentPath := "/path/to/surely/non/existent/config/file.yaml"
-	t.Setenv("AGENTT_CONFIG", nonExistentPath)
-
-	_, _, err = config.FindAndLoadConfig("") // No explicit path, will use env var
-	if err == nil {
-		t.Fatalf("Expected an error when no config file found, got nil")
 	}
-	// Check if the error message contains the expected substring for env-var-not-found
-	expectedSubString := "config file specified by environment variable"
-	if !strings.Contains(err.Error(), expectedSubString) {
-		t.Errorf("Expected error to contain '%s', got: %v", expectedSubString, err)
-	}
+	return cleanupFunc
 }
 
-func TestFindAndLoadConfig_InvalidYAML(t *testing.T) {
-	content := `entityTypes: [{name: valid}]
-listenAddress: { invalid ` // Invalid YAML
-	configPath := createTempConfig(t, content, "", "invalid.yaml")
-	// Explicitly use the invalid path via flag/env var to bypass default search
-	t.Setenv("AGENTT_CONFIG", configPath)
-	t.Cleanup(func() { t.Setenv("AGENTT_CONFIG", "") })
+func TestLoadConfig_Valid_V42(t *testing.T) {
+	configPath := filepath.Join("testdata", "valid_multi_backend.yaml")
 
-	_, _, err := config.FindAndLoadConfig("") // Use env var
-	if err == nil {
-		t.Fatalf("Expected an error for invalid YAML, got nil")
-	}
-	// Check if the error message contains the underlying yaml parsing error signature
-	expectedSubString := "yaml:"
-	if !strings.Contains(err.Error(), expectedSubString) {
-		t.Errorf("Expected error to contain yaml parsing error ('%s'), got: %v", expectedSubString, err)
-	}
-}
-
-func TestLoadConfig_Valid(t *testing.T) {
-	testFilePath := "test_valid_config.yaml"
-	cfg, err := config.LoadConfig(testFilePath)
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
-		t.Fatalf("LoadConfig failed for valid config %s: %v", testFilePath, err)
+		t.Fatalf("LoadConfig failed for valid v4.2 config: %v", err)
 	}
 
+	if cfg == nil {
+		t.Fatal("LoadConfig returned nil config for valid input")
+	}
+
+	// Basic structural checks
 	if cfg.ListenAddress != ":9090" {
 		t.Errorf("Expected ListenAddress :9090, got %s", cfg.ListenAddress)
 	}
-	if len(cfg.EntityTypes) != 1 {
-		t.Fatalf("Expected 1 entity type, got %d", len(cfg.EntityTypes))
+	if len(cfg.EntityTypes) != 2 {
+		t.Fatalf("Expected 2 EntityTypes, got %d", len(cfg.EntityTypes))
+	}
+	if len(cfg.Backends) != 2 {
+		t.Fatalf("Expected 2 Backends, got %d", len(cfg.Backends))
 	}
 
-	et := cfg.EntityTypes[0]
-	if et.Name != "test_entity" {
-		t.Errorf("Expected entity name test_entity, got %s", et.Name)
+	// Check EntityTypes
+	expectedEntityType0 := EntityType{
+		Name:           "behavior",
+		Description:    "Defines rules for agent operation.",
+		RequiredFields: []string{"id", "title", "tier", "priority", "description"},
 	}
-	if et.PathGlob != "/tmp/test_*.entity" {
-		t.Errorf("Expected path glob /tmp/test_*.entity, got %s", et.PathGlob)
+	if !reflect.DeepEqual(cfg.EntityTypes[0], expectedEntityType0) {
+		t.Errorf("EntityType[0] mismatch:\nExpected: %+v\nGot:      %+v", expectedEntityType0, cfg.EntityTypes[0])
 	}
-	if len(et.RequiredFrontMatter) != 2 || et.RequiredFrontMatter[0] != "id" || et.RequiredFrontMatter[1] != "tags" {
-		t.Errorf("Expected required frontmatter [id, tags], got %v", et.RequiredFrontMatter)
+
+	// Check Backends
+	if cfg.Backends[0].Name != "local_primary" || cfg.Backends[0].Type != "localfs" {
+		t.Errorf("Backend[0] expected name 'local_primary', type 'localfs', got name '%s', type '%s'", cfg.Backends[0].Name, cfg.Backends[0].Type)
+	}
+	if cfg.Backends[1].Name != "shared_behaviors" || cfg.Backends[1].Type != "localfs" {
+		t.Errorf("Backend[1] expected name 'shared_behaviors', type 'localfs', got name '%s', type '%s'", cfg.Backends[1].Name, cfg.Backends[1].Type)
+	}
+
+	// Check Settings extraction (using helper)
+	fsSettings0, err := cfg.Backends[0].GetLocalFSSettings()
+	if err != nil {
+		t.Fatalf("GetLocalFSSettings failed for backend[0]: %v", err)
+	}
+	expectedFsSettings0 := LocalFSBackendSettings{
+		RootDir: ".",
+		EntityLocations: map[string]string{
+			"behavior": ".agent/behaviors/**/*.bhv",
+			"recipe":   ".agent/recipes/**/*.rcp",
+		},
+	}
+	if !reflect.DeepEqual(fsSettings0, expectedFsSettings0) {
+		t.Errorf("LocalFSBackendSettings[0] mismatch:\nExpected: %+v\nGot:      %+v", expectedFsSettings0, fsSettings0)
+	}
+
+	fsSettings1, err := cfg.Backends[1].GetLocalFSSettings()
+	if err != nil {
+		t.Fatalf("GetLocalFSSettings failed for backend[1]: %v", err)
+	}
+	expectedFsSettings1 := LocalFSBackendSettings{
+		RootDir: "../shared/guidance",
+		EntityLocations: map[string]string{
+			"behavior": "common/behaviors/*.bhv",
+		},
+	}
+	if !reflect.DeepEqual(fsSettings1, expectedFsSettings1) {
+		t.Errorf("LocalFSBackendSettings[1] mismatch:\nExpected: %+v\nGot:      %+v", expectedFsSettings1, fsSettings1)
+	}
+
+	// Check LoadedFromPath is set (should be absolute)
+	if cfg.LoadedFromPath == "" {
+		t.Error("Expected LoadedFromPath to be set, but it was empty")
+	}
+	if !filepath.IsAbs(cfg.LoadedFromPath) {
+		t.Errorf("Expected LoadedFromPath to be absolute, got: %s", cfg.LoadedFromPath)
+	}
+	if !strings.HasSuffix(cfg.LoadedFromPath, configPath) {
+		t.Errorf("Expected LoadedFromPath to end with %s, got: %s", configPath, cfg.LoadedFromPath)
+	}
+
+}
+
+func TestLoadConfig_InvalidCases_V42(t *testing.T) {
+	testCases := []struct {
+		name        string
+		filePath    string
+		expectedErr string // Substring of the expected error
+	}{
+		{
+			name:        "Missing File",
+			filePath:    filepath.Join("testdata", "non_existent_config.yaml"),
+			expectedErr: "failed to read config file",
+		},
+		{
+			name:        "Invalid YAML Syntax",
+			filePath:    filepath.Join("testdata", "invalid_syntax.yaml"), // Need to create this file
+			expectedErr: "failed to parse config YAML",
+		},
+		{
+			name:        "Missing EntityTypes",
+			filePath:    filepath.Join("testdata", "invalid_no_entity_types.yaml"),
+			expectedErr: "'entityTypes' field is required",
+		},
+		{
+			name:        "Missing Backends",
+			filePath:    filepath.Join("testdata", "invalid_no_backends.yaml"),
+			expectedErr: "'backends' field is required",
+		},
+		{
+			name:        "Duplicate EntityType Name",
+			filePath:    filepath.Join("testdata", "invalid_duplicate_entity_name.yaml"),
+			expectedErr: "duplicate entity type name 'behavior'",
+		},
+		{
+			name:        "Missing EntityType Name",
+			filePath:    filepath.Join("testdata", "invalid_missing_entity_name.yaml"), // Need to create
+			expectedErr: "entityTypes[0]: 'name' field is required",
+		},
+		{
+			name:        "EntityType Missing 'id' in RequiredFields",
+			filePath:    filepath.Join("testdata", "invalid_missing_entity_id_req.yaml"),
+			expectedErr: "'requiredFields' must include 'id'",
+		},
+		{
+			name:        "Backend Missing Type",
+			filePath:    filepath.Join("testdata", "invalid_missing_backend_type.yaml"),
+			expectedErr: "backends[0]: 'type' field is required",
+		},
+	}
+
+	// Create missing invalid_syntax.yaml and invalid_missing_entity_name.yaml
+	_ = os.MkdirAll("testdata", 0755)
+	_ = os.WriteFile(filepath.Join("testdata", "invalid_syntax.yaml"), []byte("listenAddress: :8080\nentityTypes: [ { name: behavior, requiredFields: [id] }\nbackends: [{ type: localfs incorrect_indent }]"), 0644)
+	_ = os.WriteFile(filepath.Join("testdata", "invalid_missing_entity_name.yaml"), []byte("entityTypes: [{ requiredFields: [id] }]\nbackends: [{ type: localfs, settings: { rootDir: \".\"}}]"), 0644)
+	t.Cleanup(func() {
+		os.Remove(filepath.Join("testdata", "invalid_syntax.yaml"))
+		os.Remove(filepath.Join("testdata", "invalid_missing_entity_name.yaml"))
+	})
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := LoadConfig(tc.filePath)
+			if err == nil {
+				t.Fatalf("LoadConfig succeeded for invalid case '%s', expected error containing '%s'", tc.name, tc.expectedErr)
+			}
+			if !strings.Contains(err.Error(), tc.expectedErr) {
+				t.Errorf("LoadConfig error mismatch for '%s':\nExpected to contain: %s\nGot:               %v", tc.name, tc.expectedErr, err)
+			}
+		})
 	}
 }
 
-func TestLoadConfig_Defaults(t *testing.T) {
-	// Create a temp file with minimal config to test defaults
-	content := `
+func TestFindAndLoadConfig(t *testing.T) {
+	originalWD, _ := os.Getwd()
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Fatalf("Failed to restore original working directory: %v", err)
+		}
+	}() // Restore original WD after test
+
+	validContent := `
 entityTypes:
-  - name: "minimal"
-    pathGlob: "*.minimal"
-    requiredFrontMatter: ["title"]
-backend:
-  type: localfs
-  rootDir: "."
+  - name: test
+    requiredFields: [id]
+backends:
+  - type: localfs
+    settings:
+      rootDir: "."
+      entityLocations:
+        test: "*.test"
 `
-	tempDir := t.TempDir()
-	testFilePath := filepath.Join(tempDir, "minimal_config.yaml")
-	err := os.WriteFile(testFilePath, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write minimal config file: %v", err)
+	testCases := []struct {
+		name          string
+		setupDir      string // Directory relative to temp test root where test runs
+		configPath    string // Path relative to temp test root where config is placed
+		expectFound   bool
+		expectLoadErr bool
+	}{
+		{
+			name:        "Found in current dir",
+			setupDir:    "tmp_test_find_1",
+			configPath:  filepath.Join("tmp_test_find_1", ConfigDirName, DefaultConfigFileName),
+			expectFound: true,
+		},
+		{
+			name:        "Found in parent dir",
+			setupDir:    filepath.Join("tmp_test_find_2", "subdir"),
+			configPath:  filepath.Join("tmp_test_find_2", ConfigDirName, DefaultConfigFileName),
+			expectFound: true,
+		},
+		{
+			name:        "Found in grandparent dir",
+			setupDir:    filepath.Join("tmp_test_find_3", "subdir", "subsubdir"),
+			configPath:  filepath.Join("tmp_test_find_3", ConfigDirName, DefaultConfigFileName),
+			expectFound: true,
+		},
+		{
+			name:        "Not Found within 3 levels",
+			setupDir:    filepath.Join("tmp_test_find_4", "a", "b", "c", "d"),
+			configPath:  filepath.Join("tmp_test_find_4", ConfigDirName, DefaultConfigFileName),
+			expectFound: false,
+		},
+		{
+			name:          "Found but invalid content",
+			setupDir:      "tmp_test_find_5",
+			configPath:    filepath.Join("tmp_test_find_5", ConfigDirName, DefaultConfigFileName),
+			expectFound:   true,
+			expectLoadErr: true, // Will find the file but fail validation
+		},
 	}
 
-	cfg, err := config.LoadConfig(testFilePath)
-	if err != nil {
-		t.Fatalf("LoadConfig failed for minimal config: %v", err)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a clean environment for each test case
+			contentToUse := validContent
+			if tc.expectLoadErr { // Use invalid content for the load error case
+				contentToUse = "backends: [{type: invalid}]" // Invalid: missing entityTypes
+			}
+			cleanup := createTestConfigDir(t, tc.configPath, contentToUse)
+			defer cleanup()
 
-	// Check defaults
-	if cfg.ListenAddress != ":8080" {
-		t.Errorf("Expected default ListenAddress :8080, got %s", cfg.ListenAddress)
+			// Change into the setup directory
+			err := os.MkdirAll(tc.setupDir, 0755)
+			if err != nil {
+				t.Fatalf("Failed to create setup directory %s: %v", tc.setupDir, err)
+			}
+			err = os.Chdir(tc.setupDir)
+			if err != nil {
+				t.Fatalf("Failed to change directory to %s: %v", tc.setupDir, err)
+			}
+
+			cfg, err := FindAndLoadConfig()
+
+			if tc.expectFound {
+				if err != nil && !tc.expectLoadErr {
+					t.Errorf("FindAndLoadConfig failed unexpectedly: %v", err)
+				}
+				if err == nil && tc.expectLoadErr {
+					t.Error("FindAndLoadConfig succeeded but expected a load error")
+				}
+				if cfg == nil && !tc.expectLoadErr {
+					t.Error("FindAndLoadConfig returned nil config unexpectedly")
+				}
+				if cfg != nil && !tc.expectLoadErr {
+					// Basic check that it loaded *something* resembling the config
+					if len(cfg.Backends) == 0 {
+						t.Error("Loaded config has no backends")
+					}
+				}
+			} else { // Expect Not Found
+				if err == nil {
+					t.Error("FindAndLoadConfig succeeded unexpectedly, expected 'not found' error")
+				}
+				if cfg != nil {
+					t.Error("FindAndLoadConfig returned non-nil config unexpectedly")
+				}
+				if err != nil && !strings.Contains(err.Error(), "not found") {
+					t.Errorf("FindAndLoadConfig expected 'not found' error, got: %v", err)
+				}
+			}
+
+			// Change back to original directory immediately after test case
+			if err := os.Chdir(originalWD); err != nil {
+				t.Fatalf("Failed to change back to original WD in test cleanup: %v", err)
+			}
+		})
 	}
 }
 
-func TestLoadConfig_Invalid_NotFound(t *testing.T) {
-	_, err := config.LoadConfig("non_existent_config.yaml")
-	if err == nil {
-		t.Fatal("Expected error for non-existent config file, got nil")
+func TestGetLocalFSSettings(t *testing.T) {
+	testCases := []struct {
+		name        string
+		backendSpec BackendSpec
+		expectErr   bool
+		expectedCfg LocalFSBackendSettings
+	}{
+		{
+			name: "Valid LocalFS settings",
+			backendSpec: BackendSpec{
+				Type: "localfs",
+				Settings: map[string]interface{}{
+					"rootDir": "./data",
+					"entityLocations": map[string]string{
+						"behavior": "beh/*.bhv",
+					},
+				},
+			},
+			expectErr: false,
+			expectedCfg: LocalFSBackendSettings{
+				RootDir: "./data",
+				EntityLocations: map[string]string{
+					"behavior": "beh/*.bhv",
+				},
+			},
+		},
+		{
+			name: "Missing rootDir (should be valid, defaults later)",
+			backendSpec: BackendSpec{
+				Type: "localfs",
+				Settings: map[string]interface{}{
+					"entityLocations": map[string]string{"recipe": "rec/*.rcp"},
+				},
+			},
+			expectErr: false,
+			expectedCfg: LocalFSBackendSettings{
+				RootDir:         "", // Expected to be empty after extraction
+				EntityLocations: map[string]string{"recipe": "rec/*.rcp"},
+			},
+		},
+		{
+			name: "Missing entityLocations",
+			backendSpec: BackendSpec{
+				Type: "localfs",
+				Settings: map[string]interface{}{
+					"rootDir": ".",
+				},
+			},
+			expectErr: false, // Extraction doesn't fail, validation happens later
+			expectedCfg: LocalFSBackendSettings{
+				RootDir:         ".",
+				EntityLocations: nil, // Expect nil map
+			},
+		},
+		{
+			name: "Incorrect type for rootDir",
+			backendSpec: BackendSpec{
+				Type: "localfs",
+				Settings: map[string]interface{}{
+					"rootDir":         123,
+					"entityLocations": map[string]string{"behavior": "*.bhv"},
+				},
+			},
+			expectErr: true, // Expect unmarshal error
+		},
 	}
-}
 
-func TestLoadConfig_Invalid_EmptyPath(t *testing.T) {
-	_, err := config.LoadConfig("")
-	if err == nil {
-		t.Fatal("Expected error for empty config path, got nil")
-	}
-}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			settings, err := tc.backendSpec.GetLocalFSSettings()
 
-func TestLoadConfig_Invalid_Syntax(t *testing.T) {
-	// Create a temp file with invalid YAML
-	content := `listenAddress: :8080
-entityTypes: [
-  name: invalid
-`
-	tempDir := t.TempDir()
-	testFilePath := filepath.Join(tempDir, "invalid_syntax.yaml")
-	err := os.WriteFile(testFilePath, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write invalid syntax config file: %v", err)
+			if tc.expectErr {
+				if err == nil {
+					t.Error("Expected an error but got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Did not expect an error but got: %v", err)
+				}
+				if !reflect.DeepEqual(settings, tc.expectedCfg) {
+					t.Errorf("Settings mismatch:\nExpected: %+v\nGot:      %+v", tc.expectedCfg, settings)
+				}
+			}
+		})
 	}
-
-	_, err = config.LoadConfig(testFilePath)
-	if err == nil {
-		t.Fatalf("Expected YAML parsing error for %s, got nil", testFilePath)
-	}
-}
-
-func TestLoadConfig_Invalid_MissingEntityName(t *testing.T) {
-	testFilePath := "test_invalid_config_missing_name.yaml"
-	_, err := config.LoadConfig(testFilePath)
-	if err == nil {
-		t.Fatalf("Expected error for missing entity name in %s, got nil", testFilePath)
-	}
-	t.Logf("Got expected error for missing name: %v", err)
-}
-
-func TestLoadConfig_Invalid_DuplicateEntityName(t *testing.T) {
-	testFilePath := "test_invalid_config_duplicate_name.yaml"
-	_, err := config.LoadConfig(testFilePath)
-	if err == nil {
-		t.Fatalf("Expected error for duplicate entity name in %s, got nil", testFilePath)
-	}
-	t.Logf("Got expected error for duplicate name: %v", err)
-}
-
-func TestLoadConfig_Invalid_MissingPathGlob(t *testing.T) {
-	content := `
-entityTypes:
-  - name: "no_glob"
-    requiredFrontMatter: ["title"]
-`
-	tempDir := t.TempDir()
-	testFilePath := filepath.Join(tempDir, "missing_glob.yaml")
-	err := os.WriteFile(testFilePath, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write missing glob config file: %v", err)
-	}
-	_, err = config.LoadConfig(testFilePath)
-	if err == nil {
-		t.Fatalf("Expected error for missing pathGlob in %s, got nil", testFilePath)
-	}
-	t.Logf("Got expected error for missing pathGlob: %v", err)
-}
-
-func TestLoadConfig_Invalid_NoEntityTypes(t *testing.T) {
-	content := `listenAddress: ":8080"`
-	tempDir := t.TempDir()
-	testFilePath := filepath.Join(tempDir, "no_entities.yaml")
-	err := os.WriteFile(testFilePath, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write no entities config file: %v", err)
-	}
-	_, err = config.LoadConfig(testFilePath)
-	if err == nil {
-		t.Fatalf("Expected error for no entityTypes defined in %s, got nil", testFilePath)
-	}
-	t.Logf("Got expected error for no entityTypes: %v", err)
 }

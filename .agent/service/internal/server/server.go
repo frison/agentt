@@ -20,7 +20,7 @@ var LLMServerHelpContent string // Embedded server protocol/help text (Exported 
 
 // Server wraps the HTTP server dependencies and handlers.
 type Server struct {
-	cfg *config.ServiceConfig
+	cfg *config.Config
 	// store *store.GuidanceStore // REPLACED
 	backend backend.GuidanceBackend // ADDED
 	// Adding a testing.T field ONLY for debugging the Query issue
@@ -29,7 +29,7 @@ type Server struct {
 
 // NewServer creates a new HTTP server instance.
 // Adjust signature if adding testing.T
-func NewServer(cfg *config.ServiceConfig, backend backend.GuidanceBackend) *Server {
+func NewServer(cfg *config.Config, backend backend.GuidanceBackend) *Server {
 	return &Server{
 		cfg:     cfg,
 		backend: backend, // Use backend

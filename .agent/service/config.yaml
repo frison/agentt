@@ -3,33 +3,17 @@ listenAddress: ":8080"
 entityTypes:
   - name: "behavior"
     description: "Defines rules, constraints, or preferred practices for agent operation."
-    pathGlob: ".agent/behavior/**/*.bhv"
-    requiredFields:
-      - "id"
-      - "title"
-      - "tier"
-      - "priority"
-      - "tags"
-      - "description"
+    requiredFields: ["id", "title", "tier", "priority", "tags"] # Added back priority and tags
 
   - name: "recipe"
     description: "Provides step-by-step instructions or procedures for specific tasks."
-    pathGlob: ".agent/cookbook/**/*.rcp"
-    requiredFields:
-      - "id"
-      - "title"
-      - "priority"
-      - "tags"
-      - "description"
+    requiredFields: ["id", "title", "priority", "tags"] # Added back priority and tags
 
-backend:
-  type: localfs
-  rootDir: "~/repos/agent" # Base directory for resolving globs below, relative to project root (where agentt runs)
-
-  settings:
-    requireExplicitID: true
-    entityLocations: # Maps entity type name to glob patterns
-      behavior:
-        pathGlob: ".agent/behavior/**/*.bhv"
-      recipe:
-        pathGlob: ".agent/cookbook/**/*.rcp"
+backends:
+  - name: "local_primary"
+    type: localfs
+    settings:
+      rootDir: "../"
+      entityLocations:
+        behavior: "behaviors/**/*.bhv"
+        recipe: "recipes/**/*.rcp"

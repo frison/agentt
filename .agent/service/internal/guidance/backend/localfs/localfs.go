@@ -2,429 +2,412 @@ package localfs
 
 import (
 	"agentt/internal/config"
+	"agentt/internal/content"
 	"agentt/internal/guidance/backend"
 	"bytes"
-	"errors"
+	"errors" // Added for error wrapping
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
-var frontMatterSeparator = []byte("---")
+// Ensure LocalFilesystemBackend implements the GuidanceBackend interface
+var _ backend.GuidanceBackend = (*LocalFilesystemBackend)(nil)
 
-// Error for duplicate IDs found during initialization.
-var ErrDuplicateID = errors.New("duplicate entity ID detected")
-
-// LocalFilesystemBackend implements the GuidanceBackend interface
-// for loading guidance entities from the local filesystem.
 type LocalFilesystemBackend struct {
-	// Configuration (set during Initialize)
-	rootDir           string
-	behaviorGlob      string
-	recipeGlob        string
-	entityTypeDefs    map[string]config.EntityTypeDefinition // Store definitions by name
-	behaviorDef       config.EntityTypeDefinition
-	recipeDef         config.EntityTypeDefinition
-	requireExplicitID bool // Flag based on config/convention
-
-	mu          sync.RWMutex
-	entities    map[string]backend.Entity // Store entities by ID
-	summaries   []backend.Summary
-	initialized bool
+	configDir       string                        // Absolute path to the directory containing the agentt config file
+	settings        config.LocalFSBackendSettings // Specific settings for this backend instance
+	entityTypes     map[string]config.EntityType  // Map entity type name -> definition (for required fields)
+	store           map[string]*content.Item      // In-memory store: absPath -> Item
+	mu              sync.RWMutex                  // Mutex for thread-safe access to the store
+	initialScanDone bool                          // Flag to track if initial scan completed
 }
 
-// NewLocalFilesystemBackend creates a new instance of LocalFilesystemBackend.
-func NewLocalFilesystemBackend() *LocalFilesystemBackend {
-	return &LocalFilesystemBackend{
-		entities:       make(map[string]backend.Entity),
-		entityTypeDefs: make(map[string]config.EntityTypeDefinition),
+// NewLocalFSBackend creates and initializes a new LocalFilesystemBackend.
+// It now takes specific LocalFS settings and the directory of the config file.
+func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath string, entityTypes []config.EntityType) (*LocalFilesystemBackend, error) {
+	slog.Debug("Creating new LocalFS backend", "settings", settings, "configFilePath", configFilePath)
+
+	// Validate settings
+	if settings.RootDir == "" {
+		// Allow empty rootDir, defaults to config file directory
+		slog.Info("LocalFS backend 'rootDir' not set, defaulting to config file directory", "configPath", configFilePath)
+		settings.RootDir = "."
 	}
+	if len(settings.EntityLocations) == 0 {
+		return nil, errors.New("localfs backend validation failed: 'entityLocations' must be defined and contain at least one entry")
+	}
+
+	// Store absolute path of the config directory for resolving rootDir
+	configDir := filepath.Dir(configFilePath)
+
+	// Ensure rootDir itself resolves correctly relative to the config dir
+	// Note: filepath.Join cleans the path
+	absoluteRootDir := filepath.Join(configDir, settings.RootDir)
+	slog.Debug("Resolved absolute root directory for backend", "configDir", configDir, "settingsRootDir", settings.RootDir, "absoluteRootDir", absoluteRootDir)
+
+	// Check if the resolved root directory exists
+	if _, err := os.Stat(absoluteRootDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("localfs backend validation failed: resolved 'rootDir' does not exist: %s (derived from config dir %s and rootDir setting %s)", absoluteRootDir, configDir, settings.RootDir)
+	} else if err != nil {
+		return nil, fmt.Errorf("localfs backend validation failed: error checking resolved 'rootDir' %s: %w", absoluteRootDir, err)
+	}
+
+	// Convert entity type slice to map for quick lookup
+	etMap := make(map[string]config.EntityType)
+	for _, et := range entityTypes {
+		etMap[et.Name] = et
+	}
+
+	// Validate entityLocations keys against defined entity types
+	for entityName := range settings.EntityLocations {
+		if _, exists := etMap[entityName]; !exists {
+			return nil, fmt.Errorf("localfs backend validation failed: 'entityLocations' contains key '%s' which is not a defined entity type in the main config", entityName)
+		}
+	}
+
+	b := &LocalFilesystemBackend{
+		configDir:   configDir,
+		settings:    settings,
+		entityTypes: etMap,
+		store:       make(map[string]*content.Item),
+	}
+
+	// Perform initial scan on creation
+	if err := b.scanFiles(); err != nil {
+		// Log the error but allow backend creation? Or fail? Failing for now.
+		slog.Error("Initial file scan failed during LocalFS backend creation", "error", err)
+		return nil, fmt.Errorf("initial file scan failed: %w", err)
+	}
+	b.initialScanDone = true
+	slog.Info("LocalFS backend created and initial scan complete")
+	return b, nil
 }
 
-// Initialize configures and loads data for the filesystem backend.
-// It walks the filesystem based on configured globs, parses files,
-// validates them, and stores them in memory.
-// Returns ErrDuplicateID if multiple files define the same entity ID.
-func (b *LocalFilesystemBackend) Initialize(configMap map[string]interface{}) error {
+// GetSummary returns a summary of all valid loaded entities.
+func (b *LocalFilesystemBackend) GetSummary() ([]backend.Summary, error) {
+	// Ensure initial scan ran if needed (or rescan periodically?)
+	// if !b.initialScanDone { ... error or trigger scan ... }
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	summaries := make([]backend.Summary, 0, len(b.store))
+	for _, item := range b.store {
+		if item.IsValid { // Only include valid items in summary
+			summaries = append(summaries, itemToSummary(item))
+		}
+	}
+	slog.Debug("Retrieved backend summary", "valid_item_count", len(summaries))
+	return summaries, nil
+}
+
+// GetDetails returns the full details for the requested entity IDs.
+func (b *LocalFilesystemBackend) GetDetails(ids []string) ([]backend.Entity, error) {
+	// Ensure initial scan ran
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	idMap := make(map[string]bool)
+	for _, id := range ids {
+		idMap[id] = true
+	}
+
+	entities := make([]backend.Entity, 0, len(ids))
+	foundCount := 0
+	for _, item := range b.store {
+		if item.IsValid { // Only consider valid items
+			if idVal, ok := item.FrontMatter["id"].(string); ok {
+				if idMap[idVal] {
+					entities = append(entities, itemToEntity(item))
+					foundCount++
+				}
+			}
+		}
+	}
+	slog.Debug("Retrieved backend details", "requested_ids", len(ids), "found_entities", foundCount)
+	return entities, nil
+}
+
+// scanFiles scans the filesystem based on configured globs and updates the internal store.
+// It now resolves paths relative to the backend's configured rootDir.
+func (b *LocalFilesystemBackend) scanFiles() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if b.initialized {
-		return fmt.Errorf("backend already initialized")
-	}
+	newStore := make(map[string]*content.Item)
+	var encounteredError error
+	fileCount := 0
 
-	// --- Configuration Extraction ---
-	if err := b.extractConfig(configMap); err != nil {
-		return fmt.Errorf("failed to extract configuration: %w", err)
-	}
+	// Resolve the absolute root directory for this backend
+	absoluteRootDir := filepath.Join(b.configDir, b.settings.RootDir)
+	slog.Debug("Starting file scan", "absoluteRootDir", absoluteRootDir)
 
-	slog.Info("Initializing LocalFilesystemBackend", "rootDir", b.rootDir, "behaviors", b.behaviorGlob, "recipes", b.recipeGlob)
-
-	// --- File Scanning and Parsing Logic ---
-	foundFiles := make(map[string]string) // file path -> entity type ("behavior", "recipe")
-
-	findFiles := func(glob string, entityType string) error {
-		if glob == "" {
-			slog.Debug("Skipping file scan: glob pattern is empty", "entityType", entityType)
-			return nil
+	// Iterate through the entity types defined for this backend
+	for entityTypeName, globPattern := range b.settings.EntityLocations {
+		entityDef, ok := b.entityTypes[entityTypeName]
+		if !ok {
+			slog.Error("Internal inconsistency: Entity type from entityLocations not found in entityTypes map", "entityType", entityTypeName)
+			continue // Should not happen due to validation in NewLocalFSBackend
 		}
-		pattern := filepath.Join(b.rootDir, glob)
-		slog.Debug("Evaluating glob pattern", "pattern", pattern)
-		matches, err := filepath.Glob(pattern)
+
+		// Construct the full glob pattern relative to the absolute root dir
+		fullGlobPattern := filepath.Join(absoluteRootDir, globPattern)
+		slog.Debug("Scanning for entity type", "entityType", entityTypeName, "fullGlobPattern", fullGlobPattern)
+
+		matches, err := filepath.Glob(fullGlobPattern)
 		if err != nil {
-			slog.Warn("Error evaluating glob pattern", "pattern", pattern, "error", err)
-			return fmt.Errorf("error evaluating glob pattern '%s': %w", pattern, err)
+			slog.Error("Error evaluating glob pattern", "pattern", fullGlobPattern, "error", err)
+			if encounteredError == nil {
+				encounteredError = fmt.Errorf("error evaluating glob pattern '%s': %w", fullGlobPattern, err)
+			}
+			continue // Try next entity type
 		}
-		slog.Debug("Glob pattern matched files", "pattern", pattern, "count", len(matches), "matches", matches)
-		for _, match := range matches {
-			absPath, _ := filepath.Abs(match)
-			slog.Debug("Processing matched file", "match", match, "absPath", absPath)
-			if _, exists := foundFiles[absPath]; !exists {
-				fi, err := os.Stat(absPath)
-				if err == nil && !fi.IsDir() {
-					slog.Debug("Adding file to process list", "path", absPath, "type", entityType)
-					foundFiles[absPath] = entityType
-				} else if err != nil {
-					slog.Warn("Failed to stat matched file, skipping", "path", absPath, "error", err)
-				} else {
-					slog.Debug("Skipping directory matched by glob", "path", absPath)
+
+		for _, matchPath := range matches {
+			fileCount++
+			// Ensure we have an absolute path for storage and parsing
+			absPath, err := filepath.Abs(matchPath)
+			if err != nil {
+				slog.Warn("Failed to get absolute path for matched file, skipping", "matchPath", matchPath, "error", err)
+				if encounteredError == nil {
+					encounteredError = fmt.Errorf("failed to get absolute path for '%s': %w", matchPath, err)
+				}
+				continue
+			}
+
+			// Check if it's a directory (filepath.Glob can return directories)
+			fileInfo, err := os.Stat(absPath)
+			if err != nil {
+				slog.Warn("Failed to stat matched file, skipping", "path", absPath, "error", err)
+				if encounteredError == nil {
+					encounteredError = fmt.Errorf("failed to stat '%s': %w", absPath, err)
+				}
+				continue
+			}
+			if fileInfo.IsDir() {
+				slog.Debug("Skipping directory matched by glob", "path", absPath)
+				continue
+			}
+
+			slog.Debug("Attempting to load and parse file", "path", absPath, "entityType", entityTypeName)
+
+			// Load and parse the file using the new function
+			item, err := parseGuidanceFile(absPath, entityTypeName, entityDef.RequiredFields)
+
+			if err != nil {
+				slog.Warn("Failed to load or parse file", "path", absPath, "error", err)
+				// Store invalid item using error details
+				newStore[absPath] = &content.Item{
+					SourcePath:       absPath,
+					EntityType:       entityTypeName,
+					IsValid:          false,
+					ValidationErrors: []string{fmt.Sprintf("Error parsing file: %v", err)},
 				}
 			} else {
-				slog.Warn("File matched by multiple globs, using first type encountered", "path", absPath, "type", foundFiles[absPath])
-			}
-		}
-		return nil
-	}
-
-	// Scan for behaviors and recipes
-	if err := findFiles(b.behaviorGlob, "behavior"); err != nil {
-		// Non-fatal, maybe only recipes were intended
-		slog.Warn("Could not scan for behaviors", "error", err)
-	}
-	if err := findFiles(b.recipeGlob, "recipe"); err != nil {
-		// Non-fatal, maybe only behaviors were intended
-		slog.Warn("Could not scan for recipes", "error", err)
-	}
-
-	slog.Info("Initial file scan found potential entities", "count", len(foundFiles))
-
-	// --- Parse and Load Files Concurrently ---
-	var wg sync.WaitGroup
-	parseResults := make(chan parseResult, len(foundFiles))
-
-	for absPath, entityType := range foundFiles {
-		wg.Add(1)
-		go func(p string, et string) {
-			defer wg.Done()
-			entityDef := b.entityTypeDefs[et]
-			slog.Debug("Parsing file", "path", p, "type", et)
-			parsedItem, parseErr := b.parseAndValidateFile(p, et, entityDef)
-			if parseErr != nil {
-				slog.Warn("File parsing failed", "path", p, "error", parseErr)
-			} else if parsedItem == nil {
-				slog.Debug("File parsing returned nil item without error", "path", p)
-			} else {
-				slog.Debug("File parsing succeeded", "path", p, "id", parsedItem.ID)
-			}
-			parseResults <- parseResult{item: parsedItem, err: parseErr, path: p}
-		}(absPath, entityType)
-	}
-
-	wg.Wait()
-	close(parseResults)
-
-	// --- Process Results and Populate Store ---
-	tempEntities := make(map[string]backend.Entity)
-	tempSummaries := make([]backend.Summary, 0)
-
-	for result := range parseResults {
-		slog.Debug("Processing parse result", "path", result.path, "hasError", result.err != nil, "hasItem", result.item != nil)
-		if result.err != nil {
-			slog.Error("Skipping file due to parse/validation error", "path", result.path, "error", result.err)
-			continue
-		}
-		if result.item == nil {
-			slog.Warn("Skipping result with nil item but no error", "path", result.path)
-			continue
-		}
-
-		// Check for duplicate IDs
-		if _, exists := tempEntities[result.item.ID]; exists {
-			slog.Error("Duplicate entity ID detected", "id", result.item.ID, "path1", tempEntities[result.item.ID].ResourceLocator, "path2", result.path)
-			return fmt.Errorf("%w: ID '%s' defined in multiple files (%s, %s)",
-				ErrDuplicateID, result.item.ID, tempEntities[result.item.ID].ResourceLocator, result.path)
-		}
-
-		tempEntities[result.item.ID] = *result.item
-		tempSummaries = append(tempSummaries, entityToSummary(result.item))
-
-		slog.Debug("Successfully processed and stored entity", "id", result.item.ID, "path", result.path)
-	}
-
-	b.entities = tempEntities
-	b.summaries = tempSummaries
-	b.initialized = true
-	slog.Info("LocalFilesystemBackend initialized successfully", "loaded_entities", len(b.entities))
-
-	return nil
-}
-
-// parseResult holds the outcome of parsing a single file.
-type parseResult struct {
-	item *backend.Entity
-	err  error
-	path string
-}
-
-// extractConfig parses the map and sets struct fields.
-func (b *LocalFilesystemBackend) extractConfig(configMap map[string]interface{}) error {
-	var ok bool
-	b.rootDir, ok = configMap["rootDir"].(string)
-	if !ok || b.rootDir == "" {
-		return fmt.Errorf("missing or invalid 'rootDir' in backend configMap")
-	}
-	// --- REMOVED filepath.Abs call ---
-	// rootDir provided by common_setup should already be absolute/correct.
-	// absRootDir, err := filepath.Abs(b.rootDir)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get absolute path for rootDir '%s': %w", b.rootDir, err)
-	// }
-	// b.rootDir = absRootDir
-
-	// --- Extract Globs from EntityTypeDefinitions ---
-	b.behaviorGlob = "" // Reset globs
-	b.recipeGlob = ""
-
-	if defsVal, exists := configMap["entityTypes"]; exists {
-		if defsSlice, okSlice := defsVal.([]config.EntityTypeDefinition); okSlice {
-			b.entityTypeDefs = make(map[string]config.EntityTypeDefinition) // Re-initialize map
-			for _, def := range defsSlice {
-				b.entityTypeDefs[def.Name] = def
-				if def.Name == "behavior" {
-					b.behaviorDef = def
-					b.behaviorGlob = def.PathGlob // CORRECT: Extract from definition
-					// slog.Debug("Extracted behavior glob", "glob", b.behaviorGlob) // DEBUG REMOVED
+				// Check for duplicate ID (existing logic - simplified slightly)
+				if itemIDStr, ok := item.FrontMatter["id"].(string); ok && itemIDStr != "" {
+					duplicateFound := false
+					var existingPath string
+					for path, existingItem := range newStore {
+						if existingID, okID := existingItem.FrontMatter["id"].(string); okID && existingID == itemIDStr {
+							duplicateFound = true
+							existingPath = path
+							break
+						}
+					}
+					if duplicateFound {
+						slog.Warn("Duplicate entity ID detected during scan. Check guidance files.",
+							"id", itemIDStr,
+							"path1", existingPath,
+							"path2", item.SourcePath,
+						)
+						continue // Skip this duplicate (keep first encountered)
+					}
 				}
-				if def.Name == "recipe" {
-					b.recipeDef = def
-					b.recipeGlob = def.PathGlob // CORRECT: Extract from definition
-					// slog.Debug("Extracted recipe glob", "glob", b.recipeGlob) // DEBUG REMOVED
-				}
+				newStore[absPath] = item // Store the successfully parsed item
 			}
-		} else {
-			return fmt.Errorf("invalid format for 'entityTypes' in configMap, expected []config.EntityTypeDefinition")
-		}
-	} else {
-		return fmt.Errorf("missing 'entityTypes' definitions in configMap")
-	}
-
-	// Verify that we actually found the globs if types were expected
-	if b.behaviorGlob == "" {
-		slog.Warn("Behavior glob pattern is empty after config extraction.")
-	}
-	if b.recipeGlob == "" {
-		slog.Warn("Recipe glob pattern is empty after config extraction.")
-	}
-
-	// Check if explicit ID is required
-	if reqIDVal, exists := configMap["requireExplicitID"]; exists {
-		if reqIDBool, okBool := reqIDVal.(bool); okBool {
-			b.requireExplicitID = reqIDBool
-			// slog.Debug("Extracted requireExplicitID setting", "value", b.requireExplicitID) // DEBUG REMOVED
-		} else {
-			slog.Warn("Invalid format for 'requireExplicitID' in configMap, expected bool")
 		}
 	}
 
-	return nil
+	// Update the main store
+	b.store = newStore
+	slog.Info("File scan complete", "files_processed", fileCount, "valid_entities_loaded", len(b.store), "first_error", encounteredError)
+	return encounteredError // Return the first error encountered, if any
 }
 
-// parseAndValidateFile reads, parses, and validates a single guidance file.
-// Adapts logic from discovery/parsing.go/ParseFile
-func (b *LocalFilesystemBackend) parseAndValidateFile(absPath string, entityType string, entityDef config.EntityTypeDefinition) (*backend.Entity, error) {
-	fileData, err := os.ReadFile(absPath)
+// parseGuidanceFile reads a file, separates frontmatter from body, parses YAML,
+// validates required fields, and returns a content.Item.
+func parseGuidanceFile(absPath string, entityType string, requiredFields []string) (*content.Item, error) {
+	fileBytes, err := os.ReadFile(absPath)
 	if err != nil {
-		// Handle cases where file might disappear between discovery and read
-		if os.IsNotExist(err) {
-			return nil, nil // Not a fatal error for Initialize
-		}
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	meta := make(map[string]interface{})
-	body := ""
-	validationErrors := []string{}
-	isValid := true
+	frontMatterBytes, bodyBytes, err := splitFrontMatter(fileBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to split frontmatter: %w", err)
+	}
 
-	parts := bytes.SplitN(fileData, frontMatterSeparator, 3)
-
-	if len(parts) >= 3 && len(bytes.TrimSpace(parts[0])) == 0 { // Found frontmatter
-		yamlData := parts[1]
-		body = string(bytes.TrimSpace(parts[2]))
-
-		err = yaml.Unmarshal(yamlData, &meta)
+	fm := make(map[string]interface{})
+	if len(frontMatterBytes) > 0 {
+		err = yaml.Unmarshal(frontMatterBytes, &fm)
 		if err != nil {
-			isValid = false
-			validationErrors = append(validationErrors, fmt.Sprintf("YAML parsing error: %v", err))
-			// Continue validation even if YAML is broken, might catch missing ID
-		}
-	} else { // No valid frontmatter
-		isValid = false
-		validationErrors = append(validationErrors, "No valid YAML frontmatter detected")
-		body = string(bytes.TrimSpace(fileData)) // Store body anyway
-	}
-
-	// --- Validation and Field Extraction ---
-
-	// ID (Mandatory, must be extracted first)
-	itemID := ""
-	if idVal, ok := meta["id"].(string); ok && idVal != "" {
-		itemID = idVal
-	} else {
-		if b.requireExplicitID { // Only enforce if required by config
-			isValid = false
-			validationErrors = append(validationErrors, "Missing required frontmatter key: 'id'")
-			// Return error here? Or let Initialize handle duplicates? Let Initialize handle it.
-		}
-		// If ID is not required or missing, how to identify? Use path?
-		// For now, if ID is missing and required, it's invalid.
-		// If ID is missing and *not* required, we need a fallback ID strategy (e.g., hash of path/content) - NOT IMPLEMENTED YET.
-		// Forcing explicit ID seems safest based on Plan 0.1.
-		if itemID == "" {
-			// Can't proceed without an ID to store the entity
-			return nil, fmt.Errorf("missing required 'id' field in frontmatter")
+			return nil, fmt.Errorf("failed to parse YAML frontmatter: %w", err)
 		}
 	}
 
-	// Check other required frontmatter keys defined in config
-	for _, requiredKey := range entityDef.RequiredFrontMatter {
-		if requiredKey == "id" {
-			continue
-		} // Already checked
-		if _, ok := meta[requiredKey]; !ok {
+	// Perform validation
+	isValid := true
+	validationErrors := []string{}
+	requiredMap := make(map[string]bool)
+	for _, f := range requiredFields {
+		requiredMap[f] = true
+	}
+
+	for reqField := range requiredMap {
+		if _, exists := fm[reqField]; !exists {
 			isValid = false
-			validationErrors = append(validationErrors, fmt.Sprintf("Missing required frontmatter key: '%s'", requiredKey))
+			validationErrors = append(validationErrors, fmt.Sprintf("Missing required field: '%s'", reqField))
 		}
 	}
 
-	// Tier Inference (for behaviors)
-	tier := ""
-	if entityType == "behavior" {
-		dir := filepath.Dir(absPath)
-		parentDir := filepath.Base(dir)
-		if parentDir == "must" || parentDir == "should" {
-			tier = parentDir
-		} else {
-			// Mark as invalid if tier cannot be inferred and is expected?
-			if _, tierRequired := meta["tier"]; !tierRequired { // Check if explicitly set
-				isValid = false
-				validationErrors = append(validationErrors, "Could not infer behavior tier ('must' or 'should') from path, and 'tier' not set in frontmatter")
+	// Specifically check for non-empty string ID if required
+	if requiredMap["id"] {
+		if extractedID, ok := fm["id"].(string); !ok || extractedID == "" {
+			isValid = false // Mark invalid if ID is required but missing/not string/empty
+			if !contains(validationErrors, "Missing required field: 'id'") {
+				validationErrors = append(validationErrors, "Required field 'id' is missing or not a non-empty string")
 			}
 		}
-		// Allow explicit frontmatter 'tier' to override inferred?
-		if fmTier, ok := meta["tier"].(string); ok && (fmTier == "must" || fmTier == "should") {
-			tier = fmTier
+	}
+
+	// Safely get tier string (important for behaviors)
+	tierStr := ""
+	if tierVal, ok := fm["tier"].(string); ok {
+		tierStr = tierVal
+	}
+
+	// Trim leading/trailing whitespace from body
+	bodyStr := strings.TrimSpace(string(bodyBytes))
+
+	item := &content.Item{
+		SourcePath:       absPath,
+		EntityType:       entityType,
+		FrontMatter:      fm,
+		Body:             bodyStr,
+		IsValid:          isValid,
+		ValidationErrors: validationErrors,
+		LastUpdated:      time.Now(), // Use current time for now
+		Tier:             tierStr,
+	}
+
+	// If validation failed, log it but return the item anyway
+	if !isValid {
+		slog.Warn("Guidance file validation failed", "path", absPath, "errors", validationErrors)
+	}
+
+	return item, nil // Return the parsed item, validation status is inside the item
+}
+
+// splitFrontMatter separates YAML frontmatter (delimited by ---) from the main content.
+func splitFrontMatter(data []byte) (frontMatter []byte, body []byte, err error) {
+	delimiter := []byte("\n---\n")
+	startDelimiter := []byte("---\n")
+
+	if !bytes.HasPrefix(data, startDelimiter) {
+		// No frontmatter detected, treat entire content as body
+		return nil, data, nil
+	}
+
+	// Handle empty frontmatter case (--- followed immediately by ---)
+	if bytes.HasPrefix(data[len(startDelimiter):], startDelimiter) {
+		frontMatter = nil
+		body = data[len(startDelimiter)*2:] // Body starts after the second ---
+		return frontMatter, body, nil
+	}
+
+	// Find the end delimiter (--- preceded by newline)
+	// Start searching after the initial '---'
+	endIndex := bytes.Index(data[len(startDelimiter):], delimiter)
+	if endIndex == -1 {
+		// Found start delimiter but no end delimiter
+		return nil, nil, fmt.Errorf("invalid frontmatter format: start delimiter '---' found but no proper end delimiter '\n---' detected")
+	}
+
+	// Adjust endIndex to be relative to the original data slice
+	endIndex += len(startDelimiter)
+
+	frontMatter = bytes.TrimSpace(data[len(startDelimiter):endIndex]) // Trim whitespace from FM
+	body = data[endIndex+len(delimiter):]
+
+	return frontMatter, body, nil
+}
+
+// Helper to check slice contains string
+func contains(slice []string, str string) bool {
+	for _, v := range slice {
+		if v == str {
+			return true
 		}
 	}
-
-	// Last Updated Time (from file stat)
-	lastUpdated := time.Now().UTC()
-	fi, statErr := os.Stat(absPath)
-	if statErr == nil {
-		lastUpdated = fi.ModTime().UTC()
-	}
-
-	// Log validation errors if any
-	if !isValid {
-		slog.Warn("Invalid content detected in file", "path", absPath, "errors", validationErrors)
-		// Decide whether to return the invalid entity or nil. Let's return it marked invalid.
-	}
-
-	entity := &backend.Entity{
-		ID:              itemID,
-		Type:            entityType,
-		Tier:            tier, // Will be empty if not a behavior or not inferred
-		Body:            body,
-		ResourceLocator: absPath,
-		Metadata:        meta, // Store the whole frontmatter map
-		LastUpdated:     lastUpdated,
-		// Add IsValid and ValidationErrors? The interface doesn't have them.
-		// For now, we only store valid entities in the map returned by Initialize.
-		// If we need to surface invalid items later, the interface needs adjustment.
-	}
-
-	// Only return successfully parsed and *valid* entities from this function
-	// to be added to the main map in Initialize.
-	if !isValid {
-		// Return nil, error? Or just nil? Let's return nil, error will be logged by caller.
-		// Return nil, nil - let Initialize log the warning and skip.
-		return nil, fmt.Errorf("file content is invalid: %v", validationErrors)
-	}
-
-	return entity, nil
+	return false
 }
 
-// GetSummary returns the summaries of all loaded entities.
-func (b *LocalFilesystemBackend) GetSummary() ([]backend.Summary, error) {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	if !b.initialized {
-		return nil, fmt.Errorf("backend not initialized")
+// Helper to convert content.Item to backend.Summary
+// Now populates fields correctly from FrontMatter
+func itemToSummary(item *content.Item) backend.Summary {
+	idStr := ""
+	if idVal, ok := item.FrontMatter["id"].(string); ok {
+		idStr = idVal
 	}
-
-	// Return a copy to prevent external modification
-	summariesCopy := make([]backend.Summary, len(b.summaries))
-	copy(summariesCopy, b.summaries)
-	return summariesCopy, nil
-}
-
-// GetDetails returns the details for the specified entity IDs.
-func (b *LocalFilesystemBackend) GetDetails(ids []string) ([]backend.Entity, error) {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	if !b.initialized {
-		return nil, fmt.Errorf("backend not initialized")
+	descStr := ""
+	if descVal, ok := item.FrontMatter["description"].(string); ok {
+		descStr = descVal
 	}
-
-	foundEntities := make([]backend.Entity, 0, len(ids))
-	for _, id := range ids {
-		if entity, ok := b.entities[id]; ok {
-			foundEntities = append(foundEntities, entity)
-		} else {
-			slog.Warn("Entity ID not found in local filesystem backend", "id", id)
-		}
-	}
-
-	return foundEntities, nil
-}
-
-// Helper function to convert Entity to Summary
-func entityToSummary(e *backend.Entity) backend.Summary {
-	desc := ""
-	if descVal, ok := e.Metadata["description"].(string); ok {
-		desc = descVal
-	}
-	tags := []string{}
-	if tagsVal, ok := e.Metadata["tags"].([]interface{}); ok {
+	var tags []string
+	if tagsVal, ok := item.FrontMatter["tags"].([]interface{}); ok {
 		for _, t := range tagsVal {
 			if tagStr, okStr := t.(string); okStr {
 				tags = append(tags, tagStr)
 			}
 		}
+	} else if tagsStr, ok := item.FrontMatter["tags"].(string); ok && tagsStr != "" {
+		// Handle tags specified as a single comma-separated string
+		tags = strings.Split(tagsStr, ",")
+		for i := range tags {
+			tags[i] = strings.TrimSpace(tags[i])
+		}
 	}
 
 	return backend.Summary{
-		ID:          e.ID,
-		Type:        e.Type,
-		Tier:        e.Tier,
+		ID:          idStr,
+		Type:        item.EntityType,
+		Tier:        item.Tier, // Tier is now a direct field on content.Item
+		Description: descStr,
 		Tags:        tags,
-		Description: desc,
+	}
+}
+
+// Helper to convert content.Item to backend.Entity
+// Now populates fields correctly
+func itemToEntity(item *content.Item) backend.Entity {
+	idStr := ""
+	if idVal, ok := item.FrontMatter["id"].(string); ok {
+		idStr = idVal
+	}
+	return backend.Entity{
+		ID:              idStr,
+		Type:            item.EntityType,
+		Tier:            item.Tier, // Use direct field
+		Body:            item.Body, // Use direct field
+		ResourceLocator: item.SourcePath,
+		Metadata:        item.FrontMatter, // Pass the whole map
+		LastUpdated:     item.LastUpdated, // Use direct field
 	}
 }

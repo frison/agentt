@@ -1,59 +1,43 @@
 package cmd
 
 import (
-	_ "embed" // Import the embed package for side effects
-	// "errors"
+	"embed"
 	"fmt"
-	"log"
-	"os"
-	"strings"
+	"log/slog"
+	// "agentt/internal/server"
 
-	// "agentt/internal/config"
 	"github.com/spf13/cobra"
 )
 
 //go:embed llm_cli_help.txt
-var llmHelpTextContent string // Variable to hold embedded content
+var embeddedHelpText embed.FS
 
-// llmCmd represents the llm command
+const llmHelpTextPath = "llm_cli_help.txt"
+
 var llmCmd = &cobra.Command{
 	Use:   "llm",
-	Short: "Prints guidance on how an LLM agent should use this CLI.",
-	Long: `Provides instructions for an LLM on how to interact with the agentt CLI.
-It details the flow: fetch summary, identify relevant IDs, fetch details.
-Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
+	Short: "Provides instructions for LLM interaction (internal use)",
+	Long: `Outputs the standard interaction protocol for LLMs interacting with the Agentt service.
+This is primarily intended for internal use during development and testing.
+It prints the expected API endpoints and interaction flow.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// --- Use common setup (Optional for basic help text, but good practice) ---
-		// We attempt setup primarily to check for config errors that might prevent usage.
-		_, err := setupDiscovery(rootConfigPath)
+		slog.Info("Displaying LLM interaction protocol")
+
+		// Read the embedded help text file
+		// TODO: Verify embedding and path access are correct
+		helpTextBytes, err := embeddedHelpText.ReadFile(llmHelpTextPath)
 		if err != nil {
-			// We can still show the help text even if the scan fails (e.g., no files found),
-			// but not if the config itself couldn't be loaded.
-			// Let's check for specific config loading errors.
-			if strings.Contains(err.Error(), "configuration error") {
-				// If the core config loading failed, return the error.
-				return err
-			}
-			// For other errors (like scan errors), log but continue.
-			log.Printf("Warning during setup for llm command: %v. Proceeding with help text.", err)
+			slog.Error("Failed to read embedded LLM help text", "path", llmHelpTextPath, "error", err)
+			return fmt.Errorf("failed to read internal help text: %w", err)
 		}
 
-		// --- Get Path to Agentt Binary (Potentially use configDir from setupRes later if needed) ---
-		agenttPath, err := os.Executable()
-		if err != nil {
-			log.Printf("Warning: failed to get executable path, examples may be incorrect: %v", err)
-			agenttPath = "agentt" // Fallback
-		}
-
-		// Simple placeholder replacement for now
-		output := strings.ReplaceAll(llmHelpTextContent, "{{AGENTT_EXECUTABLE_PATH}}", agenttPath)
-
-		fmt.Println(output)
+		fmt.Println("```")
+		fmt.Println(string(helpTextBytes))
+		fmt.Println("```")
 		return nil
 	},
 }
 
 func init() {
-	// Add llmCmd directly to the rootCmd.
-	rootCmd.AddCommand(llmCmd)
+	// No specific flags for llm command
 }

@@ -1,9 +1,15 @@
 ---
-title: "Time Awareness Practice"
 id: time-awareness
-priority: 900
-description: "Guidelines for handling time and dates consistently, anchoring to system time."
-tags: ["time", "date", "consistency", "system-time", "formatting", "safety"]
+title: Maintain Temporal Awareness
+priority: 300
+description: Track time passage during operations, manage timeouts, and use timestamps appropriately for logging and data handling.
+tier: should
+tags:
+  - scope:meta
+  - topic:time
+  - quality:robustness
+  - quality:observability
+  - process:state_management
 ---
 
 # Time Awareness Guidelines

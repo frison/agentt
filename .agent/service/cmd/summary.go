@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"agentt/internal/guidance/backend" // Add this import back
 	// "agentt/internal/guidance/backend" // REMOVED - Unused
 	"github.com/spf13/cobra"
 )
@@ -20,45 +22,67 @@ var (
 // summaryCmd represents the summary command
 var summaryCmd = &cobra.Command{
 	Use:   "summary",
-	Short: "Outputs a JSON summary of all guidance entities (behaviors and recipes).",
-	Long: `Outputs a JSON summary of all guidance entities (behaviors and recipes).
-This includes minimal information like ID, type, tags, and description,
-suitable for initial discovery by an agent.
-Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
+	Short: "Displays a summary of all discovered guidance entities (behaviors, recipes)",
+	Long: `Scans the configured backend(s) for guidance entities and outputs a JSON
+array summarizing each valid entity found.
+
+The summary includes the entity ID, type, tier (if applicable), description, and tags.
+Duplicate entity IDs found across different backends will be noted with a warning.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// --- Use common setup ---
-		setupRes, err := setupDiscovery(rootConfigPath)
-		if err != nil {
-			return err // Errors already formatted by helper
+		// Backend initialization is now handled by rootCmd.PersistentPreRunE
+		if len(globalBackendService) == 0 {
+			return fmt.Errorf("internal error: no backend service available")
+		}
+		slog.Info("Fetching summaries from initialized backends", "backend_count", len(globalBackendService))
+
+		allSummaries := make([]backend.Summary, 0)
+		seenIDs := make(map[string]string) // Map ID -> source backend info (e.g., type/name)
+
+		for i, service := range globalBackendService {
+			slog.Debug("Fetching summary from backend", "index", i)
+			summaries, err := service.GetSummary()
+			if err != nil {
+				slog.Error("Failed to get summary from a backend", "index", i, "error", err)
+				// Decide whether to fail or just continue with results from other backends
+				// Continuing for now, but logging the error.
+				continue
+			}
+			slog.Debug("Received summaries from backend", "index", i, "count", len(summaries))
+
+			// Merge summaries and check for duplicates
+			for _, summary := range summaries {
+				if existingSource, exists := seenIDs[summary.ID]; exists {
+					// Found duplicate ID
+					slog.Warn("Duplicate entity ID found across backends",
+						"id", summary.ID,
+						"source1", existingSource,
+						"source2", fmt.Sprintf("backend %d", i), // Improve source info if possible
+					)
+					// Decide strategy: skip duplicate, merge, error? Skipping for now.
+				} else {
+					allSummaries = append(allSummaries, summary)
+					seenIDs[summary.ID] = fmt.Sprintf("backend %d", i) // Store source info
+				}
+			}
 		}
 
-		// --- Retrieve All Summaries from Backend ---
-		summaries, err := setupRes.Backend.GetSummary()
-		if err != nil {
-			slog.Error("Failed to retrieve summaries from backend", "error", err)
-			return fmt.Errorf("failed to retrieve summaries: %w", err)
-		}
-		slog.Info("Retrieved summaries from backend", "count", len(summaries))
+		slog.Info("Total summaries collected", "count", len(allSummaries))
 
-		// --- Marshal to JSON ---
-		outputJSON, err := json.MarshalIndent(summaries, "", "  ")
-		if err != nil {
-			slog.Error("Failed to marshal summary data to JSON", "error", err)
-			return fmt.Errorf("failed to marshal summary to JSON: %w", err)
+		// Output the combined summary as JSON
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ") // Pretty print
+		if err := encoder.Encode(allSummaries); err != nil {
+			slog.Error("Failed to encode summary to JSON", "error", err)
+			return fmt.Errorf("failed to encode summary to JSON: %w", err)
 		}
 
-		// --- Print JSON to stdout ---
-		fmt.Println(string(outputJSON))
-
-		return nil // Return nil on success
+		return nil
 	},
 }
 
 func init() {
-	// Add summaryCmd directly to the rootCmd.
-	rootCmd.AddCommand(summaryCmd)
-
-	// Config flag is now persistent on root command
+	// No command-specific flags for summary currently
+	// rootCmd.AddCommand(summaryCmd) // AddCommand is now done in root.go's init
 }
 
 // Placeholder: Define SummaryItem structure based on Phase 1

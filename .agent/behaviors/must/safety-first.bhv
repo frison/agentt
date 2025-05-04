@@ -1,9 +1,14 @@
 ---
-title: Safety First
 id: safety-first
-priority: 1
-description: "Safety considerations must precede and constrain all other technical decisions."
-tags: ["core", "safety", "security", "universal", "all"]
+title: Safety First (Error Prevention)
+priority: 1 # Reverted Priority based on user file state
+description: Prioritize safety and error prevention in all operations, especially file modifications and command execution.
+tier: must
+tags:
+  - scope:core
+  - quality:safety
+  - quality:security
+  - scope:universal
 ---
 
 # Safety First

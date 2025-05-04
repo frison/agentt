@@ -1,9 +1,15 @@
 ---
-title: "Reflex Interaction: Black-Box Principle"
 id: reflex-black-box-interaction
-priority: 510 # Mid-range priority, adjust as needed
-description: "Guidance on interacting with reflexes as black boxes via their defined interfaces, without inspecting internals."
-tags: ["reflex", "interface", "interaction", "docker", "abstraction", "bin"]
+title: Reflex Black Box Interaction
+priority: 400
+description: When interacting with reflex tools as black boxes, rely only on documented interfaces (manifest, stdin/stdout) and avoid internal implementation assumptions.
+tier: should
+tags:
+  - domain:ai
+  - tech:reflex
+  - process:integration
+  - quality:robustness
+  - quality:maintainability
 ---
 
 # Reflex Interaction: Black-Box Principle

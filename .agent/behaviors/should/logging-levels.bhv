@@ -1,9 +1,13 @@
 ---
 id: logging-levels
-title: Standardized CLI/App Logging Levels
-priority: 500
-tags: [logging, cli, application, verbosity, standard, behavior, convention, slog]
-description: Defines standard logging levels and corresponding CLI flags for consistent output verbosity in command-line tools and applications using slog.
+title: Appropriate Logging Levels
+priority: 100
+description: Use appropriate logging levels (DEBUG, INFO, WARN, ERROR) based on the nature and severity of the information being logged.
+tier: should
+tags:
+  - topic:logging
+  - quality:observability
+  - quality:debugging
 ---
 
 # Behavior: Standardized Logging Levels for CLIs and Applications (using slog)

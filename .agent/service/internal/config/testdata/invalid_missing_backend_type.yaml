@@ -1,0 +1,11 @@
+entityTypes:
+  - name: "behavior"
+    requiredFields: ["id"]
+
+backends:
+  - name: "local_primary"
+    # type: localfs # Missing type
+    settings:
+      rootDir: "."
+      entityLocations:
+        behavior: "*.bhv"

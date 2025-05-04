@@ -76,28 +76,26 @@ backends:
 
 2.  **Update YAML Parsing:** Modify the `LoadConfig` function (and potentially `FindAndLoadConfig`) in `internal/config/config.go`:
     *   Use a suitable YAML parsing library (e.g., `gopkg.in/yaml.v3`) to unmarshal the config file contents into the new Go structs.
-    *   Implement validation logic:
+    *   Implement *general* validation logic within `LoadConfig`:
         *   Ensure required top-level fields (`EntityTypes`, `Backends`) are present.
         *   Validate `entityTypes[*].requiredFields` includes `"id"`.
-        *   Validate backend configurations (e.g., `localfs` must have `rootDir` and `entityLocations`).
-        *   Ensure `entityLocations` keys correspond to defined `entityTypes` names.
+        *   Ensure `entityTypes[*].Name` is present and unique.
+        *   Ensure `backends[*].Type` is present.
+    *   **Note:** Backend-specific validation (e.g., checking `rootDir` and `entityLocations` for `localfs`, or validating `entityLocations` keys against known `entityTypes`) will be moved to the backend instantiation logic in Phase 2.
 
 **Phase 2: Update Backend Logic**
 
 1.  **Modify Backend Interface/Implementation:** Refactor the guidance backend interface (likely in `internal/guidance/backend`) and the `localfs` implementation:
     *   The backend initialization (`NewLocalFSBackend` or similar) should accept its specific configuration settings (derived from one entry in the `Backends` list in the config) and the *path of the loaded configuration file*.
-    *   The logic for finding files (e.g., in `loadFiles` or similar methods) must now resolve paths correctly:
-        *   Get the directory of the config file.
-        *   Join the config file directory with the backend's `rootDir`.
-        *   Iterate through the backend's `entityLocations` map. For each entry (e.g., `behavior: ".agent/behavior/**/*.bhv"`):
-            *   Join the (config dir + `rootDir`) path with the glob pattern (e.g., `.agent/behavior/**/*.bhv`).
-            *   Use this fully resolved glob pattern to find files (e.g., using `filepath.Glob`).
+    *   **Perform backend-specific validation** within the initialization function (e.g., `NewLocalFSBackend` must validate `rootDir`, `entityLocations`, and ensure `entityLocations` keys match defined `entityTypes`).
+    *   The logic for finding files (e.g., in `loadFiles` or similar methods) must now resolve paths correctly based on the config file's directory and the validated `rootDir`.
+    *   Implement file path resolution: Config Dir + `rootDir` + `entityLocations[*]` glob -> `filepath.Glob`.
 
 2.  **Adapt Core Logic:** Update the main command logic (e.g., in `cmd/summary.go`, `cmd/details.go`, potentially `server` logic) to handle the list of backends:
     *   Iterate through the configured `backends` in order.
-    *   Instantiate each backend with its settings and the config file path.
+    *   Instantiate each backend (which includes its specific validation) using its settings and the config file path.
     *   Load entities from each backend.
-    *   Implement logic to merge results and detect/warn about duplicate entity IDs found across different backends. (Initial implementation might just load sequentially, overwriting duplicates based on order, with a warning).
+    *   Implement logic to merge results and detect/warn about duplicate entity IDs found across different backends.
 
 **Phase 3: Testing and Refinement**
 

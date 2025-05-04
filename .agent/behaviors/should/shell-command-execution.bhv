@@ -1,9 +1,15 @@
 ---
-title: "Safe Shell Command Execution Practice"
 id: shell-command-execution
-priority: 150
-description: "Patterns for executing shell commands safely in scripts and automation."
-tags: ["shell", "scripting", "automation", "safety", "execution", "commands"]
+title: Shell Command Execution via Tool
+priority: 160
+description: Execute shell commands using the designated `run_terminal_cmd` tool, ensuring safety and non-interactivity.
+tier: should
+tags:
+  - domain:ai
+  - tech:shell
+  - process:automation
+  - quality:safety
+  - process:tool_usage
 ---
 
 # Safe Shell Command Execution

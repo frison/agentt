@@ -5,260 +5,350 @@ import (
 	// "agentt/internal/content" // REMOVED
 	"agentt/internal/server"
 	// "agentt/internal/store" // REMOVED
-	"agentt/internal/guidance/backend" // ADDED
-	"bytes"                            // ADDED for details POST request
+	"agentt/internal/guidance/backend" // Use package path for mocks generated within
+	// "agentt/internal/guidance/backend/mocks" // REMOVED
+	// "bytes" // REMOVED - Unused
 	"encoding/json"
-	"io"
+	// "io" // Unused
 	"net/http"
 	"net/http/httptest"
-	// "strings" // REMOVED - Unused
+	"reflect" // Added for deep comparison
+	"sort"    // Added for ElementsMatch replacement
+	"strings" // Added back for details body
 	"testing"
-	"time" // ADDED for backend.Entity
+	// "time" // REMOVED - Unused
+	"os"
+	"path/filepath"
+
+	"agentt/internal/guidance/backend/localfs"
+	"github.com/golang/mock/gomock"
+	"time"
 )
-
-// --- Mock Guidance Backend ---
-
-type mockGuidanceBackend struct {
-	MockSummaries []backend.Summary
-	MockEntities  map[string]backend.Entity // Store by ID for easy lookup
-}
-
-func (m *mockGuidanceBackend) Initialize(config map[string]interface{}) error {
-	// No-op for mock
-	return nil
-}
-
-func (m *mockGuidanceBackend) GetSummary() ([]backend.Summary, error) {
-	// Return a copy to avoid test modifications affecting the mock
-	summariesCopy := make([]backend.Summary, len(m.MockSummaries))
-	copy(summariesCopy, m.MockSummaries)
-	return summariesCopy, nil
-}
-
-func (m *mockGuidanceBackend) GetDetails(ids []string) ([]backend.Entity, error) {
-	found := make([]backend.Entity, 0)
-	for _, id := range ids {
-		if entity, ok := m.MockEntities[id]; ok {
-			found = append(found, entity)
-		}
-	}
-	return found, nil
-}
-
-// newMockGuidanceBackend creates a mock backend with sample data.
-func newMockGuidanceBackend() *mockGuidanceBackend {
-	summaryB1 := backend.Summary{ID: "bhv-B1", Type: "behavior", Tier: "must", Tags: []string{"core"}, Description: "Behavior B1"}
-	summaryB2 := backend.Summary{ID: "bhv-B2", Type: "behavior", Tier: "should", Tags: []string{"git"}, Description: "Behavior B2"}
-	summaryR1 := backend.Summary{ID: "rcp-r1", Type: "recipe", Tags: []string{"core", "git"}, Description: "Recipe R1"}
-
-	entityB1 := backend.Entity{ID: "bhv-B1", Type: "behavior", Tier: "must", Body: "Body B1", ResourceLocator: "/test/b1.bhv", Metadata: map[string]interface{}{"title": "B1", "tags": []interface{}{"core"}}, LastUpdated: time.Now()}
-	entityB2 := backend.Entity{ID: "bhv-B2", Type: "behavior", Tier: "should", Body: "Body B2", ResourceLocator: "/test/b2.bhv", Metadata: map[string]interface{}{"title": "B2", "tags": []interface{}{"git"}}, LastUpdated: time.Now()}
-	entityR1 := backend.Entity{ID: "rcp-r1", Type: "recipe", Body: "Body R1", ResourceLocator: "/test/r1.rcp", Metadata: map[string]interface{}{"id": "r1", "tags": []interface{}{"core", "git"}}, LastUpdated: time.Now()}
-
-	return &mockGuidanceBackend{
-		MockSummaries: []backend.Summary{summaryB1, summaryB2, summaryR1},
-		MockEntities: map[string]backend.Entity{
-			"bhv-B1": entityB1,
-			"bhv-B2": entityB2,
-			"rcp-r1": entityR1,
-		},
-	}
-}
 
 // --- Test Setup ---
 
-// Helper to create a test server with mock backend
-func setupTestServer() *server.Server {
-	// Mock Config (remains mostly the same)
-	mockConfig := &config.ServiceConfig{
+// Helper to create a server instance with a gomock backend
+func setupTestServer(t *testing.T) (*server.Server, *backend.MockGuidanceBackend, *gomock.Controller) {
+	ctrl := gomock.NewController(t)
+	mockBackend := backend.NewMockGuidanceBackend(ctrl) // Corrected: Use type defined in package
+
+	// Use the new config.Config struct
+	mockConfig := &config.Config{
 		ListenAddress: ":0",
-		EntityTypes: []config.EntityTypeDefinition{
-			{Name: "behavior", Description: "Test Behavior"},
-			{Name: "recipe", Description: "Test Recipe"},
+		EntityTypes: []config.EntityType{
+			{Name: "behavior", Description: "Behavior Type", RequiredFields: []string{"id", "tier"}}, // Corrected description
+			{Name: "recipe", Description: "Recipe Type", RequiredFields: []string{"id"}},             // Corrected description
 		},
-		// Backend config not directly used by server logic itself, but mock needs data
+		Backends: []config.BackendSpec{
+			{ // Define BackendSpec correctly
+				Type: "mock", // Or a relevant type for the test setup
+				Settings: map[string]interface{}{
+					"rootDir":         ".",                                    // Example setting
+					"entityLocations": map[string]string{"behavior": "*.bhv"}, // Example setting
+				},
+			},
+		},
 	}
 
-	// Create Mock Backend
-	mockBackend := newMockGuidanceBackend()
-
-	// Pass backend to server
-	return server.NewServer(mockConfig, mockBackend)
+	srv := server.NewServer(mockConfig, mockBackend) // Pass mock backend
+	return srv, mockBackend, ctrl                    // Return srv, mock, ctrl
 }
 
 // --- Test Cases ---
 
-func TestHandlers(t *testing.T) {
-	srv := setupTestServer()
+func TestServer_HandleHealth(t *testing.T) {
+	srv, _, ctrl := setupTestServer(t) // Adjusted call site (ignore mockBackend)
+	defer ctrl.Finish()
 
-	// Setup mux manually for testing specific handlers
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", srv.HandleHealth)
-	mux.HandleFunc("/entityTypes", srv.HandleEntityTypes)
-	mux.HandleFunc("/llm.txt", srv.HandleLLMGuidance)
-	mux.HandleFunc("/summary", srv.HandleSummary)
-	mux.HandleFunc("/details", srv.HandleDetails)
+	req, _ := http.NewRequest("GET", "/health", nil)
+	rr := httptest.NewRecorder()
+	srv.HandleHealth(rr, req)
+	// Standard library checks
+	if rr.Code != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
+	}
+	expectedBody := "OK"
+	if rr.Body.String() != expectedBody {
+		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expectedBody)
+	}
+}
 
-	testServer := httptest.NewServer(mux)
-	defer testServer.Close()
+func TestServer_HandleEntityTypes(t *testing.T) {
+	srv, _, ctrl := setupTestServer(t)
+	defer ctrl.Finish()
 
-	// --- Test /health ---
-	t.Run("HealthCheck", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/health")
-		if err != nil {
-			t.Fatalf("GET /health failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /health, got %d", res.StatusCode)
-		}
-		bodyBytes := make([]byte, 2)
-		_, _ = res.Body.Read(bodyBytes)
-		if string(bodyBytes) != "OK" {
-			t.Errorf("Expected body 'OK', got '%s'", string(bodyBytes))
-		}
+	req, _ := http.NewRequest("GET", "/entity-types", nil)
+	rr := httptest.NewRecorder()
+	srv.HandleEntityTypes(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
+	}
+
+	var entityTypes []config.EntityType // Expect a slice (JSON array)
+	err := json.NewDecoder(rr.Body).Decode(&entityTypes)
+	if err != nil {
+		t.Fatalf("Failed to decode response body: %v", err)
+	}
+
+	// Define expected slice based on setupTestServer config
+	expectedTypes := []config.EntityType{
+		{Name: "behavior", Description: "Behavior Type", RequiredFields: []string{"id", "tier"}},
+		{Name: "recipe", Description: "Recipe Type", RequiredFields: []string{"id"}},
+	}
+
+	// Sort both slices by Name for consistent comparison
+	sort.Slice(expectedTypes, func(i, j int) bool {
+		return expectedTypes[i].Name < expectedTypes[j].Name
+	})
+	sort.Slice(entityTypes, func(i, j int) bool {
+		return entityTypes[i].Name < entityTypes[j].Name
 	})
 
-	// --- Test /entityTypes ---
-	t.Run("EntityTypes", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/entityTypes")
-		if err != nil {
-			t.Fatalf("GET /entityTypes failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /entityTypes, got %d", res.StatusCode)
-		}
+	// Use reflect.DeepEqual for slice comparison after sorting
+	if !reflect.DeepEqual(expectedTypes, entityTypes) {
+		t.Errorf("Returned entity types do not match expected (after sorting).\nExpected: %+v\nActual:   %+v", expectedTypes, entityTypes)
+	}
+}
 
-		var entityTypes []config.EntityTypeDefinition
-		if err := json.NewDecoder(res.Body).Decode(&entityTypes); err != nil {
-			t.Fatalf("Failed to decode /entityTypes response: %v", err)
-		}
-		if len(entityTypes) != 2 {
-			t.Errorf("Expected 2 entity types, got %d", len(entityTypes))
-		}
-		if entityTypes[0].Name != "behavior" || entityTypes[1].Name != "recipe" {
-			t.Errorf("Unexpected entity types returned: %v", entityTypes)
-		}
+func TestServer_HandleSummary_Success(t *testing.T) {
+	server, mockBackend, ctrl := setupTestServer(t) // Correct call site
+	defer ctrl.Finish()
+
+	// Define Expected Data (remains the same)
+	expectedSummaries := []backend.Summary{
+		{ID: "bhv1", Type: "behavior", Tier: "must", Description: "Behavior 1"},
+		{ID: "rcp1", Type: "recipe", Description: "Recipe 1"},
+	}
+
+	// Set Mock Expectations (remains the same, now uses gomock object)
+	mockBackend.EXPECT().GetSummary().Return(expectedSummaries, nil).Times(1)
+
+	// Perform Request (remains the same)
+	req := httptest.NewRequest(http.MethodGet, "/summary", nil)
+	w := httptest.NewRecorder()
+	server.HandleSummary(w, req)
+
+	// Assert Results (remains the same)
+	resp := w.Result()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", resp.StatusCode, http.StatusOK)
+	}
+	var summaries []backend.Summary
+	err := json.NewDecoder(resp.Body).Decode(&summaries)
+	if err != nil {
+		t.Fatalf("Failed to decode response body: %v", err)
+	}
+
+	// Replace ElementsMatch with custom logic (sort and compare)
+	sortSummaries(expectedSummaries)
+	sortSummaries(summaries)
+	if !reflect.DeepEqual(expectedSummaries, summaries) {
+		t.Errorf("Returned summaries do not match expected (after sorting).\nExpected: %+v\nActual:   %+v", expectedSummaries, summaries)
+	}
+}
+
+func TestServer_HandleDetails_Success(t *testing.T) {
+	server, mockBackend, ctrl := setupTestServer(t) // Correct call site
+	defer ctrl.Finish()
+
+	// Define Expected Data (remains the same, corrected Metadata slightly)
+	expectedIDs := []string{"bhv1", "rcp1"}
+	expectedEntities := []backend.Entity{
+		{ID: "bhv1", Type: "behavior", Tier: "must", Body: "Body 1", Metadata: map[string]interface{}{"id": "bhv1", "tier": "must"}},
+		{ID: "rcp1", Type: "recipe", Body: "Body 2", Metadata: map[string]interface{}{"id": "rcp1"}},
+	}
+
+	// Set Mock Expectations (remains the same, now uses gomock object)
+	mockBackend.EXPECT().GetDetails(expectedIDs).Return(expectedEntities, nil).Times(1)
+
+	// Perform Request (remains the same)
+	body := strings.NewReader(`{"ids":["bhv1", "rcp1"]}`)
+	req := httptest.NewRequest(http.MethodPost, "/details", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	server.HandleDetails(w, req)
+
+	// Assert Results (remains the same)
+	resp := w.Result()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", resp.StatusCode, http.StatusOK)
+	}
+	var entities []backend.Entity
+	err := json.NewDecoder(resp.Body).Decode(&entities)
+	if err != nil {
+		t.Fatalf("Failed to decode response body: %v", err)
+	}
+
+	// Replace ElementsMatch with custom logic (sort and compare)
+	sortEntities(expectedEntities)
+	sortEntities(entities)
+	if !reflect.DeepEqual(expectedEntities, entities) {
+		t.Errorf("Returned entities do not match expected (after sorting).\nExpected: %+v\nActual:   %+v", expectedEntities, entities)
+	}
+}
+
+// Removed duplicate TestServer_HandleEntityTypes_Success
+
+// --- Helper functions for sorting --- //
+
+func sortSummaries(summaries []backend.Summary) {
+	sort.Slice(summaries, func(i, j int) bool {
+		return summaries[i].ID < summaries[j].ID
 	})
+}
 
-	// --- Test /llm.txt ---
-	t.Run("LLMGuidance", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/llm.txt")
-		if err != nil {
-			t.Fatalf("GET /llm.txt failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /llm.txt, got %d", res.StatusCode)
-		}
-		body, _ := io.ReadAll(res.Body)
-		bodyStr := string(body)
-
-		// Check if it matches the embedded content directly (placeholder logic removed from handler)
-		if bodyStr != server.LLMServerHelpContent {
-			t.Errorf("LLM guidance mismatch.\nExpected:\n%s\nGot:\n%s", server.LLMServerHelpContent, bodyStr)
-		}
+func sortEntities(entities []backend.Entity) {
+	sort.Slice(entities, func(i, j int) bool {
+		return entities[i].ID < entities[j].ID
 	})
+}
 
-	// --- Test /summary ---
-	t.Run("SummaryEndpoint", func(t *testing.T) {
-		res, err := http.Get(testServer.URL + "/summary")
-		if err != nil {
-			t.Fatalf("GET /summary failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /summary, got %d", res.StatusCode)
-		}
+// Helper to setup test server with a real LocalFS backend
+func setupTestServerWithLocalFS(t *testing.T) (*server.Server, backend.GuidanceBackend) { // Return real backend interface
+	testConfig := &config.Config{
+		ListenAddress: ":0",
+		EntityTypes: []config.EntityType{
+			{Name: "behavior", RequiredFields: []string{"id", "tier"}},
+			{Name: "recipe", RequiredFields: []string{"id"}},
+		},
+		Backends: []config.BackendSpec{
+			{
+				Type: "localfs", // Use localfs type
+				Settings: map[string]interface{}{
+					"rootDir": "testdata/localfs_content", // Point to test data
+					"entityLocations": map[string]string{
+						"behavior": "*.bhv",
+						"recipe":   "*.rcp",
+					},
+				},
+			},
+		},
+		LoadedFromPath: ".", // Mock the loaded path for relative resolution
+	}
 
-		// Expect backend.Summary type now
-		var summaries []backend.Summary
-		if err := json.NewDecoder(res.Body).Decode(&summaries); err != nil {
-			t.Fatalf("Failed to decode /summary response: %v", err)
-		}
+	// Setup testdata directory
+	rootDir := "testdata/localfs_content"
+	if err := os.MkdirAll(rootDir, 0755); err != nil {
+		t.Fatalf("Failed to create test directory %s: %v", rootDir, err)
+	}
+	if err := os.WriteFile(filepath.Join(rootDir, "bhv1.bhv"), []byte("---\nid: bhv1\ntier: must\n---\nBehavior Body 1"), 0644); err != nil {
+		t.Fatalf("Failed to write test file bhv1.bhv: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(rootDir, "rcp1.rcp"), []byte("---\nid: rcp1\n---\nRecipe Body 1"), 0644); err != nil {
+		t.Fatalf("Failed to write test file rcp1.rcp: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll("testdata") })
 
-		// Expect 3 summaries from mock backend
-		if len(summaries) != 3 {
-			t.Errorf("Expected 3 summaries, got %d", len(summaries))
-		}
+	// Extract settings and create the real backend
+	backendSettings, err := testConfig.Backends[0].GetLocalFSSettings()
+	if err != nil {
+		t.Fatalf("Failed to get localfs settings: %v", err)
+	}
+	fsBackend, err := localfs.NewLocalFSBackend(backendSettings, testConfig.LoadedFromPath, testConfig.EntityTypes)
+	if err != nil {
+		t.Fatalf("Failed to create localfs backend: %v", err)
+	}
 
-		// Basic check for one item (R1)
-		foundR1 := false
-		for _, s := range summaries {
-			if s.ID == "rcp-r1" && s.Type == "recipe" { // Check ID from mock
-				foundR1 = true
-				if len(s.Tags) != 2 || s.Tags[0] != "core" || s.Tags[1] != "git" {
-					t.Errorf("Recipe r1 summary has incorrect tags: %v", s.Tags)
-				}
-				break
-			}
-		}
-		if !foundR1 {
-			t.Error("Did not find summary for recipe r1")
-		}
-	})
+	// Pass the single backend instance, not a slice
+	srv := server.NewServer(testConfig, fsBackend)
+	return srv, fsBackend // Return the real backend
+}
 
-	// --- Test /details ---
-	t.Run("DetailsEndpoint_Found", func(t *testing.T) {
-		// Request details for bhv-B1 and rcp-r1
-		requestBody := `{"ids": ["bhv-B1", "rcp-r1"]}`
-		// Use bytes.NewBuffer for request body
-		res, err := http.Post(testServer.URL+"/details", "application/json", bytes.NewBufferString(requestBody))
-		if err != nil {
-			t.Fatalf("POST /details failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /details, got %d", res.StatusCode)
-		}
+// --- LocalFS Integration Test Cases ---
 
-		// Expect backend.Entity type now
-		var details []backend.Entity
-		if err := json.NewDecoder(res.Body).Decode(&details); err != nil {
-			t.Fatalf("Failed to decode /details response: %v", err)
-		}
+// Test Summary endpoint with a real LocalFS backend
+func TestServer_HandleSummary_LocalFS(t *testing.T) {
+	// Use the helper that sets up a real backend
+	srv, _ := setupTestServerWithLocalFS(t) // Ignore backend return value here
 
-		// Expect 2 entities from mock backend
-		if len(details) != 2 {
-			t.Errorf("Expected 2 detail items, got %d", len(details))
-		}
+	// Perform Request
+	req := httptest.NewRequest(http.MethodGet, "/summary", nil)
+	w := httptest.NewRecorder()
+	srv.HandleSummary(w, req)
 
-		// Check types and ResourceLocator
-		foundB1 := false
-		foundR1 := false
-		for _, item := range details {
-			if item.ID == "bhv-B1" && item.Type == "behavior" && item.ResourceLocator == "/test/b1.bhv" {
-				foundB1 = true
-			}
-			if item.ID == "rcp-r1" && item.Type == "recipe" && item.ResourceLocator == "/test/r1.rcp" {
-				foundR1 = true
-			}
-		}
-		if !foundB1 || !foundR1 {
-			t.Errorf("Did not find expected items in details response. Found B1: %t, Found R1: %t", foundB1, foundR1)
-		}
-	})
+	// Assert Results
+	resp := w.Result()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", resp.StatusCode, http.StatusOK)
+	}
+	var summaries []backend.Summary
+	err := json.NewDecoder(resp.Body).Decode(&summaries)
+	if err != nil {
+		t.Fatalf("Failed to decode response body: %v", err)
+	}
 
-	// Add test case for details not found
-	t.Run("DetailsEndpoint_NotFound", func(t *testing.T) {
-		requestBody := `{"ids": ["non-existent-id"]}`
-		res, err := http.Post(testServer.URL+"/details", "application/json", bytes.NewBufferString(requestBody))
-		if err != nil {
-			t.Fatalf("POST /details (not found) failed: %v", err)
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 OK for /details (not found), got %d", res.StatusCode)
-		}
+	// Define expected based on files created in setupTestServerWithLocalFS
+	expectedSummaries := []backend.Summary{
+		{ID: "bhv1", Type: "behavior", Tier: "must"},
+		{ID: "rcp1", Type: "recipe"},
+	}
 
-		var details []backend.Entity
-		if err := json.NewDecoder(res.Body).Decode(&details); err != nil {
-			t.Fatalf("Failed to decode /details (not found) response: %v", err)
-		}
+	// Sort and compare
+	sortSummaries(expectedSummaries)
+	sortSummaries(summaries)
+	if !reflect.DeepEqual(expectedSummaries, summaries) {
+		t.Errorf("Returned summaries do not match expected (after sorting).\nExpected: %+v\nActual:   %+v", expectedSummaries, summaries)
+	}
+}
 
-		if len(details) != 0 {
-			t.Errorf("Expected 0 detail items for non-existent ID, got %d", len(details))
-		}
-	})
+// Test Details endpoint with a real LocalFS backend
+func TestServer_HandleDetails_LocalFS(t *testing.T) {
+	// Use the helper that sets up a real backend
+	srv, _ := setupTestServerWithLocalFS(t)
+
+	// Perform Request
+	body := strings.NewReader(`{"ids":["bhv1", "rcp1"]}`)
+	req := httptest.NewRequest(http.MethodPost, "/details", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	srv.HandleDetails(w, req)
+
+	// Assert Results
+	resp := w.Result()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("handler returned wrong status code: got %v want %v", resp.StatusCode, http.StatusOK)
+	}
+	var entities []backend.Entity
+	err := json.NewDecoder(resp.Body).Decode(&entities)
+	if err != nil {
+		t.Fatalf("Failed to decode response body: %v", err)
+	}
+
+	// Define expected based on files created in setupTestServerWithLocalFS
+	expectedEntities := []backend.Entity{
+		{ID: "bhv1", Type: "behavior", Tier: "must", Body: "Behavior Body 1", Metadata: map[string]interface{}{"id": "bhv1", "tier": "must"}, ResourceLocator: filepath.Join("testdata/localfs_content", "bhv1.bhv")},
+		{ID: "rcp1", Type: "recipe", Body: "Recipe Body 1", Metadata: map[string]interface{}{"id": "rcp1"}, ResourceLocator: filepath.Join("testdata/localfs_content", "rcp1.rcp")},
+	}
+
+	// Normalize ResourceLocator paths before comparing
+	for i := range expectedEntities {
+		absPath, _ := filepath.Abs(expectedEntities[i].ResourceLocator)
+		expectedEntities[i].ResourceLocator = absPath
+	}
+	for i := range entities {
+		absPath, _ := filepath.Abs(entities[i].ResourceLocator)
+		entities[i].ResourceLocator = absPath
+	}
+
+	// Sort and compare
+	sortEntities(expectedEntities)
+	sortEntities(entities)
+
+	// Zero out LastUpdated fields before comparison as they are dynamic
+	zeroTime := time.Time{}
+	for i := range expectedEntities {
+		expectedEntities[i].LastUpdated = zeroTime
+	}
+	for i := range entities {
+		entities[i].LastUpdated = zeroTime
+	}
+
+	if !reflect.DeepEqual(expectedEntities, entities) {
+		t.Errorf("Returned entities do not match expected (after sorting and zeroing timestamps).\nExpected: %+v\nActual:   %+v", expectedEntities, entities)
+	}
 }

@@ -6,72 +6,104 @@ package cmd
 import (
 	// "agentt/internal/guidance/backend" // REMOVED - Unused
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 
+	"agentt/internal/guidance/backend"
 	"github.com/spf13/cobra"
 )
 
-var (
-	detailsIDs []string // Slice to store the IDs passed via flags
-	// detailsConfigPath string // REMOVED - Use rootConfigPath from root.go
-)
+var entityIDs []string
 
 // detailsCmd represents the details command
 var detailsCmd = &cobra.Command{
 	Use:   "details",
-	Short: "Outputs the full JSON details for specific guidance entities by ID.",
-	Long: `Outputs the full JSON details for one or more specific guidance entities, identified by their unique IDs.
-Configuration is loaded via --config flag, AGENTT_CONFIG env var, or default search paths.`,
-	// Args: cobra.MinimumNArgs(1), // REMOVE: We are using flags, not positional args for IDs
+	Short: "Displays full details for specified entity IDs",
+	Long: `Retrieves and outputs the full details (including body content) for one or
+more guidance entities specified by their IDs using the --id flag.
+
+Details are fetched from all configured backend(s).
+Output is a JSON array containing the full entity details for each ID found.
+If an ID is found in multiple backends, a warning is logged, but only the first
+instance found is included in the output.`, // Updated long description
+	Args: cobra.NoArgs, // Ensure no positional args, IDs must come from flags
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// requestedIDs := args // OLD: IDs were passed as arguments
-		requestedIDs := detailsIDs // NEW: Use the slice populated by --id flags
-
-		// --- Add check for empty IDs from flags ---
-		if len(requestedIDs) == 0 {
-			return fmt.Errorf("at least one --id flag must be provided")
+		if len(entityIDs) == 0 {
+			return errors.New("at least one --id flag must be provided")
 		}
 
-		// --- Use common setup ---
-		setupRes, err := setupDiscovery(rootConfigPath)
-		if err != nil {
-			return err // Errors already formatted by helper
+		// Backend initialization is now handled by rootCmd.PersistentPreRunE
+		if len(globalBackendService) == 0 {
+			return fmt.Errorf("internal error: no backend service available")
+		}
+		slog.Info("Fetching details from initialized backends", "backend_count", len(globalBackendService), "requested_ids", entityIDs)
+
+		allEntities := make([]backend.Entity, 0, len(entityIDs))
+		foundIDs := make(map[string]string) // Map ID -> source backend info
+
+		for i, service := range globalBackendService {
+			slog.Debug("Fetching details from backend", "index", i, "ids", entityIDs)
+			entities, err := service.GetDetails(entityIDs)
+			if err != nil {
+				slog.Error("Failed to get details from a backend", "index", i, "error", err)
+				// Continuing for now, but logging the error.
+				continue
+			}
+			slog.Debug("Received details from backend", "index", i, "count", len(entities))
+
+			// Merge entities and check for duplicates
+			for _, entity := range entities {
+				if existingSource, exists := foundIDs[entity.ID]; exists {
+					// Found duplicate ID from different backends
+					slog.Warn("Duplicate entity ID found across backends (details)",
+						"id", entity.ID,
+						"source1", existingSource,
+						"source2", fmt.Sprintf("backend %d", i),
+					)
+					// Skip adding the duplicate, keep the first one found.
+				} else {
+					allEntities = append(allEntities, entity)
+					foundIDs[entity.ID] = fmt.Sprintf("backend %d", i) // Record that this ID was found
+				}
+			}
 		}
 
-		// --- Retrieve Details from Backend ---
-		// Use setupRes.Backend instead of setupRes.Store
-		// Call GetDetails once with all requested IDs
-		entities, err := setupRes.Backend.GetDetails(requestedIDs)
-		if err != nil {
-			slog.Error("Failed to retrieve details from backend", "error", err)
-			return fmt.Errorf("failed to retrieve details: %w", err)
-		}
-		// Update log message
-		slog.Info("Retrieved details from backend", "found_count", len(entities), "requested_count", len(requestedIDs))
+		slog.Info("Total entity details collected", "count", len(allEntities))
 
-		// --- Marshal to JSON ---
-		// Use the entities slice directly returned by the backend
-		// The backend.Entity struct matches the desired output format
-		outputJSON, err := json.MarshalIndent(entities, "", "  ")
-		if err != nil {
-			slog.Error("Failed to marshal details data to JSON", "error", err)
-			return fmt.Errorf("failed to marshal details to JSON: %w", err)
+		// Check if all requested IDs were found
+		if len(foundIDs) != len(entityIDs) {
+			missingIDs := []string{}
+			requestedMap := make(map[string]bool)
+			for _, id := range entityIDs {
+				requestedMap[id] = true
+			}
+			for reqID := range requestedMap {
+				if _, found := foundIDs[reqID]; !found {
+					missingIDs = append(missingIDs, reqID)
+				}
+			}
+			slog.Warn("Some requested entity IDs were not found", "missing_ids", missingIDs)
+			// Do not error out, just return the ones that were found.
 		}
 
-		// --- Print JSON to stdout ---
-		fmt.Println(string(outputJSON))
+		// Output the combined details as JSON
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ") // Pretty print
+		if err := encoder.Encode(allEntities); err != nil {
+			slog.Error("Failed to encode details to JSON", "error", err)
+			return fmt.Errorf("failed to encode details to JSON: %w", err)
+		}
 
-		return nil // Return nil on success
+		return nil
 	},
 }
 
 func init() {
-	// Add detailsCmd directly to the rootCmd.
-	rootCmd.AddCommand(detailsCmd)
+	// Define the --id flag (can be used multiple times)
+	detailsCmd.Flags().StringSliceVar(&entityIDs, "id", []string{}, "Entity ID to retrieve details for (required, use multiple times for multiple IDs)")
+	_ = detailsCmd.MarkFlagRequired("id") // Mark as required
 
-	// Define the repeatable --id flag
-	detailsCmd.Flags().StringSliceVar(&detailsIDs, "id", []string{}, "Entity ID to get details for (repeatable)")
-	// Config flag is persistent on root
-	// detailsCmd.Flags().StringVarP(&detailsConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
+	// rootCmd.AddCommand(detailsCmd) // AddCommand is now done in root.go's init
 }

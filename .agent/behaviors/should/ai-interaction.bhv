@@ -1,9 +1,15 @@
 ---
-title: "AI Interaction Guidelines Practice"
 id: ai-interaction
-priority: 1000 # Lower priority, applies broadly
-description: "Establishes ethical, responsible, and effective patterns for AI interaction."
-tags: ["ai", "interaction", "safety", "ethics", "prompting", "llm"]
+title: AI Interaction Model
+priority: 50
+description: Defines the expected interaction patterns between the user and the AI assistant, focusing on clarity, context, and iterative refinement.
+tier: should
+tags:
+  - scope:meta
+  - domain:ai
+  - process:interaction
+  - quality:collaboration
+  - process:communication
 ---
 
 # AI Interaction Guidelines

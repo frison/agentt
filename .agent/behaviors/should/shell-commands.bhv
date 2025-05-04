@@ -1,9 +1,15 @@
 ---
-title: "Shell Command Structure Practice"
 id: shell-commands
-priority: 151
-description: "Rules for safe, predictable shell command execution in automated environments."
-tags: ["shell", "automation", "commands", "safety", "scripting"]
+title: Generate Safe and Effective Shell Commands
+priority: 170
+description: Construct shell commands that are clear, non-destructive, non-interactive, and achieve the intended task reliably.
+tier: should
+tags:
+  - domain:ai
+  - tech:shell
+  - process:generation
+  - quality:safety
+  - quality:effectiveness
 ---
 
 # Shell Command Structure

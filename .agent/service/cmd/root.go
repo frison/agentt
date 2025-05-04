@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"io"
-	"log"
+	"fmt"
+	// "io"
+	// "log"
 	"log/slog"
-	"os"
+	// "os"
 
 	"github.com/spf13/cobra"
 )
@@ -16,6 +17,7 @@ import (
 var rootConfigPath string
 var quiet bool    // Flag to suppress non-warning/error logs
 var verbosity int // Verbosity level controlled by -v flags
+var verbose bool
 
 var (
 	rootCmd = &cobra.Command{
@@ -31,42 +33,21 @@ relative to the current directory, in that order of precedence.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Configure logging level based on -q and -v flags
+			setupLogging(verbose, quiet)
+			slog.Debug("Executing rootCmd PersistentPreRunE")
 
-			// --- Configure slog ---
-			var logLevel slog.Level
-			if quiet {
-				logLevel = slog.LevelError // Only errors and above (effectively)
-			} else {
-				switch verbosity {
-				case 0:
-					logLevel = slog.LevelWarn // Default: Warn+
-				case 1:
-					logLevel = slog.LevelInfo // -v: Info+
-				default: // >= 2
-					logLevel = slog.LevelDebug // -vv and above: Debug+
+			// Initialize backend(s) conditionally
+			// Remove IsCompletionCommand() check
+			if cmd.Name() != "server" && cmd.Name() != "help" && cmd.Name() != "llm" { // Add other commands to skip? Maybe completion commands?
+				slog.Debug("Initializing backend service for command", "command", cmd.Name())
+				err := initializeBackend()
+				if err != nil {
+					return fmt.Errorf("backend initialization failed: %w", err)
 				}
+				slog.Debug("Backend service initialized successfully")
+			} else {
+				slog.Debug("Skipping backend initialization for command", "command", cmd.Name())
 			}
-
-			opts := &slog.HandlerOptions{
-				Level: logLevel,
-				// Optional: Customize time format or remove time
-				// ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				// 	if a.Key == slog.TimeKey {
-				// 		return slog.Attr{}
-				// 	}
-				// 	return a
-				// },
-			}
-
-			// Use TextHandler for more human-readable CLI output
-			handler := slog.NewTextHandler(os.Stderr, opts)
-			logger := slog.New(handler)
-			slog.SetDefault(logger)
-
-			// Discard output from the standard log package, just in case any library uses it
-			log.SetOutput(io.Discard)
-
 			return nil
 		},
 	}
@@ -74,6 +55,7 @@ relative to the current directory, in that order of precedence.`,
 
 // Execute executes the root command.
 func Execute() error {
+	// Call Execute which might exit, so os is needed
 	return rootCmd.Execute()
 }
 
@@ -89,7 +71,10 @@ func init() {
 	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "Increase logging verbosity (default: WARN, -v: INFO, -vv: DEBUG)")
 
 	// Subcommands add themselves via their own init() functions.
-
+	// Ensure all commands are added here if not done in their own init.
+	rootCmd.AddCommand(summaryCmd) // Ensure these are still added
+	rootCmd.AddCommand(detailsCmd)
+	rootCmd.AddCommand(llmCmd)
 	rootCmd.AddCommand(serverCmd)
-	serverCmd.AddCommand(serverStartCmd)
+	// serverCmd adds its own subcommands (like start) in its init
 }

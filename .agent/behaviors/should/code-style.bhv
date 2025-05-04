@@ -1,9 +1,16 @@
 ---
-title: "Code Style Requirements Practice"
 id: code-style
-priority: 400
-description: "Establishes consistent, readable, and maintainable code standards."
-tags: ["code", "style", "formatting", "convention", "readability", "maintainability"]
+title: Adhere to Established Code Style
+priority: 30
+description: Follow existing code style conventions (formatting, naming, idioms) for the language and project.
+tier: should
+tags:
+  - scope:code
+  - quality:style
+  - quality:formatting
+  - quality:convention
+  - quality:readability
+  - quality:maintainability
 ---
 
 # Code Style Requirements

@@ -1,0 +1,10 @@
+entityTypes:
+  - name: "behavior"
+    requiredFields: ["title", "description"] # Missing 'id'
+
+backends:
+  - type: localfs
+    settings:
+      rootDir: "."
+      entityLocations:
+        behavior: "*.bhv"

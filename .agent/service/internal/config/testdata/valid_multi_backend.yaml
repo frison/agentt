@@ -1,0 +1,25 @@
+listenAddress: ":9090"
+
+entityTypes:
+  - name: "behavior"
+    description: "Defines rules for agent operation."
+    requiredFields: ["id", "title", "tier", "priority", "description"]
+  - name: "recipe"
+    description: "Provides step-by-step instructions."
+    requiredFields: ["id", "title", "priority", "tags", "description"]
+
+backends:
+  - name: "local_primary"
+    type: localfs
+    settings:
+      rootDir: "."
+      entityLocations:
+        behavior: ".agent/behaviors/**/*.bhv"
+        recipe: ".agent/recipes/**/*.rcp"
+
+  - name: "shared_behaviors"
+    type: localfs
+    settings:
+      rootDir: "../shared/guidance" # Example relative path
+      entityLocations:
+        behavior: "common/behaviors/*.bhv"
