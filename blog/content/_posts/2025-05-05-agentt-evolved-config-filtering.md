@@ -9,7 +9,7 @@ categories:
   - cli
 draft: true # Start as draft
 provenance:
-  repo: "https://github.com/your_repo/agentt" # Adjust repo URL if needed
+  repo: "https://github.com/frison/agentt" # Adjust repo URL if needed
   commit: "1239727da589afe0981320fd7e4d58bfa89c80aa"
   prompt: "1239727da589afe0981320fd7e4d58bfa89c80aa" # Often the same as commit
   modifications: []
