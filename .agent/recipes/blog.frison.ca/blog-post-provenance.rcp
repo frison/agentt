@@ -6,13 +6,10 @@ tags:
   - topic:provenance
   - topic:metadata
   - topic:authorship
+  - format:markdown
 title: "Blog Article Provenance Tracking"
 priority: 201
 description: Ensuring blog articles correctly track author and origin information.
-domain: blog
-related_guidance:
-  behavior:
-    - behavior/should/git-commit-format.bhv
 ---
 
 # Recipe: Blog Article Provenance

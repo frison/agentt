@@ -1,5 +1,5 @@
 ---
-id: blog-article-collaboration
+id: blog-post-collaboration
 type: recipe
 tags:
   - topic:blog
@@ -7,9 +7,9 @@ tags:
   - tech:git
   - tech:github
   - process:workflow
-title: "Blog Article Collaboration Workflow"
+title: "Blog Post Collaboration Workflow"
 priority: 200
-description: Defines the process for collaborating on blog articles using Git and GitHub.
+description: Defines the process for collaborating on blog posts using Git and GitHub.
 domain: blog
 related_guidance:
   behavior:
@@ -19,12 +19,12 @@ calls_recipes:
   - git-history-preservation # Example if it calls another recipe
 ---
 
-# Recipe: Blog Article Collaboration
+# Recipe: Blog Post Collaboration
 
 ## Prerequisites
 - Working in the blog/content directory
 - Understanding of Markdown syntax
-- Clear topic idea for the article
+- Clear topic idea for the post
 - Get the current date with `date +%Y-%m-%d`
 
 ## File Naming Convention
@@ -34,7 +34,7 @@ calls_recipes:
 2. For special pages:
    - Use simple descriptive name: `about.md`, `contact.md`
 
-## Phase 1: Article Request & Setup
+## Phase 1: Post Request & Setup
 1. User provides:
    - Specific topic
    - Initial thoughts or random meanderings
@@ -44,7 +44,7 @@ calls_recipes:
 4. AI generates frontmatter:
    ```md
    ---
-   title: "Article Title"
+   title: "Post Title"
    date: YYYY-MM-DD
    draft: true
    ---
@@ -68,7 +68,7 @@ calls_recipes:
    - Engineering-focused perspective
    - Constructive suggestions
 3. AI maintains salty, funny, but professional tone
-4. Continue until article is complete
+4. Continue until post is complete
 
 ## Notes
 - Keep AI commentary relevant to engineering context
