@@ -8,6 +8,11 @@ categories:
   - configuration
   - cli
 draft: true # Start as draft
+provenance:
+  repo: "https://github.com/your_repo/agentt" # Adjust repo URL if needed
+  commit: "1239727da589afe0981320fd7e4d58bfa89c80aa"
+  prompt: "1239727da589afe0981320fd7e4d58bfa89c80aa" # Often the same as commit
+  modifications: []
 ---
 
 As AI assistants become more integrated into our development workflows, managing the guidance that shapes their behavior becomes increasingly critical. Simple lists of rules or instructions quickly become unwieldy. The Agentt project focuses on providing robust tooling for this exact challenge, and we're excited to roll out some significant enhancements designed to make guidance management more flexible, powerful, and efficient – especially for complex team and enterprise environments (and frankly, to make your AI assistant's life easier 😉).
@@ -136,3 +141,7 @@ These enhancements represent a major step forward for Agentt:
 *   **Improved Maintainability:** A cleaner, more portable configuration structure.
 
 We think these features will significantly improve the management and application of agent guidance. Give them a try and let us know what you think! What other filtering capabilities would make your life easier?
+
+---
+
+*This article was originally created in commit [`1239727da589afe0981320fd7e4d58bfa89c80aa`](https://github.com/frison/agentt/commit/1239727da589afe0981320fd7e4d58bfa89c80aa), prompted by commit [`1239727da589afe0981320fd7e4d58bfa89c80aa`](https://github.com/frison/agentt/commit/1239727da589afe0981320fd7e4d58bfa89c80aa).*
