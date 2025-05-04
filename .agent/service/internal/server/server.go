@@ -12,7 +12,6 @@ import (
 	// "log" // REMOVED (use slog)
 	"log/slog" // ADDED
 	"net/http"
-	// "strings" // REMOVED - Unused
 	"time" // Add time package
 )
 
@@ -101,8 +100,11 @@ func (s *Server) HandleHealth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		// Log the error, but we probably can't send an HTTP error response if writing failed.
+		slog.Error("Error writing health check response", "error", err)
+	}
 }
 
 // HandleEntityTypes returns the configured entity types.
@@ -132,7 +134,11 @@ func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write(contentBytes)
+	_, err := w.Write(contentBytes)
+	if err != nil {
+		// Log the error
+		slog.Error("Error writing static file content", "error", err)
+	}
 }
 
 // HandleSummary returns a JSON array of backend.Summary for all entities.
@@ -154,7 +160,11 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slog.Info("Prepared summaries for response", "count", len(summaries), "path", r.URL.Path)
-	s.writeJSONResponse(w, http.StatusOK, summaries) // Return summaries directly
+	if err := json.NewEncoder(w).Encode(summaries); err != nil {
+		slog.Error("Failed to encode summaries", "error", err)
+		http.Error(w, "Failed to encode summaries", http.StatusInternalServerError)
+		return
+	}
 }
 
 // --- Request/Response Structs ---
@@ -198,7 +208,19 @@ func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 	// Log how many were found vs requested
 	slog.Info("Returning details response", "found_count", len(entities), "requested_count", len(req.IDs))
 
-	s.writeJSONResponse(w, http.StatusOK, entities) // Return entities directly
+	jsonData, err := json.Marshal(entities)
+	if err != nil {
+		slog.Error("Failed to marshal details to JSON", "error", err)
+		http.Error(w, "Failed to marshal details to JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		// Log the error
+		slog.Error("Error writing details JSON response", "error", err)
+	}
 }
 
 // writeJSONResponse is a helper to marshal data to JSON and write the response.
@@ -212,5 +234,9 @@ func (s *Server) writeJSONResponse(w http.ResponseWriter, statusCode int, data i
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	w.Write(jsonData)
+	_, err = w.Write(jsonData)
+	if err != nil {
+		// Log the error
+		slog.Error("Error writing JSON response", "error", err)
+	}
 }

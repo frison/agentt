@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	// "agentt/internal/config" // REMOVED - Unused
 	"agentt/internal/server"
-	// "agentt/internal/guidance/backend" // REMOVED - Unused
-	// "context" // REMOVED - Unused
 	"log"
 	"log/slog"
 	"net/http"
@@ -16,8 +13,6 @@ import (
 )
 
 var (
-	// configPath string // REMOVED - Use rootConfigPath from root.go
-
 	serverCmd = &cobra.Command{
 		Use:   "server",
 		Short: "Manage the Agent Guidance HTTP server",
@@ -53,20 +48,8 @@ func startServer(cmd *cobra.Command, args []string) {
 	cfg := setupRes.Cfg
 	guidanceBackend := setupRes.Backend // Get the initialized backend
 
-	// --- REMOVED: Old Store/Watcher Setup ---
-	// guidanceStore := store.NewGuidanceStore()
-	// wchr, err := discovery.NewWatcher(cfg, guidanceStore, loadedPath)
-	// ...
-	// err = wchr.InitialScan()
-	// ...
-
 	// --- Setup HTTP Server (passing backend) ---
 	srv := server.NewServer(cfg, guidanceBackend) // Pass backend instead of store
-
-	// --- REMOVED: Watcher Start ---
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
-	// wchr.Start(ctx)
 
 	// --- Start HTTP Server ---
 	serverErrChan := make(chan error, 1)
@@ -99,12 +82,6 @@ func startServer(cmd *cobra.Command, args []string) {
 	}
 
 	slog.Info("Shutting down server...")
-
-	// --- REMOVED: Watcher Shutdown ---
-	// cancel()
-	// if err := wchr.Close(); err != nil {
-	// 	slog.Error("Error closing watcher", "error", err)
-	// }
 
 	// TODO: Implement graceful HTTP server shutdown (using context)
 	// Example:

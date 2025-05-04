@@ -1,48 +1,35 @@
 listenAddress: ":8080"
 
-# llmGuidanceFile: "llm_guidance.txt" # REMOVED - Now embedded
-
 entityTypes:
   - name: "behavior"
-    description: "Defines behavioral directives (MUSTs and SHOULDs) for the agent."
-    pathGlob: "../behavior/**/*.bhv" # Path relative to this file
-    fileExtensionHint: ".bhv"
-    requiredFrontMatter:
+    description: "Defines rules, constraints, or preferred practices for agent operation."
+    pathGlob: ".agent/behavior/**/*.bhv"
+    requiredFields:
+      - "id"
       - "title"
+      - "tier"
       - "priority"
-      - "description"
       - "tags"
-      # Tier (must/should) will be inferred from path later
+      - "description"
 
   - name: "recipe"
-    description: "Provides procedural steps for specific tasks."
-    pathGlob: "../cookbook/**/*.rcp" # Path relative to this file
-    fileExtensionHint: ".rcp"
-    requiredFrontMatter:
+    description: "Provides step-by-step instructions or procedures for specific tasks."
+    pathGlob: ".agent/cookbook/**/*.rcp"
+    requiredFields:
       - "id"
       - "title"
       - "priority"
-      - "description"
       - "tags"
-
-  # Add persona here later, e.g.:
-  # - name: "persona"
-  #   description: "Defines agent personas or modes of operation."
-  #   pathGlob: ".agent/personas/**/*.prs"
-  #   requiredFrontMatter:
-  #     - "id"
-  #     - "name"
-  #     - "tags"
-
-  # Add reflex manifest here later, e.g.:
-  # - name: "reflex"
-  #   description: "Manifest describing a reflex (containerized tool)."
-  #   pathGlob: ".agent/reflexes/**/*.yaml"
-  #   requiredFrontMatter:
-  #     - "id"
-  #     - "image"
-  #     - "tags"
+      - "description"
 
 backend:
   type: localfs
-  rootDir: "."
+  rootDir: "~/repos/agent" # Base directory for resolving globs below, relative to project root (where agentt runs)
+
+  settings:
+    requireExplicitID: true
+    entityLocations: # Maps entity type name to glob patterns
+      behavior:
+        pathGlob: ".agent/behavior/**/*.bhv"
+      recipe:
+        pathGlob: ".agent/cookbook/**/*.rcp"

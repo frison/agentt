@@ -84,8 +84,13 @@ func TestFindAndLoadConfig_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Change back to the original directory
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Fatalf("Failed to change back to original directory: %v", err)
+		}
+	}()
 	t.Cleanup(func() {
-		os.Chdir(originalWD)
 		t.Setenv("AGENTT_CONFIG", "") // Clean up env var
 	})
 

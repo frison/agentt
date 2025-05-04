@@ -39,3 +39,9 @@ This document provides a high-level overview of the Go service located in the `.
 ## Module Path
 
 The Go module name is `agentt` as defined in `go.mod`. Internal packages should be imported relative to this, e.g., `agentt/internal/content`.
+
+### Testing
+
+Unit and integration tests are crucial for ensuring the service's correctness and stability. Tests should be co-located with the code they test (e.g., `foo_test.go` alongside `foo.go`).
+
+Test files that require filesystem content (like mock configuration files, behaviors, or recipes) should place these assets in a `testdata` directory adjacent to the test file. Helper functions within the tests (e.g., using `t.TempDir()` and `filepath.WalkDir`) should be used to copy these assets into a temporary location for each test run, ensuring test isolation and repeatable results.

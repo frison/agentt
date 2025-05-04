@@ -40,31 +40,46 @@ If no configuration file is found through any of these methods, the command will
 The configuration file uses YAML format:
 
 ```yaml
-# Address for the HTTP server to listen on
+# Address for the HTTP server to listen on (if running server)
 listenAddress: ":8080"
 
-# Definitions of entity types to discover
+# Definitions of all known entity types and their required fields
 entityTypes:
-  - name: "behavior"                             # Unique type name
-    description: "Defines behavioral directives..." # For documentation
-    pathGlob: "../behavior/**/*.bhv"             # Glob pattern relative to config file location
-    fileExtensionHint: ".bhv"                    # Optional hint
-    requiredFrontMatter:                       # List of required frontmatter keys
+  - name: "behavior"
+    description: "Defines rules, constraints, or preferred practices for agent operation."
+    requiredFields:
+      - "id"          # Now explicitly required for all types
       - "title"
+      - "tier"
       - "priority"
-      - "description"
       - "tags"
+      - "description"
 
   - name: "recipe"
-    description: "Provides procedural steps..."
-    pathGlob: "../cookbook/**/*.rcp"
-    fileExtensionHint: ".rcp"
-    requiredFrontMatter:
+    description: "Provides step-by-step instructions or procedures for specific tasks."
+    requiredFields:
       - "id"
       - "title"
       - "priority"
-      - "description"
       - "tags"
+      - "description"
+
+# Configuration for the selected guidance backend
+backend:
+  type: localfs # Specifies the backend type (currently only "localfs" supported)
+  settings:
+    # Settings specific to the "localfs" backend:
+    rootDir: "." # Base directory for resolving globs below.
+                 # Relative paths resolved against project root (where agentt runs).
+                 # Defaults to "." if omitted.
+    requireExplicitID: true # If true, files without an 'id' field in frontmatter are ignored.
+                            # Defaults to true.
+    entityLocations: # Maps entity type name (from entityTypes above) to glob patterns
+      behavior:      # Key must match an entityType name
+        pathGlob: ".agent/behavior/**/*.bhv" # Glob pattern relative to rootDir
+      recipe:        # Key must match an entityType name
+        pathGlob: ".agent/cookbook/**/*.rcp"
+      # ... add entries for other entity types if needed ...
 ```
 
 **Note:** The `pathGlob` within `entityTypes` is interpreted relative to the location of the loaded `config.yaml` file itself.
@@ -99,6 +114,22 @@ Get specific details (outputs JSON):
 ```bash
 ./agentt details --id bhv-some-id --id rcp-other-id [-c path/to/config.yaml]
 ```
+
+#### Filtering CLI Output
+
+Both `summary` and `details` commands support a `--filter` flag to filter the results based on metadata *after* they have been retrieved from the backend.
+
+```bash
+# Get summaries for all 'must' tier behaviors
+./agentt summary --filter 'tier:must AND type:behavior'
+
+# Get details for specific IDs, but only show those tagged 'core'
+./agentt details --id bhv-safety-first --id sep-of-concerns --filter 'tag:core'
+```
+
+**Filter Query Syntax (Basic):**
+*   Terms: Match against fields (e.g., `tag:core`, `type:behavior`, `tier:must`). Tag values are case-insensitive.
+*   (Note: Full support for boolean operators like `AND`, `OR`, `NOT`, and grouping `()` is planned but the current parser implementation is basic and may only support simple `key:value` terms.)
 
 Show agent interaction help (outputs text):
 ```bash

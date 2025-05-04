@@ -36,8 +36,12 @@ func TestGuidanceStore_AddOrUpdate(t *testing.T) {
 	item1 := createItem("/path/to/item1.bhv", "behavior", true, map[string]interface{}{"title": "Item 1"})
 	item2 := createItem("/path/to/item2.rcp", "recipe", true, map[string]interface{}{"id": "item2"})
 
-	s.AddOrUpdate(item1)
-	s.AddOrUpdate(item2)
+	if err := s.AddOrUpdate(item1); err != nil {
+		t.Fatalf("AddOrUpdate(item1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(item2); err != nil {
+		t.Fatalf("AddOrUpdate(item2) failed: %v", err)
+	}
 
 	if len(s.GetAll()) != 2 {
 		t.Fatalf("Expected store to have 2 items, got %d", len(s.GetAll()))
@@ -45,7 +49,9 @@ func TestGuidanceStore_AddOrUpdate(t *testing.T) {
 
 	// Test update
 	item1Updated := createItem("/path/to/item1.bhv", "behavior", true, map[string]interface{}{"title": "Item 1 Updated"})
-	s.AddOrUpdate(item1Updated)
+	if err := s.AddOrUpdate(item1Updated); err != nil {
+		t.Fatalf("AddOrUpdate(item1Updated) failed: %v", err)
+	}
 
 	if len(s.GetAll()) != 2 {
 		t.Fatalf("Expected store to still have 2 items after update, got %d", len(s.GetAll()))
@@ -60,8 +66,18 @@ func TestGuidanceStore_AddOrUpdate(t *testing.T) {
 	}
 
 	// Test adding nil or invalid path item
-	s.AddOrUpdate(nil)
-	s.AddOrUpdate(&content.Item{SourcePath: ""})
+	/* // Remove empty branches causing staticcheck warnings
+	if err := s.AddOrUpdate(nil); err == nil { // Expecting an error here ideally, but current AddOrUpdate ignores nil
+		// t.Error("AddOrUpdate(nil) should ideally return an error, but didn't")
+	}
+	if err := s.AddOrUpdate(&content.Item{SourcePath: ""}); err == nil { // Expecting an error here ideally
+		// t.Error("AddOrUpdate(empty path) should ideally return an error, but didn't")
+	}
+	*/
+	// Explicitly call them outside the check, as they are currently no-ops that don't error
+	_ = s.AddOrUpdate(nil)             // Currently ignored by AddOrUpdate, assign to _ to satisfy errcheck
+	_ = s.AddOrUpdate(&content.Item{}) // Also ignored, assign to _ to satisfy errcheck
+
 	if len(s.GetAll()) != 2 {
 		t.Errorf("Store size changed after adding nil/empty path items, got %d", len(s.GetAll()))
 	}
@@ -71,8 +87,12 @@ func TestGuidanceStore_Remove(t *testing.T) {
 	s := store.NewGuidanceStore()
 	item1 := createItem("/path/to/item1.bhv", "behavior", true, nil)
 	item2 := createItem("/path/to/item2.rcp", "recipe", true, nil)
-	s.AddOrUpdate(item1)
-	s.AddOrUpdate(item2)
+	if err := s.AddOrUpdate(item1); err != nil {
+		t.Fatalf("AddOrUpdate(item1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(item2); err != nil {
+		t.Fatalf("AddOrUpdate(item2) failed: %v", err)
+	}
 
 	s.Remove("/path/to/item1.bhv")
 	if len(s.GetAll()) != 1 {
@@ -100,7 +120,9 @@ func TestGuidanceStore_Remove(t *testing.T) {
 func TestGuidanceStore_GetByPath(t *testing.T) {
 	s := store.NewGuidanceStore()
 	item1 := createItem("/path/to/item1.bhv", "behavior", true, map[string]interface{}{"title": "Get Me"})
-	s.AddOrUpdate(item1)
+	if err := s.AddOrUpdate(item1); err != nil {
+		t.Fatalf("AddOrUpdate(item1) failed: %v", err)
+	}
 
 	retrieved, found := s.GetByPath("/path/to/item1.bhv")
 	if !found {
@@ -136,10 +158,18 @@ func TestQuery_FilterByEntityType(t *testing.T) {
 	itemR1 := createItem("/path/r1.rcp", "recipe", true, nil)
 	itemBInvalid := createItem("/path/b3.bhv", "behavior", false, nil) // Should be ignored
 
-	s.AddOrUpdate(itemB1)
-	s.AddOrUpdate(itemB2)
-	s.AddOrUpdate(itemR1)
-	s.AddOrUpdate(itemBInvalid)
+	if err := s.AddOrUpdate(itemB1); err != nil {
+		t.Fatalf("AddOrUpdate(itemB1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemB2); err != nil {
+		t.Fatalf("AddOrUpdate(itemB2) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR1); err != nil {
+		t.Fatalf("AddOrUpdate(itemR1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemBInvalid); err != nil {
+		t.Fatalf("AddOrUpdate(itemBInvalid) failed: %v", err)
+	}
 
 	tests := []struct {
 		name          string
@@ -190,10 +220,18 @@ func TestQuery_FilterByTier(t *testing.T) {
 	itemB3.Tier = "must"
 	itemR1 := createItem("/path/r1.rcp", "recipe", true, nil) // No tier
 
-	s.AddOrUpdate(itemB1)
-	s.AddOrUpdate(itemB2)
-	s.AddOrUpdate(itemB3)
-	s.AddOrUpdate(itemR1)
+	if err := s.AddOrUpdate(itemB1); err != nil {
+		t.Fatalf("AddOrUpdate(itemB1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemB2); err != nil {
+		t.Fatalf("AddOrUpdate(itemB2) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemB3); err != nil {
+		t.Fatalf("AddOrUpdate(itemB3) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR1); err != nil {
+		t.Fatalf("AddOrUpdate(itemR1) failed: %v", err)
+	}
 
 	tests := []struct {
 		name          string
@@ -241,10 +279,18 @@ func TestQuery_FilterByFrontMatterSimple(t *testing.T) {
 	itemR3 := createItem("/path/r3.rcp", "recipe", true, map[string]interface{}{"id": "r3", "priority": 10})
 	itemB1 := createItem("/path/b1.bhv", "behavior", true, map[string]interface{}{"id": "b1", "priority": 10}) // Add ID for testing
 
-	s.AddOrUpdate(itemR1)
-	s.AddOrUpdate(itemR2)
-	s.AddOrUpdate(itemR3)
-	s.AddOrUpdate(itemB1)
+	if err := s.AddOrUpdate(itemR1); err != nil {
+		t.Fatalf("AddOrUpdate(itemR1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR2); err != nil {
+		t.Fatalf("AddOrUpdate(itemR2) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR3); err != nil {
+		t.Fatalf("AddOrUpdate(itemR3) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemB1); err != nil {
+		t.Fatalf("AddOrUpdate(itemB1) failed: %v", err)
+	}
 
 	tests := []struct {
 		name          string
@@ -303,11 +349,21 @@ func TestQuery_FilterByTag(t *testing.T) {
 	itemR2 := createItem("/path/r2.rcp", "recipe", true, map[string]interface{}{"tags": []interface{}{"core"}, "id": "r2"})
 	itemR3NoTags := createItem("/path/r3.rcp", "recipe", true, map[string]interface{}{"id": "r3"})
 
-	s.AddOrUpdate(itemB1)
-	s.AddOrUpdate(itemB2)
-	s.AddOrUpdate(itemR1)
-	s.AddOrUpdate(itemR2)
-	s.AddOrUpdate(itemR3NoTags)
+	if err := s.AddOrUpdate(itemB1); err != nil {
+		t.Fatalf("AddOrUpdate(itemB1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemB2); err != nil {
+		t.Fatalf("AddOrUpdate(itemB2) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR1); err != nil {
+		t.Fatalf("AddOrUpdate(itemR1) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR2); err != nil {
+		t.Fatalf("AddOrUpdate(itemR2) failed: %v", err)
+	}
+	if err := s.AddOrUpdate(itemR3NoTags); err != nil {
+		t.Fatalf("AddOrUpdate(itemR3NoTags) failed: %v", err)
+	}
 
 	tests := []struct {
 		name          string
@@ -371,7 +427,9 @@ func TestGuidanceStore_AddOrUpdate_DuplicateID(t *testing.T) {
 	item2 := createItem("/path/other/different-name.rcp", "recipe", true, map[string]interface{}{"id": "duplicate-id"})
 
 	// Add first item - should succeed
-	s.AddOrUpdate(item1)
+	if err := s.AddOrUpdate(item1); err != nil {
+		t.Fatalf("AddOrUpdate(item1) failed unexpectedly: %v", err)
+	}
 	if len(s.GetAll()) != 1 {
 		t.Fatal("Store should have 1 item after adding item1")
 	}

@@ -2,7 +2,6 @@ package store
 
 import (
 	// "agentt/internal/content" // Original incorrect path?
-	// "agentt.hershel.co/service/internal/content" // Incorrect module path assumption
 	"agentt/internal/content" // Correct path relative to module 'agentt'
 	"errors"                  // Re-add import
 	"fmt"
