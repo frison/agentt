@@ -30,6 +30,7 @@ Establish a consistent, informative commit message structure that effectively co
      - Blank line after title
      - 72 characters per line
      - Explain what changed and why
+     - **Note:** When constructing multi-line bodies in shell commands, ensure newlines are correctly interpreted (e.g., using `printf`, ANSI-C quoting `$'...'`, or heredocs) rather than being treated as literal `\\n`.
      - Use markdown formatting
      - Focus on motivation and context
 
