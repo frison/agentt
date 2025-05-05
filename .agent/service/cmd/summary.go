@@ -1,10 +1,6 @@
 package cmd
 
 import (
-	// "agentt/internal/config" // Unused after refactor
-	// "agentt/internal/content" // REMOVED
-	// "agentt/internal/discovery" // Unused after refactor
-	// "agentt/internal/store" // Unused after refactor
 	"agentt/internal/filter" // Import the filter package
 	"encoding/json"
 	"fmt"
@@ -36,18 +32,25 @@ Examples:
 The summary includes the entity ID, type, tier (if applicable), description, and tags.
 Duplicate entity IDs found across different backends will be noted with a warning.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Backend initialization is now handled by rootCmd.PersistentPreRunE
-		if len(globalBackendService) == 0 {
-			return fmt.Errorf("internal error: no backend service available")
+		// Get verbosity level from root command's persistent flag
+		verbosity, _ := cmd.Root().PersistentFlags().GetCount("verbose")
+
+		// Get backend instance
+		backendInstance, _, err := GetBackendAndConfig(verbosity) // Use GetBackendAndConfig, ignore config
+		if err != nil {
+			return fmt.Errorf("failed to get backend instance: %w", err)
 		}
-		slog.Info("Fetching summaries from initialized backends", "backend_count", len(globalBackendService))
+		if backendInstance == nil {
+			return fmt.Errorf("internal error: backend instance is nil after initialization")
+		}
+		slog.Info("Fetching summaries from backend") // Simplified log
 
 		// --- Parse Filter --- START ---
 		var parsedFilter filter.FilterNode
-		var err error
+		// Use simple assignment `=` for the second time err is assigned
 		if filterQuery != "" {
 			slog.Debug("Parsing filter query", "query", filterQuery)
-			parsedFilter, err = filter.ParseFilter(filterQuery)
+			parsedFilter, err = filter.ParseFilter(filterQuery) // Use = instead of :=
 			if err != nil {
 				slog.Error("Failed to parse filter query", "query", filterQuery, "error", err)
 				return fmt.Errorf("failed to parse filter query: %w", err)
@@ -60,53 +63,38 @@ Duplicate entity IDs found across different backends will be noted with a warnin
 		}
 		// --- Parse Filter --- END ---
 
-		allSummaries := make([]backend.Summary, 0)
-		seenIDs := make(map[string]string) // Map ID -> source backend info (e.g., type/name)
+		// Slice to hold summaries after filtering
+		var filteredSummaries []backend.Summary
+		// seenIDs map is handled within MultiBackend now, not needed here.
 
-		for i, service := range globalBackendService {
-			slog.Debug("Fetching summary from backend", "index", i)
-			summaries, err := service.GetSummary()
-			if err != nil {
-				slog.Error("Failed to get summary from a backend", "index", i, "error", err)
-				// Decide whether to fail or just continue with results from other backends
-				// Continuing for now, but logging the error.
-				continue
-			}
-			slog.Debug("Received summaries from backend", "index", i, "count", len(summaries))
+		// Fetch summaries from the single (potentially aggregate) backend instance
+		slog.Debug("Fetching summary from backend instance")
+		summaries, err := backendInstance.GetSummary() // Use the instance
+		if err != nil {
+			slog.Error("Failed to get summary from backend", "error", err)
+			// Decide whether to fail or just continue with potentially partial results from MultiBackend
+			// Let's proceed and filter whatever we got.
+		}
+		slog.Debug("Received summaries from backend instance", "count", len(summaries))
 
-			// Merge summaries and check for duplicates
+		// Apply filter if necessary
+		if parsedFilter != nil {
+			filteredSummaries = make([]backend.Summary, 0, len(summaries))
 			for _, summary := range summaries {
-				if existingSource, exists := seenIDs[summary.ID]; exists {
-					// Found duplicate ID
-					slog.Warn("Duplicate entity ID found across backends",
-						"id", summary.ID,
-						"source1", existingSource,
-						"source2", fmt.Sprintf("backend %d", i), // Improve source info if possible
-					)
-					// Decide strategy: skip duplicate, merge, error? Skipping for now.
-				} else {
-					// --- Apply Filter --- START ---
-					passedFilter := true
-					if parsedFilter != nil {
-						passedFilter = parsedFilter.Evaluate(summary)
-						slog.Debug("Evaluated filter on summary", "id", summary.ID, "filter_result", passedFilter)
-					}
-					// --- Apply Filter --- END ---
-
-					if passedFilter {
-						allSummaries = append(allSummaries, summary)
-						seenIDs[summary.ID] = fmt.Sprintf("backend %d", i) // Store source info only if it passes filter
-					}
+				if parsedFilter.Evaluate(summary) {
+					filteredSummaries = append(filteredSummaries, summary)
 				}
 			}
+		} else {
+			filteredSummaries = summaries // Use all summaries if no filter
 		}
 
-		slog.Info("Total summaries collected after filtering", "count", len(allSummaries))
+		slog.Info("Total summaries collected after filtering", "count", len(filteredSummaries))
 
 		// Output the combined summary as JSON
 		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ") // Pretty print
-		if err := encoder.Encode(allSummaries); err != nil {
+		encoder.SetIndent("", "  ")                              // Pretty print
+		if err = encoder.Encode(filteredSummaries); err != nil { // Use = here too
 			slog.Error("Failed to encode summary to JSON", "error", err)
 			return fmt.Errorf("failed to encode summary to JSON: %w", err)
 		}
@@ -118,19 +106,5 @@ Duplicate entity IDs found across different backends will be noted with a warnin
 func init() {
 	// Add the filter flag
 	summaryCmd.Flags().StringVar(&filterQuery, "filter", "", "Filter entities using a query. Supported syntax: key:value, key:*, -key:value. Implicit AND between terms. E.g., 'tier:must tag:scope:core -type:recipe'")
-	// rootCmd.AddCommand(summaryCmd) // AddCommand is now done in root.go's init
+	rootCmd.AddCommand(summaryCmd) // Add the command back to rootCmd
 }
-
-// Placeholder: Define SummaryItem structure based on Phase 1
-// type SummaryItem struct {
-//	 ID          string   `json:"id"`
-//	 Type        string   `json:"type"` // "behavior" or "recipe"
-//	 Tier        string   `json:"tier,omitempty"` // "must" or "should" for behaviors
-//	 Tags        []string `json:"tags"`
-//	 Description string   `json:"description"`
-//}
-
-// Placeholder: Mapping function if needed
-// func PrepareSummary(entities []loader.Entity) []SummaryItem {
-// 	// ... logic ...
-// }

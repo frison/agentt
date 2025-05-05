@@ -6,6 +6,7 @@ import (
 	"errors"                  // Re-add import
 	"fmt"
 	"log" // Added for logging
+	"reflect"
 	"sync"
 )
 
@@ -87,12 +88,12 @@ func (s *GuidanceStore) Remove(sourcePath string) {
 func (s *GuidanceStore) GetAll() []*content.Item {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	allItems := make([]*content.Item, 0, len(s.itemsByPath)) // Iterate path map
+	// Make a copy to avoid returning internal slice directly
+	all := make([]*content.Item, 0, len(s.itemsByPath))
 	for _, item := range s.itemsByPath {
-		allItems = append(allItems, item)
+		all = append(all, item)
 	}
-	return allItems
+	return all
 }
 
 // GetByPath retrieves a single item by its source path.
@@ -103,7 +104,7 @@ func (s *GuidanceStore) GetByPath(sourcePath string) (*content.Item, bool) {
 	return item, found
 }
 
-// GetByID retrieves a single item by its canonical ID.
+// GetByID retrieves an item by its canonical ID.
 func (s *GuidanceStore) GetByID(id string) (*content.Item, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -111,68 +112,64 @@ func (s *GuidanceStore) GetByID(id string) (*content.Item, bool) {
 	return item, found
 }
 
-// Query performs filtering on the items in the store.
-// Filters is a map where key is the field name (e.g., "entityType", "tier", or any key in FrontMatter)
-// and value is the desired value.
-// NOTE: This still iterates through all items for general filtering.
-// Optimization for direct ID lookup should use GetByID.
+// Query searches the store based on provided filter criteria.
+// Filters is a map where keys are field names (e.g., "entityType", "tier", "tag", or any frontmatter key)
+// and values are the desired values to match.
+// For "tag", the value should be a single tag string; the item matches if it contains that tag.
 func (s *GuidanceStore) Query(filters map[string]interface{}) []*content.Item {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	results := make([]*content.Item, 0)
-
-itemLoop:
-	// Iterate over one of the maps, e.g., by path
-	for _, item := range s.itemsByPath {
-		if !item.IsValid {
+	var results []*content.Item
+	for _, item := range s.itemsByPath { // Iterate through path map to get unique items
+		if !item.IsValid { // Ignore invalid items during query
 			continue
 		}
-
-		// Check if the item matches ALL provided filters
-		for filterKey, expectedFilterValue := range filters {
-			match := false
-
-			switch filterKey {
-			case "entityType":
-				if fmt.Sprintf("%v", item.EntityType) == fmt.Sprintf("%v", expectedFilterValue) {
-					match = true
-				}
-			case "tier":
-				if fmt.Sprintf("%v", item.Tier) == fmt.Sprintf("%v", expectedFilterValue) {
-					match = true
-				}
-			case "tag": // Special handling for tag - must check FrontMatter["tags"]
-				if actualValue, found := item.FrontMatter["tags"]; found { // Look for "tags" plural
-					if tagsSlice, sliceOk := actualValue.([]interface{}); sliceOk {
-						if expectedTagStr, filterOk := expectedFilterValue.(string); filterOk {
-							for _, tagInItem := range tagsSlice {
-								if tagStr, itemOk := tagInItem.(string); itemOk && tagStr == expectedTagStr {
-									match = true
-									break
-								}
-							}
-						}
-					}
-				}
-			default: // Handle other frontmatter keys
-				if actualValue, found := item.FrontMatter[filterKey]; found {
-					if fmt.Sprintf("%v", actualValue) == fmt.Sprintf("%v", expectedFilterValue) {
-						match = true
-					}
-				}
-			}
-
-			// If this specific filter key did not match, skip the whole item
-			if !match {
-				continue itemLoop
-			}
-
-		} // End of loop over filters for one item
-
-		results = append(results, item)
-
-	} // End of loop over all items
-
+		if matchesFilters(item, filters) {
+			results = append(results, item)
+		}
+	}
 	return results
+}
+
+// matchesFilters checks if a single item matches all provided filter criteria.
+func matchesFilters(item *content.Item, filters map[string]interface{}) bool {
+	for key, filterValue := range filters {
+		matches := false
+		switch key {
+		case "entityType":
+			if strVal, ok := filterValue.(string); ok && item.EntityType == strVal {
+				matches = true
+			}
+		case "tier":
+			if strVal, ok := filterValue.(string); ok && item.Tier == strVal {
+				matches = true
+			}
+		case "tag":
+			filterTag, okFilter := filterValue.(string)
+			itemTags, okItem := item.FrontMatter["tags"].([]interface{})
+			if okFilter && okItem {
+				for _, itemTagRaw := range itemTags {
+					if itemTagStr, okTagStr := itemTagRaw.(string); okTagStr && itemTagStr == filterTag {
+						matches = true
+						break // Found the tag, no need to check further item tags for *this* filter tag
+					}
+				}
+			}
+		default: // Assume it's a frontmatter key
+			if item.FrontMatter != nil {
+				if itemValue, exists := item.FrontMatter[key]; exists {
+					// Simple comparison for now, might need DeepEqual for complex types
+					if reflect.DeepEqual(itemValue, filterValue) {
+						matches = true
+					}
+				}
+			}
+		}
+
+		if !matches {
+			return false // If any filter doesn't match, the item doesn't match overall
+		}
+	}
+	return true // All filters matched
 }

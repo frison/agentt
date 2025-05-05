@@ -8,7 +8,7 @@ without needing the HTTP server.
 1.  **Fetch Summary:**
     Run the command:
     ```bash
-    agentt summary
+    agentt summary -q
     ```
     This will output a JSON array containing summaries for all available
     behaviors and recipes.
@@ -36,17 +36,17 @@ without needing the HTTP server.
     Run the command, providing the relevant IDs using the --id flag
     (repeat the flag for multiple IDs):
     ```bash
-    agentt details --id <relevant_id_1> --id <relevant_id_2> ...
+    agentt details -q --id <relevant_id_1> --id <relevant_id_2> ...
     ```
     Example:
     ```bash
-    agentt details --id bhv-safety-first --id rcp-git-commit-creation
+    agentt details -q --id bhv-safety-first --id rcp-git-commit-creation
     ```
     *Alternatively, if you used `--filter` in step 1 or want to filter directly,
     you can use `--filter` with `details` instead of specific IDs:*
     ```bash
     # Example: Get details for all MUST behaviors tagged 'scope:core'
-    agentt details --filter "tier:must tag:scope:core"
+    agentt details -q --filter "tier:must tag:scope:core"
     ```
 
     This will output a JSON array containing the full details (including

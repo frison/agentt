@@ -25,7 +25,7 @@ type Entity struct {
 
 // GuidanceBackend defines the interface for loading guidance entities.
 //
-//go:generate mockgen -destination=mock_backend.go -package=backend -source=backend.go GuidanceBackend
+// //go:generate mockgen -destination=mock_backend.go -package=backend -source=backend.go GuidanceBackend // Temporarily commented out
 type GuidanceBackend interface {
 	// GetSummary returns summaries for all available entities.
 	GetSummary() ([]Summary, error)

@@ -1,11 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-	// "io"
-	// "log"
-	"log/slog"
-	// "os"
+	"log" // Add standard log package
 
 	"github.com/spf13/cobra"
 )
@@ -17,7 +13,7 @@ import (
 var rootConfigPath string
 var quiet bool    // Flag to suppress non-warning/error logs
 var verbosity int // Verbosity level controlled by -v flags
-var verbose bool
+// var verbose bool // REMOVED: Unused, verbosity controlled by count flag
 
 var (
 	rootCmd = &cobra.Command{
@@ -33,21 +29,18 @@ relative to the current directory, in that order of precedence.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			setupLogging(verbose, quiet)
-			slog.Debug("Executing rootCmd PersistentPreRunE")
-
-			// Initialize backend(s) conditionally
-			// Remove IsCompletionCommand() check
-			if cmd.Name() != "server" && cmd.Name() != "help" && cmd.Name() != "llm" { // Add other commands to skip? Maybe completion commands?
-				slog.Debug("Initializing backend service for command", "command", cmd.Name())
-				err := initializeBackend()
-				if err != nil {
-					return fmt.Errorf("backend initialization failed: %w", err)
-				}
-				slog.Debug("Backend service initialized successfully")
-			} else {
-				slog.Debug("Skipping backend initialization for command", "command", cmd.Name())
+			// Initialize logging and backend ONCE before any command runs.
+			// GetBackendAndConfig handles the sync.Once logic.
+			// Pass the verbosity flag value.
+			// We ignore the returned backend/config here, just ensuring initialization happens.
+			_, _, err := GetBackendAndConfig(verbosity)
+			if err != nil {
+				// Log the error using standard log before slog might be configured
+				log.Printf("Initialization failed: %v", err)
+				// We might want to return the error here to stop execution
+				// return err
 			}
+			// Logging is now configured by initializeBackend based on verbosity flags.
 			return nil
 		},
 	}
@@ -60,6 +53,15 @@ func Execute() error {
 }
 
 func init() {
+	// cobra.OnInitialize(initConfig) // REMOVED: Config loaded via GetBackend() called in PersistentPreRunE
+	// Define flags and configuration settings here.
+	// Persistent flags are global for the application.
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.agentt.yaml or ./.agentt.yaml)")
+
+	// Define persistent flags used by setupLogging (now read from config)
+	// rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output (INFO level)")
+	// rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress informational output (WARN level)")
+
 	// Define persistent --config flag on the root command
 	// The value will be stored in the rootConfigPath package variable.
 	rootCmd.PersistentFlags().StringVarP(&rootConfigPath, "config", "c", "", "Path to the configuration file (overrides AGENTT_CONFIG env var and default search paths)")
@@ -70,12 +72,6 @@ func init() {
 	// Define persistent -v flag for verbosity (can be repeated)
 	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "Increase logging verbosity (default: WARN, -v: INFO, -vv: DEBUG)")
 
-	// Subcommands add themselves via their own init() functions.
-	// Ensure all commands are added here if not done in their own init.
-	rootCmd.AddCommand(summaryCmd) // Ensure these are still added
-	rootCmd.AddCommand(detailsCmd)
-	rootCmd.AddCommand(llmCmd)
-	rootCmd.AddCommand(idsCmd)
 	rootCmd.AddCommand(serverCmd)
-	// serverCmd adds its own subcommands (like start) in its init
+	rootCmd.AddCommand(llmCmd)
 }

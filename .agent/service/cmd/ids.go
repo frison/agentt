@@ -3,10 +3,7 @@ package cmd
 import (
 	"agentt/internal/filter"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log/slog"
-	"os"
 
 	// "agentt/internal/guidance/backend"
 	"github.com/spf13/cobra"
@@ -20,92 +17,83 @@ var (
 // idsCmd represents the ids command
 var idsCmd = &cobra.Command{
 	Use:   "ids",
-	Short: "Lists the IDs of guidance entities matching a filter query",
-	Long: `Scans the configured backend(s) for guidance entities and outputs a JSON
-array containing only the IDs of entities that match the provided filter query.
+	Short: "Get a list of entity IDs, optionally filtered",
+	Long: `Retrieves a JSON array of entity IDs based on the provided filter criteria.
+If no filter is provided, all entity IDs are returned.
 
-This is useful for obtaining a list of relevant entity IDs based on criteria
-without retrieving the full summaries.
-
-The --filter flag is required.
 Example:
-  agentt ids --filter "tier:must tag:scope:core -type:recipe"
-`,
-	Args: cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// --- Validate Flags ---
-		if filterQuery == "" {
-			return errors.New("the --filter flag is required for the ids command")
-		}
-
-		// --- Backend Initialization Check ---
-		if len(globalBackendService) == 0 {
-			return fmt.Errorf("internal error: no backend service available")
-		}
-		slog.Info("Fetching summaries to extract IDs based on filter", "backend_count", len(globalBackendService), "query", filterQuery)
-
-		// --- Parse Filter ---
-		parsedFilter, err := filter.ParseFilter(filterQuery)
-		if err != nil {
-			slog.Error("Failed to parse filter query", "query", filterQuery, "error", err)
-			return fmt.Errorf("failed to parse filter query: %w", err)
-		}
-		if parsedFilter == nil {
-			// An empty/trivial filter would match everything.
-			slog.Warn("Empty or trivial filter parsed, potentially listing all entity IDs.")
-			// Let it proceed, it will list all IDs.
-		} else {
-			slog.Info("Applying filter to find matching IDs", "parsed", parsedFilter.String())
-		}
-
-		// --- Fetch Summaries and Filter IDs ---
-		matchingIDs := make([]string, 0)
-		seenIDs := make(map[string]bool) // Use map to prevent duplicate IDs in output
-
-		for i, service := range globalBackendService {
-			slog.Debug("Fetching summary from backend for ID extraction", "index", i)
-			summaries, err := service.GetSummary()
-			if err != nil {
-				slog.Error("Failed to get summary from a backend", "index", i, "error", err)
-				continue // Skip this backend on error
-			}
-
-			for _, summary := range summaries {
-				if _, seen := seenIDs[summary.ID]; seen {
-					continue // Already added this ID from another backend
-				}
-
-				passedFilter := true
-				if parsedFilter != nil {
-					passedFilter = parsedFilter.Evaluate(summary)
-				}
-
-				if passedFilter {
-					matchingIDs = append(matchingIDs, summary.ID)
-					seenIDs[summary.ID] = true // Mark as seen
-				}
-			}
-		}
-
-		slog.Info("Total matching IDs found", "count", len(matchingIDs))
-
-		// --- Output IDs as JSON ---
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ") // Pretty print JSON array
-		if err := encoder.Encode(matchingIDs); err != nil {
-			slog.Error("Failed to encode IDs to JSON", "error", err)
-			return fmt.Errorf("failed to encode IDs to JSON: %w", err)
-		}
-
-		return nil
-	},
+  agentt ids --filter "type:behavior tier:must"
+  agentt ids -f "tag:core"`,
+	RunE: runIds,
 }
+
+// Flag for the filter string
+var idsFilter string
 
 func init() {
 	// Add the required filter flag
 	// It reuses the filterQuery variable defined in details.go/root.go
-	idsCmd.Flags().StringVar(&filterQuery, "filter", "", "Filter query to select entities (required)")
+	idsCmd.Flags().StringVarP(&idsFilter, "filter", "f", "", "Filter entities by attributes (e.g., 'type:behavior tier:must tag:scope:core')")
 	_ = idsCmd.MarkFlagRequired("filter") // Mark as required for this command
 
-	// Add command to root later in root.go
+	// CliCmd.AddCommand(idsCmd) // Remove from CliCmd
+	rootCmd.AddCommand(idsCmd) // Add the command back to rootCmd
+}
+
+// runIds executes the ids command logic.
+func runIds(cmd *cobra.Command, args []string) error {
+	// Get verbosity level from root command's persistent flag
+	verbosity, _ := cmd.Root().PersistentFlags().GetCount("verbose")
+
+	seenSummaryIDs := make(map[string]bool)
+	matchingIDs := make(map[string]bool)
+
+	// Always need the backend to get summaries
+	backendInstance, _, err := GetBackendAndConfig(verbosity) // Ignore config
+	if err != nil {
+		return fmt.Errorf("failed to get backend: %w", err)
+	}
+	if backendInstance == nil {
+		return fmt.Errorf("backend instance is nil")
+	}
+
+	allSummaries, err := backendInstance.GetSummary()
+	if err != nil {
+		return fmt.Errorf("failed to fetch summaries: %w", err)
+	}
+
+	var parsedFilter filter.FilterNode // Assuming FilterNode is the type returned by parseFilterString
+	if idsFilter != "" {
+		parsedFilter, err = filter.ParseFilter(idsFilter)
+		if err != nil {
+			return fmt.Errorf("invalid filter string: %w", err)
+		}
+	}
+
+	for _, summary := range allSummaries {
+		if _, exists := seenSummaryIDs[summary.ID]; exists {
+			continue // Avoid duplicates
+		}
+		seenSummaryIDs[summary.ID] = true
+
+		if parsedFilter == nil || parsedFilter.Evaluate(summary) {
+			matchingIDs[summary.ID] = true
+		}
+	}
+
+	// Convert matching IDs map to slice
+	finalIDs := make([]string, 0, len(matchingIDs))
+	for id := range matchingIDs {
+		finalIDs = append(finalIDs, id)
+	}
+
+	// Marshal the IDs to JSON
+	jsonData, err := json.MarshalIndent(finalIDs, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal IDs to JSON: %w", err)
+	}
+
+	// Print the JSON output
+	fmt.Println(string(jsonData))
+	return nil
 }

@@ -51,7 +51,8 @@ func LoadConfig(configPath string) (*Config, error) {
 }
 
 // FindAndLoadConfig searches for the configuration file in standard locations
-// (current directory, then parent directories up to 3 levels) and loads it.
+// (current dir, .agent/service/, user config dir) and loads it.
+// It returns the loaded configuration or an error if not found or invalid.
 func FindAndLoadConfig() (*Config, error) {
 	searchPaths := []string{"."} // Start with current directory
 	wd, err := os.Getwd()
@@ -71,7 +72,7 @@ func FindAndLoadConfig() (*Config, error) {
 		slog.Debug("Checking for config file", "path", configPath)
 		if _, err := os.Stat(configPath); err == nil {
 			slog.Info("Found configuration file", "path", configPath)
-			// Found the file, now load it using the updated LoadConfig
+			// Found the file, now load it using the specific path loader
 			return LoadConfig(configPath)
 		} else if !errors.Is(err, os.ErrNotExist) {
 			// Log error if it's something other than file not found

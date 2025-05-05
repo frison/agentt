@@ -12,13 +12,13 @@ import (
 	"log/slog"
 	"os"
 
-	"agentt/internal/guidance/backend"
+	// "agentt/internal/guidance/backend" // REMOVED: Unused
 	"github.com/spf13/cobra"
 )
 
 var (
 	entityIDs   []string
-	filterQuery string // Add variable for filter flag
+	filterQuery string // Filter query string
 )
 
 // detailsCmd represents the details command
@@ -42,6 +42,9 @@ If an ID is found in multiple backends, a warning is logged, but only the first
 instance found is included in the output.`, // Updated long description
 	Args: cobra.NoArgs, // Ensure no positional args, IDs/filter must come from flags
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Get verbosity level from root command's persistent flag
+		verbosity, _ := cmd.Root().PersistentFlags().GetCount("verbose")
+
 		// --- Validate Flags --- START ---
 		hasIDs := len(entityIDs) > 0
 		hasFilter := filterQuery != ""
@@ -54,10 +57,16 @@ instance found is included in the output.`, // Updated long description
 		}
 		// --- Validate Flags --- END ---
 
-		// Backend initialization is now handled by rootCmd.PersistentPreRunE
-		if len(globalBackendService) == 0 {
-			return fmt.Errorf("internal error: no backend service available")
+		// --- Get Backend (Initialized by Root PersistentPreRunE) --- START ---
+		// Call GetBackendAndConfig again here to get the instance for this command's execution.
+		backendInstance, _, err := GetBackendAndConfig(verbosity) // Ignore config here
+		if err != nil {
+			return fmt.Errorf("failed to get backend instance: %w", err)
 		}
+		if backendInstance == nil {
+			return fmt.Errorf("internal error: backend instance is nil after initialization")
+		}
+		// --- Get Backend --- END ---
 
 		idsToFetch := entityIDs // Default to using --id flags if provided
 
@@ -70,34 +79,34 @@ instance found is included in the output.`, // Updated long description
 				return fmt.Errorf("failed to parse filter query: %w", err)
 			}
 			if parsedFilter == nil {
-				// Empty filter might mean match all? Or should be an error?
-				// Let's assume it means match all summaries for now to get all details.
-				slog.Warn("Empty or trivial filter parsed, potentially fetching all details. Consider a more specific filter.")
-				// Proceed without specific IDs means GetDetails needs to handle empty list? No, fetch all summaries.
+				slog.Warn("Empty or trivial filter parsed, fetching all details.")
 			}
 
-			// Fetch all summaries first
-			matchingIDs := make(map[string]bool) // Use map to handle duplicates implicitly
-			seenSummaryIDs := make(map[string]string)
+			// Fetch all summaries first using the obtained backend instance
+			matchingIDs := make(map[string]bool)
+			seenSummaryIDs := make(map[string]string) // Keep track of where ID was first seen
 			slog.Debug("Fetching all summaries to apply filter")
 
-			for i, service := range globalBackendService {
-				summaries, err := service.GetSummary()
-				if err != nil {
-					slog.Error("Failed to get summary from a backend (for filter)", "index", i, "error", err)
-					continue // Skip this backend
-				}
-				for _, summary := range summaries {
-					if _, exists := seenSummaryIDs[summary.ID]; exists {
-						continue // Already processed this ID from another backend
-					}
-					seenSummaryIDs[summary.ID] = fmt.Sprintf("backend %d", i)
-
-					if parsedFilter == nil || parsedFilter.Evaluate(summary) {
-						matchingIDs[summary.ID] = true
-					}
-				}
+			allSummaries, err := backendInstance.GetSummary()
+			if err != nil {
+				// Log the error, but potentially continue if MultiBackend returned partial results?
+				// For now, fail if summaries can't be retrieved.
+				slog.Error("Failed to get summaries from backend (for filter)", "error", err)
+				return fmt.Errorf("failed to fetch summaries for filtering: %w", err)
 			}
+
+			for _, summary := range allSummaries {
+				// Check for duplicates across backends (handled by MultiBackend logging, just need to avoid processing twice here)
+				if _, exists := seenSummaryIDs[summary.ID]; exists {
+					continue
+				}
+				// NOTE: MultiBackend.GetSummary already logs duplicate warnings. This map is just to ensure we only evaluate the filter once per unique ID summary.
+				seenSummaryIDs[summary.ID] = "seen" // Mark as processed in this filter stage
+
+				if parsedFilter == nil || parsedFilter.Evaluate(summary) {
+					matchingIDs[summary.ID] = true
+				}
+			} // End loop through summaries
 
 			// Convert map keys to slice for GetDetails
 			idsToFetch = make([]string, 0, len(matchingIDs))
@@ -111,57 +120,50 @@ instance found is included in the output.`, // Updated long description
 				return nil        // Successful exit, just no results
 			}
 			slog.Info("Found matching IDs via filter", "count", len(idsToFetch), "ids", idsToFetch)
+		} // --- Handle Filter Query --- END ---
+
+		// --- Handle Case: No IDs from flags, no filter provided --- START ---
+		// This case should now be implicitly handled: if !hasIDs and !hasFilter, error is returned at the start.
+		// If hasFilter but no matches, idsToFetch is empty and we return above.
+		// If hasIDs, idsToFetch is populated initially.
+		// Therefore, we only need to check if idsToFetch is empty *after* potential filtering.
+		if len(idsToFetch) == 0 {
+			// This should only happen if --id flags were provided but were empty, or filter matched nothing.
+			slog.Info("No entity IDs specified or found matching filter.")
+			fmt.Println("[]") // Output empty JSON array
+			return nil
 		}
-		// --- Handle Filter Query --- END ---
+		// --- Handle Case: No IDs from flags, no filter provided --- END ---
 
-		slog.Info("Fetching details from initialized backends", "backend_count", len(globalBackendService), "requested_ids", idsToFetch)
+		slog.Info("Fetching details from backend", "requested_ids_count", len(idsToFetch))
 
-		allEntities := make([]backend.Entity, 0, len(idsToFetch))
-		foundIDs := make(map[string]string) // Map ID -> source backend info
-
-		for i, service := range globalBackendService {
-			slog.Debug("Fetching details from backend", "index", i, "ids", idsToFetch)
-			entities, err := service.GetDetails(idsToFetch)
-			if err != nil {
-				slog.Error("Failed to get details from a backend", "index", i, "error", err)
-				// Continuing for now, but logging the error.
-				continue
-			}
-			slog.Debug("Received details from backend", "index", i, "count", len(entities))
-
-			// Merge entities and check for duplicates
-			for _, entity := range entities {
-				if existingSource, exists := foundIDs[entity.ID]; exists {
-					// Found duplicate ID from different backends
-					slog.Warn("Duplicate entity ID found across backends (details)",
-						"id", entity.ID,
-						"source1", existingSource,
-						"source2", fmt.Sprintf("backend %d", i),
-					)
-					// Skip adding the duplicate, keep the first one found.
-				} else {
-					allEntities = append(allEntities, entity)
-					foundIDs[entity.ID] = fmt.Sprintf("backend %d", i) // Record that this ID was found
-				}
-			}
+		// Fetch details using the SAME backend instance obtained earlier
+		allEntities, err := backendInstance.GetDetails(idsToFetch)
+		if err != nil {
+			// Log the error, but MultiBackend might return partial results
+			slog.Error("Error encountered while fetching details from backend", "error", err)
+			// Decide if we should still attempt to output partial results or fail hard.
+			// Let's try outputting what we got.
+			// return fmt.Errorf("failed to fetch details: %w", err) // Option to fail hard
 		}
 
 		slog.Info("Total entity details collected", "count", len(allEntities))
 
 		// Check if all requested IDs were found (relevant if --id was used)
-		if hasIDs && len(foundIDs) != len(idsToFetch) {
-			missingIDs := []string{}
-			requestedMap := make(map[string]bool)
-			for _, id := range idsToFetch { // idsToFetch contains the original --id list if hasIDs is true
-				requestedMap[id] = true
+		if hasIDs {
+			foundIDsMap := make(map[string]bool)
+			for _, entity := range allEntities {
+				foundIDsMap[entity.ID] = true
 			}
-			for reqID := range requestedMap {
-				if _, found := foundIDs[reqID]; !found {
+			missingIDs := []string{}
+			for _, reqID := range idsToFetch { // idsToFetch contains original --id list here
+				if !foundIDsMap[reqID] {
 					missingIDs = append(missingIDs, reqID)
 				}
 			}
-			slog.Warn("Some requested entity IDs were not found", "missing_ids", missingIDs)
-			// Do not error out, just return the ones that were found.
+			if len(missingIDs) > 0 {
+				slog.Warn("Some requested entity IDs were not found", "missing_ids", missingIDs)
+			}
 		}
 
 		// Output the combined details as JSON
@@ -179,10 +181,10 @@ instance found is included in the output.`, // Updated long description
 func init() {
 	// Define the --id flag (can be used multiple times)
 	detailsCmd.Flags().StringSliceVar(&entityIDs, "id", []string{}, "Entity ID to retrieve details for (use multiple times for multiple IDs)")
-	// Removed MarkFlagRequired("id") - now optional if --filter is used
 
 	// Add the filter flag
-	detailsCmd.Flags().StringVar(&filterQuery, "filter", "", "Filter entities using a query. Supported syntax: key:value, key:*, -key:value. Implicit AND. E.g., 'tier:must tag:scope:core -type:recipe'")
+	detailsCmd.Flags().StringVarP(&filterQuery, "filter", "f", "", "Filter entities using a query (e.g., 'type:behavior tier:must tag:api')")
 
-	// rootCmd.AddCommand(detailsCmd) // AddCommand is now done in root.go's init
+	// CliCmd.AddCommand(detailsCmd) // Remove from CliCmd
+	rootCmd.AddCommand(detailsCmd) // Add the command back to rootCmd
 }

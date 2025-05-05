@@ -390,3 +390,98 @@ func TestGetLocalFSSettings(t *testing.T) {
 		})
 	}
 }
+
+// TestFindAndLoadConfig_Success tests finding and loading a valid config file.
+func TestFindAndLoadConfig_Success(t *testing.T) {
+	// Setup: Create a temporary config file in a place FindAndLoadConfig will find it
+	tempDir := t.TempDir()
+	configDir := filepath.Join(tempDir, ".agent", "service")
+	err := os.MkdirAll(configDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create temp config dir: %v", err)
+	}
+	configPath := filepath.Join(configDir, DefaultConfigFileName)
+	validYAML := `
+entityTypes:
+  - name: behavior
+    requiredFields: [id, title]
+  - name: recipe
+    requiredFields: [id]
+backends:
+  - type: localfs
+    rootDir: "."
+`
+	err = os.WriteFile(configPath, []byte(validYAML), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write temp config file: %v", err)
+	}
+
+	// Change to tempDir so FindAndLoadConfig searches correctly
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get current working directory: %v", err)
+	}
+	err = os.Chdir(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to change directory to tempDir: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Logf("Warning: failed to change back to original directory: %v", err)
+		}
+	}()
+
+	// Test: Call FindAndLoadConfig
+	cfg, err := FindAndLoadConfig() // Use the correct function name
+	if err != nil {
+		t.Fatalf("FindAndLoadConfig failed unexpectedly: %v", err)
+	}
+
+	// Assert: Check if the loaded config is correct
+	if cfg == nil {
+		t.Fatal("FindAndLoadConfig returned nil config without error")
+	}
+	if len(cfg.EntityTypes) != 2 {
+		t.Errorf("Expected 2 entity types, got %d", len(cfg.EntityTypes))
+	}
+	if len(cfg.Backends) != 1 {
+		t.Errorf("Expected 1 backend, got %d", len(cfg.Backends))
+	}
+	if cfg.LoadedFromPath == "" {
+		t.Error("Expected LoadedFromPath to be set")
+	}
+}
+
+// TestFindAndLoadConfig_NotFound tests the case where the config file is not found.
+func TestFindAndLoadConfig_NotFound(t *testing.T) {
+	// Setup: Ensure no config file exists in the search paths
+	tempDir := t.TempDir()
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get current working directory: %v", err)
+	}
+	err = os.Chdir(tempDir) // Change to a directory guaranteed not to have the config
+	if err != nil {
+		t.Fatalf("Failed to change directory to tempDir: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWD); err != nil {
+			t.Logf("Warning: failed to change back to original directory: %v", err)
+		}
+	}()
+
+	// Test: Call FindAndLoadConfig
+	cfg, err := FindAndLoadConfig() // Use the correct function name
+
+	// Assert: Check for expected error
+	if err == nil {
+		t.Fatal("FindAndLoadConfig succeeded unexpectedly when config should not be found")
+	}
+	if cfg != nil {
+		t.Error("FindAndLoadConfig returned non-nil config on error")
+	}
+	// Check if the error indicates file not found (might be wrapped)
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("FindAndLoadConfig returned wrong error type: %v", err)
+	}
+}

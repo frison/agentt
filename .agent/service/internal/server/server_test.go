@@ -2,23 +2,17 @@ package server_test
 
 import (
 	"agentt/internal/config"
-	// "agentt/internal/content" // REMOVED
-	"agentt/internal/server"
-	// "agentt/internal/store" // REMOVED
 	"agentt/internal/guidance/backend" // Use package path for mocks generated within
-	// "agentt/internal/guidance/backend/mocks" // REMOVED
-	// "bytes" // REMOVED - Unused
+	"agentt/internal/server"
 	"encoding/json"
-	// "io" // Unused
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"reflect" // Added for deep comparison
 	"sort"    // Added for ElementsMatch replacement
 	"strings" // Added back for details body
 	"testing"
-	// "time" // REMOVED - Unused
-	"os"
-	"path/filepath"
 
 	"agentt/internal/guidance/backend/localfs"
 	"github.com/golang/mock/gomock"

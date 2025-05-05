@@ -2,17 +2,13 @@ package server
 
 import (
 	"agentt/internal/config"
-	// "agentt/internal/content" // REMOVE if unused after refactor
-	// "agentt/internal/store" // REMOVED
-	"agentt/internal/guidance/backend" // ADDED
-	// "bytes" // REMOVED - Unused
-	_ "embed" // Import embed
+	"agentt/internal/guidance/backend"
+	_ "embed"
 	"encoding/json"
 	"fmt"
-	// "log" // REMOVED (use slog)
-	"log/slog" // ADDED
+	"log/slog"
 	"net/http"
-	"time" // Add time package
+	"time"
 )
 
 //go:embed llm_server_help.txt
@@ -20,20 +16,15 @@ var LLMServerHelpContent string // Embedded server protocol/help text (Exported 
 
 // Server wraps the HTTP server dependencies and handlers.
 type Server struct {
-	cfg *config.Config
-	// store *store.GuidanceStore // REPLACED
-	backend backend.GuidanceBackend // ADDED
-	// Adding a testing.T field ONLY for debugging the Query issue
-	// t *testing.T // REMOVE THIS AFTER DEBUGGING
+	cfg     *config.Config
+	backend backend.GuidanceBackend
 }
 
 // NewServer creates a new HTTP server instance.
-// Adjust signature if adding testing.T
 func NewServer(cfg *config.Config, backend backend.GuidanceBackend) *Server {
 	return &Server{
 		cfg:     cfg,
-		backend: backend, // Use backend
-		// t: t, // REMOVE THIS
+		backend: backend,
 	}
 }
 
@@ -43,16 +34,11 @@ func (s *Server) ListenAndServe() error {
 
 	mux.HandleFunc("/health", s.HandleHealth)
 	mux.HandleFunc("/entityTypes", s.HandleEntityTypes)
-	// mux.HandleFunc("/discover/", s.HandleDiscover) // DEPRECATED/REMOVED
 	mux.HandleFunc("/llm.txt", s.HandleLLMGuidance)
-	// Add new summary endpoint
 	mux.HandleFunc("/summary", s.HandleSummary)
-	// Add new details endpoint
 	mux.HandleFunc("/details", s.HandleDetails)
 
-	// Use slog
 	slog.Info("Starting HTTP server", "address", s.cfg.ListenAddress)
-	// Wrap the mux with the logging middleware before starting the server
 	loggedMux := LoggingMiddleware(mux)
 	return http.ListenAndServe(s.cfg.ListenAddress, loggedMux)
 }
@@ -81,7 +67,6 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		rw := newResponseWriter(w)
 		next.ServeHTTP(rw, r)
 		duration := time.Since(start)
-		// Use slog
 		slog.Info("HTTP Request",
 			"method", r.Method,
 			"path", r.URL.Path,
@@ -102,7 +87,6 @@ func (s *Server) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := w.Write([]byte("OK"))
 	if err != nil {
-		// Log the error, but we probably can't send an HTTP error response if writing failed.
 		slog.Error("Error writing health check response", "error", err)
 	}
 }
@@ -116,12 +100,6 @@ func (s *Server) HandleEntityTypes(w http.ResponseWriter, r *http.Request) {
 	s.writeJSONResponse(w, http.StatusOK, s.cfg.EntityTypes)
 }
 
-/* // HandleDiscover DEPRECATED/REMOVED
-func (s *Server) HandleDiscover(w http.ResponseWriter, r *http.Request) {
-	// ... old handler code removed ...
-}
-*/
-
 // HandleLLMGuidance serves the embedded LLM guidance text file.
 func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -129,21 +107,18 @@ func (s *Server) HandleLLMGuidance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simplified: Remove placeholder replacement as it seems outdated/unused
 	contentBytes := []byte(LLMServerHelpContent)
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write(contentBytes)
 	if err != nil {
-		// Log the error
 		slog.Error("Error writing static file content", "error", err)
 	}
 }
 
 // HandleSummary returns a JSON array of backend.Summary for all entities.
 func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
-	// Use slog
 	slog.Debug("Received request", "path", r.URL.Path, "method", r.Method)
 	if r.Method != http.MethodGet {
 		slog.Warn("Method not allowed", "path", r.URL.Path, "method", r.Method)
@@ -151,7 +126,6 @@ func (s *Server) HandleSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Call backend GetSummary
 	summaries, err := s.backend.GetSummary()
 	if err != nil {
 		slog.Error("Failed to get summaries from backend", "error", err)
@@ -197,46 +171,33 @@ func (s *Server) HandleDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("Processing details request", "requested_ids_count", len(req.IDs))
 
-	// Call backend GetDetails
-	entities, err := s.backend.GetDetails(req.IDs)
+	details, err := s.backend.GetDetails(req.IDs)
 	if err != nil {
 		slog.Error("Failed to get details from backend", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	// Log how many were found vs requested
-	slog.Info("Returning details response", "found_count", len(entities), "requested_count", len(req.IDs))
-
-	jsonData, err := json.Marshal(entities)
-	if err != nil {
-		slog.Error("Failed to marshal details to JSON", "error", err)
-		http.Error(w, "Failed to marshal details to JSON", http.StatusInternalServerError)
+	slog.Info("Prepared details for response", "count", len(details), "path", r.URL.Path)
+	if err := json.NewEncoder(w).Encode(details); err != nil {
+		slog.Error("Failed to encode details", "error", err)
+		http.Error(w, "Failed to encode details", http.StatusInternalServerError)
 		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonData)
-	if err != nil {
-		// Log the error
-		slog.Error("Error writing details JSON response", "error", err)
 	}
 }
 
 // writeJSONResponse is a helper to marshal data to JSON and write the response.
 func (s *Server) writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
+	response, err := json.Marshal(data)
 	if err != nil {
 		slog.Error("Failed to marshal JSON response", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	_, err = w.Write(jsonData)
+	_, err = w.Write(response)
 	if err != nil {
-		// Log the error
 		slog.Error("Error writing JSON response", "error", err)
 	}
 }
