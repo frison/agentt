@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Agentt Evolved: Multi-Source Guidance, Precision Filtering, and AI Efficiency 🚀"
-date: 2025-05-05 10:30:00 -0600 # Placeholder time, adjust as needed
+date: 2025-05-04 14:30:00 -0600
 categories:
   - agentt
   - ai-development
@@ -15,7 +15,7 @@ provenance:
   modifications: []
 ---
 
-As AI assistants become more integrated into our development workflows, managing the guidance that shapes their behavior becomes increasingly critical. Simple lists of rules or instructions quickly become unwieldy. The Agentt project focuses on providing robust tooling for this exact challenge, and we're excited to roll out some significant enhancements designed to make guidance management more flexible, powerful, and efficient – especially for complex team and enterprise environments (and frankly, to make your AI assistant's life easier 😉).
+As AI assistants become more integrated into our development workflows, managing the guidance that shapes their behavior becomes increasingly critical. Simple lists of rules or instructions quickly become unwieldy. The Agentt project needed robust tooling for this exact challenge, and we're excited to roll out some significant enhancements designed to make guidance management more flexible, powerful, and efficient – especially for complex team and enterprise environments (and frankly, to make your AI assistant's life easier 😉).
 
 ## The Growing Pains of Guidance
 
