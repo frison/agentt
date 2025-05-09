@@ -27,6 +27,7 @@ type LocalFilesystemBackend struct {
 	store           map[string]*content.Item      // In-memory store: absPath -> Item
 	mu              sync.RWMutex                  // Mutex for thread-safe access to the store
 	initialScanDone bool                          // Flag to track if initial scan completed
+	absoluteRootDir string                        // Resolved absolute path to the root directory
 }
 
 // NewLocalFSBackend creates and initializes a new LocalFilesystemBackend.
@@ -47,9 +48,38 @@ func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath st
 	// Store absolute path of the config directory for resolving rootDir
 	configDir := filepath.Dir(configFilePath)
 
-	// Ensure rootDir itself resolves correctly relative to the config dir
-	// Note: filepath.Join cleans the path
-	absoluteRootDir := filepath.Join(configDir, settings.RootDir)
+	var absoluteRootDir string
+
+	// Resolve RootDir:
+	// 1. If it starts with "~", expand to user's home directory.
+	// 2. If it's an absolute path (e.g., starts with "/" or "C:\"), use it as is.
+	// 3. Otherwise, resolve it relative to the config file's directory.
+	if strings.HasPrefix(settings.RootDir, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			// Propagate error as NewLocalFSBackend can return an error
+			return nil, fmt.Errorf("failed to get user home directory to expand rootDir '%s': %w", settings.RootDir, err)
+		}
+		// Join home directory with the path part after "~"
+		// e.g., "~" -> homeDir
+		// e.g., "~/some/path" -> homeDir/some/path
+		pathRelativeToHome := strings.TrimPrefix(settings.RootDir, "~")
+		absoluteRootDir = filepath.Join(homeDir, pathRelativeToHome)
+		// Update settings.RootDir to use the expanded path
+		settings.RootDir = absoluteRootDir
+	} else if filepath.IsAbs(settings.RootDir) {
+		// Path is already absolute
+		absoluteRootDir = settings.RootDir
+	} else {
+		// Path is relative to the config directory
+		absoluteRootDir = filepath.Join(configDir, settings.RootDir)
+	}
+
+	// Clean the path to resolve any ".." or "." components and ensure a canonical representation.
+	// filepath.Join typically calls Clean, but an explicit Clean here ensures it for all branches
+	// and handles cases like an empty path segment from TrimPrefix or direct absolute path.
+	absoluteRootDir = filepath.Clean(absoluteRootDir)
+
 	slog.Debug("Resolved absolute root directory for backend", "configDir", configDir, "settingsRootDir", settings.RootDir, "absoluteRootDir", absoluteRootDir)
 
 	// Check if the resolved root directory exists
@@ -73,10 +103,11 @@ func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath st
 	}
 
 	b := &LocalFilesystemBackend{
-		configDir:   configDir,
-		settings:    settings,
-		entityTypes: etMap,
-		store:       make(map[string]*content.Item),
+		configDir:       configDir,
+		settings:        settings,
+		entityTypes:     etMap,
+		store:           make(map[string]*content.Item),
+		absoluteRootDir: absoluteRootDir,
 	}
 
 	// Perform initial scan on creation
@@ -135,7 +166,6 @@ func (b *LocalFilesystemBackend) GetDetails(ids []string) ([]backend.Entity, err
 }
 
 // scanFiles scans the filesystem based on configured globs and updates the internal store.
-// It now resolves paths relative to the backend's configured rootDir.
 func (b *LocalFilesystemBackend) scanFiles() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -144,9 +174,7 @@ func (b *LocalFilesystemBackend) scanFiles() error {
 	var encounteredError error
 	fileCount := 0
 
-	// Resolve the absolute root directory for this backend
-	absoluteRootDir := filepath.Join(b.configDir, b.settings.RootDir)
-	slog.Debug("Starting file scan", "absoluteRootDir", absoluteRootDir)
+	slog.Debug("Starting file scan", "absoluteRootDir", b.absoluteRootDir)
 
 	// Iterate through the entity types defined for this backend
 	for entityTypeName, globPattern := range b.settings.EntityLocations {
@@ -157,7 +185,7 @@ func (b *LocalFilesystemBackend) scanFiles() error {
 		}
 
 		// Construct the full glob pattern relative to the absolute root dir
-		fullGlobPattern := filepath.Join(absoluteRootDir, globPattern)
+		fullGlobPattern := filepath.Join(b.absoluteRootDir, globPattern)
 		slog.Debug("Scanning for entity type", "entityType", entityTypeName, "fullGlobPattern", fullGlobPattern)
 
 		matches, err := filepath.Glob(fullGlobPattern)
@@ -197,47 +225,25 @@ func (b *LocalFilesystemBackend) scanFiles() error {
 
 			slog.Debug("Attempting to load and parse file", "path", absPath, "entityType", entityTypeName)
 
-			// Load and parse the file using the new function
+			// Load and parse the file
 			item, err := parseGuidanceFile(absPath, entityTypeName, entityDef.RequiredFields)
-
 			if err != nil {
-				slog.Warn("Failed to load or parse file", "path", absPath, "error", err)
-				// Store invalid item using error details
-				newStore[absPath] = &content.Item{
-					SourcePath:       absPath,
-					EntityType:       entityTypeName,
-					IsValid:          false,
-					ValidationErrors: []string{fmt.Sprintf("Error parsing file: %v", err)},
+				slog.Error("Failed to parse guidance file", "path", absPath, "error", err)
+				if encounteredError == nil {
+					encounteredError = fmt.Errorf("failed to parse guidance file '%s': %w", absPath, err)
 				}
-			} else {
-				// Check for duplicate ID (existing logic - simplified slightly)
-				if itemIDStr, ok := item.FrontMatter["id"].(string); ok && itemIDStr != "" {
-					duplicateFound := false
-					var existingPath string
-					for path, existingItem := range newStore {
-						if existingID, okID := existingItem.FrontMatter["id"].(string); okID && existingID == itemIDStr {
-							duplicateFound = true
-							existingPath = path
-							break
-						}
-					}
-					if duplicateFound {
-						slog.Warn("Duplicate entity ID detected during scan. Check guidance files.",
-							"id", itemIDStr,
-							"path1", existingPath,
-							"path2", item.SourcePath,
-						)
-						continue // Skip this duplicate (keep first encountered)
-					}
-				}
-				newStore[absPath] = item // Store the successfully parsed item
+				continue
 			}
+
+			// Store the item in our new map
+			newStore[absPath] = item
 		}
 	}
 
-	// Update the main store
+	// Update the store with our new data
 	b.store = newStore
-	slog.Info("File scan complete", "files_processed", fileCount, "valid_entities_loaded", len(b.store), "first_error", encounteredError)
+	slog.Info("File scan complete", "total_files", fileCount)
+
 	return encounteredError // Return the first error encountered, if any
 }
 

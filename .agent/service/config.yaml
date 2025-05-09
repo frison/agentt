@@ -17,3 +17,11 @@ backends:
       entityLocations:
         behavior: "behaviors/**/*.bhv"
         recipe: "recipes/**/*.rcp"
+
+  - name: "user_primary"
+    type: localfs
+    settings:
+      rootDir: "~/.agentt"
+      entityLocations:
+        behavior: "**/*.bhv"
+        recipe: "**/*.rcp"

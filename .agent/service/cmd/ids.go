@@ -5,13 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	// "agentt/internal/guidance/backend"
 	"github.com/spf13/cobra"
-)
-
-var (
-// Re-use filterQuery variable declared in details.go (or root.go eventually)
-// idsFilterQuery string // No need for a separate variable
 )
 
 // idsCmd represents the ids command
@@ -36,7 +30,6 @@ func init() {
 	idsCmd.Flags().StringVarP(&idsFilter, "filter", "f", "", "Filter entities by attributes (e.g., 'type:behavior tier:must tag:scope:core')")
 	_ = idsCmd.MarkFlagRequired("filter") // Mark as required for this command
 
-	// CliCmd.AddCommand(idsCmd) // Remove from CliCmd
 	rootCmd.AddCommand(idsCmd) // Add the command back to rootCmd
 }
 
