@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -19,10 +20,12 @@ import (
 
 // Ensure LocalFilesystemBackend implements the GuidanceBackend interface
 var _ backend.GuidanceBackend = (*LocalFilesystemBackend)(nil)
+var _ backend.WritableBackend = (*LocalFilesystemBackend)(nil) // Ensure it implements WritableBackend
 
 type LocalFilesystemBackend struct {
 	configDir       string                        // Absolute path to the directory containing the agentt config file
 	settings        config.LocalFSBackendSettings // Specific settings for this backend instance
+	writable        bool                          // Whether this backend instance is writable
 	entityTypes     map[string]config.EntityType  // Map entity type name -> definition (for required fields)
 	store           map[string]*content.Item      // In-memory store: absPath -> Item
 	mu              sync.RWMutex                  // Mutex for thread-safe access to the store
@@ -31,9 +34,9 @@ type LocalFilesystemBackend struct {
 }
 
 // NewLocalFSBackend creates and initializes a new LocalFilesystemBackend.
-// It now takes specific LocalFS settings and the directory of the config file.
-func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath string, entityTypes []config.EntityType) (*LocalFilesystemBackend, error) {
-	slog.Debug("Creating new LocalFS backend", "settings", settings, "configFilePath", configFilePath)
+// It now takes specific LocalFS settings, the directory of the config file, and writability.
+func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath string, entityTypes []config.EntityType, writable bool) (*LocalFilesystemBackend, error) {
+	slog.Debug("Creating new LocalFS backend", "settings", settings, "configFilePath", configFilePath, "writable", writable)
 
 	// Validate settings
 	if settings.RootDir == "" {
@@ -105,6 +108,7 @@ func NewLocalFSBackend(settings config.LocalFSBackendSettings, configFilePath st
 	b := &LocalFilesystemBackend{
 		configDir:       configDir,
 		settings:        settings,
+		writable:        writable,
 		entityTypes:     etMap,
 		store:           make(map[string]*content.Item),
 		absoluteRootDir: absoluteRootDir,
@@ -163,6 +167,245 @@ func (b *LocalFilesystemBackend) GetDetails(ids []string) ([]backend.Entity, err
 	}
 	slog.Debug("Retrieved backend details", "requested_ids", len(ids), "found_entities", foundCount)
 	return entities, nil
+}
+
+// CreateEntity creates a new guidance entity in the local filesystem.
+func (b *LocalFilesystemBackend) CreateEntity(entityData map[string]interface{}, body string, force bool) error {
+	b.mu.Lock() // Exclusive lock for create operation
+	defer b.mu.Unlock()
+
+	if !b.writable {
+		return fmt.Errorf("localfs backend is not configured as writable")
+	}
+
+	// 1. Extract ID and EntityType from entityData
+	idVal, ok := entityData["id"]
+	if !ok {
+		return errors.New("entityData must contain an 'id' field")
+	}
+	id, ok := idVal.(string)
+	if !ok || id == "" {
+		return errors.New("'id' field must be a non-empty string")
+	}
+
+	typeVal, ok := entityData["type"]
+	if !ok {
+		return errors.New("entityData must contain a 'type' field")
+	}
+	entityType, ok := typeVal.(string)
+	if !ok || entityType == "" {
+		return errors.New("'type' field must be a non-empty string")
+	}
+
+	// 2. Check if entityType is configured for this backend
+	entityLocationPattern, found := b.settings.EntityLocations[entityType]
+	if !found {
+		return fmt.Errorf("entity type '%s' is not configured in this backend's entityLocations", entityType)
+	}
+
+	// Check if this entity type has a definition (for required fields later)
+	entityDef, entityDefExists := b.entityTypes[entityType]
+	if !entityDefExists {
+		// This should ideally not happen if config validation is thorough
+		return fmt.Errorf("internal inconsistency: entity type '%s' configured in entityLocations but not defined in global entityTypes", entityType)
+	}
+
+	// 3. Check if an entity with this ID already exists in the store
+	for _, item := range b.store {
+		if item.IsValid {
+			if storedID, ok := item.FrontMatter["id"].(string); ok && storedID == id {
+				return fmt.Errorf("entity with ID '%s' already exists at path '%s'", id, item.SourcePath)
+			}
+		}
+	}
+
+	// 4. Determine target file path
+	//    We take the directory part of the glob and append "id.ext".
+	//    This uses the template directly if available.
+	var targetPath string
+	tmplData := struct{ ID string }{ID: id}
+	var pathBuffer bytes.Buffer
+	tmpl, err := template.New("filename").Parse(entityLocationPattern)
+	if err != nil {
+		return fmt.Errorf("failed to parse filename template '%s': %w", entityLocationPattern, err)
+	}
+	if err := tmpl.Execute(&pathBuffer, tmplData); err != nil {
+		return fmt.Errorf("failed to execute filename template '%s' for ID '%s': %w", entityLocationPattern, id, err)
+	}
+	relativePathFromRoot := pathBuffer.String()
+	targetPath = filepath.Join(b.absoluteRootDir, relativePathFromRoot)
+	targetPath = filepath.Clean(targetPath)
+
+	// Security check: ensure the targetPath is still within b.absoluteRootDir
+	if !strings.HasPrefix(targetPath, b.absoluteRootDir) {
+		slog.Error("Potential path traversal attempt in CreateEntity", "targetPath", targetPath, "rootDir", b.absoluteRootDir)
+		return fmt.Errorf("invalid target path: constructed path is outside the backend's root directory")
+	}
+
+	slog.Debug("Attempting to create entity file", "path", targetPath, "force", force)
+
+	// 5. Create and write the file
+	// Ensure the directory for the target file exists
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return fmt.Errorf("failed to create directory for '%s': %w", targetPath, err)
+	}
+
+	// Prepare file content
+	fileContentBytes, err := constructFileContent(entityData, body)
+	if err != nil {
+		return fmt.Errorf("failed to construct file content: %w", err)
+	}
+
+	// Open file with O_EXCL to prevent overwriting unless force is true
+	fileFlags := os.O_RDWR | os.O_CREATE
+	if force {
+		fileFlags |= os.O_TRUNC // Truncate if exists, or create if not
+		slog.Debug("Force flag is true, using O_TRUNC for file opening")
+	} else {
+		fileFlags |= os.O_EXCL // Fail if exists
+		slog.Debug("Force flag is false, using O_EXCL for file opening")
+	}
+
+	file, err := os.OpenFile(targetPath, fileFlags, 0666)
+	if err != nil {
+		if os.IsExist(err) && !force { // Check !force here explicitly for clarity
+			return fmt.Errorf("file already exists at target path '%s'", targetPath)
+		} else if os.IsExist(err) && force {
+			// This case should be handled by O_TRUNC, but if OpenFile somehow still returns IsExist with O_TRUNC
+			// it implies a race or an issue. For robustness, log it but proceed if err is nil later.
+			slog.Warn("os.OpenFile with O_TRUNC returned IsExist, proceeding with write if file handle is valid", "path", targetPath, "error", err)
+			// We might need to re-open without O_EXCL if O_TRUNC isn't behaving as expected with O_EXCL still present implicitly.
+			// Simpler: O_TRUNC implies write, so if it exists, it will be truncated.
+			// If it still errors with IsExist, something is very wrong with the flags combination or OS behavior.
+			// Let's assume standard behavior: if force is true, O_TRUNC will handle existing files.
+			// The error here would be some other OpenFile error.
+			return fmt.Errorf("failed to open file '%s' (even with force): %w", targetPath, err)
+		}
+		return fmt.Errorf("failed to open file '%s': %w", targetPath, err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(fileContentBytes)
+	if err != nil {
+		return fmt.Errorf("failed to write file to '%s': %w", targetPath, err)
+	}
+	slog.Info("Successfully wrote new entity file", "path", targetPath)
+
+	// 9. Add to in-memory b.store
+	// Use the existing parseGuidanceFile to load it as a content.Item
+	newItem, parseErr := parseGuidanceFile(targetPath, entityType, entityDef.RequiredFields)
+	if parseErr != nil {
+		// If parsing fails, this is a problem. The file was written but can't be loaded.
+		// Log an error. Depending on desired atomicity, might consider deleting the file.
+		slog.Error("Failed to parse newly created guidance file, store will be inconsistent until next scan", "path", targetPath, "error", parseErr)
+		return fmt.Errorf("failed to parse newly created file '%s' for store update: %w. Backend may be inconsistent.", targetPath, parseErr)
+	}
+	if !newItem.IsValid {
+		slog.Error("Newly created guidance file is invalid after parsing, store will be inconsistent until next scan", "path", targetPath, "validationErrors", newItem.ValidationErrors)
+		return fmt.Errorf("newly created file '%s' is invalid: %v. Backend may be inconsistent.", targetPath, newItem.ValidationErrors)
+	}
+
+	b.store[targetPath] = newItem // Assuming targetPath is already absolute and clean
+	slog.Debug("Added new entity to in-memory store", "path", targetPath, "id", newItem.FrontMatter["id"])
+
+	return nil // Success
+}
+
+// UpdateEntity updates an existing guidance entity in the local filesystem.
+func (b *LocalFilesystemBackend) UpdateEntity(entityID string, updatedData map[string]interface{}, updatedBody *string) error {
+	b.mu.Lock() // Exclusive lock for update operation
+	defer b.mu.Unlock()
+
+	if !b.writable {
+		return fmt.Errorf("localfs backend is not configured as writable")
+	}
+
+	if updatedData == nil && updatedBody == nil {
+		return fmt.Errorf("UpdateEntity requires either updatedData or updatedBody to be non-nil")
+	}
+
+	// 1. Find entity by ID in b.store
+	var existingItem *content.Item
+	var entityPath string
+
+	for path, item := range b.store {
+		if item.IsValid {
+			if itemID, ok := item.FrontMatter["id"].(string); ok && itemID == entityID {
+				existingItem = item
+				entityPath = path // path is the absolute path, which is the key in b.store
+				break
+			}
+		}
+	}
+
+	if existingItem == nil {
+		return fmt.Errorf("entity with ID '%s' not found", entityID)
+	}
+	slog.Debug("Found entity to update", "id", entityID, "path", entityPath)
+
+	// Prepare the new frontmatter and body
+	newFrontMatter := make(map[string]interface{})
+	// Copy existing frontmatter to start with
+	for k, v := range existingItem.FrontMatter {
+		newFrontMatter[k] = v
+	}
+
+	// 2. Update frontmatter if updatedData is provided
+	for k, v := range updatedData {
+		// Prevent changing ID or Type via this update mechanism
+		if k == "id" || k == "type" {
+			slog.Warn("Attempted to update restricted field, skipping", "field", k, "entityID", entityID)
+			continue
+		}
+		newFrontMatter[k] = v
+	}
+
+	// 3. Validate the potentially modified newFrontMatter
+	entityDef, entityDefExists := b.entityTypes[existingItem.EntityType]
+	if !entityDefExists {
+		return fmt.Errorf("internal inconsistency: entity type '%s' for existing entity not defined", existingItem.EntityType)
+	}
+	for _, reqField := range entityDef.RequiredFields {
+		if _, exists := newFrontMatter[reqField]; !exists {
+			// This could happen if updatedData REMOVES a required field without replacing it.
+			return fmt.Errorf("update would result in missing required field '%s' for type '%s'", reqField, existingItem.EntityType)
+		}
+	}
+
+	// 4. Determine new body
+	newBody := existingItem.Body
+	if updatedBody != nil {
+		newBody = *updatedBody
+	}
+
+	// 5. Construct new file content
+	fileBytes, err := constructFileContent(newFrontMatter, newBody)
+	if err != nil {
+		return fmt.Errorf("failed to construct updated file content for '%s': %w", entityID, err)
+	}
+
+	// 6. Write modified content back to file
+	// entityPath is already absolute and clean as it came from b.store keys
+	if err := os.WriteFile(entityPath, fileBytes, 0644); err != nil {
+		return fmt.Errorf("failed to write updated file to '%s': %w", entityPath, err)
+	}
+	slog.Info("Successfully updated entity file", "path", entityPath, "id", entityID)
+
+	// 7. Update in-memory b.store
+	updatedItem, parseErr := parseGuidanceFile(entityPath, existingItem.EntityType, entityDef.RequiredFields)
+	if parseErr != nil {
+		slog.Error("Failed to parse updated guidance file, store will be inconsistent until next scan", "path", entityPath, "error", parseErr)
+		return fmt.Errorf("failed to parse updated file '%s' for store update: %w. Backend may be inconsistent.", entityPath, parseErr)
+	}
+	if !updatedItem.IsValid {
+		slog.Error("Updated guidance file is invalid after parsing, store will be inconsistent until next scan", "path", entityPath, "validationErrors", updatedItem.ValidationErrors)
+		return fmt.Errorf("updated file '%s' is invalid: %v. Backend may be inconsistent.", entityPath, updatedItem.ValidationErrors)
+	}
+
+	b.store[entityPath] = updatedItem
+	slog.Debug("Updated entity in in-memory store", "path", entityPath, "id", entityID)
+
+	return nil // Success
 }
 
 // scanFiles scans the filesystem based on configured globs and updates the internal store.
@@ -416,4 +659,38 @@ func itemToEntity(item *content.Item) backend.Entity {
 		Metadata:        item.FrontMatter, // Pass the whole map
 		LastUpdated:     item.LastUpdated, // Use direct field
 	}
+}
+
+// helper function to construct file content from frontmatter and body
+func constructFileContent(frontMatterData map[string]interface{}, body string) ([]byte, error) {
+	fmBytes, err := yaml.Marshal(frontMatterData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal frontmatter to YAML: %w", err)
+	}
+
+	var buffer bytes.Buffer
+
+	// Write starting delimiter
+	buffer.WriteString("---\n")
+
+	// Write frontmatter bytes
+	if len(fmBytes) > 0 { // Ensure yaml.Marshal didn't return empty (e.g. for nil map)
+		buffer.Write(fmBytes)
+		// Ensure frontmatter ends with a newline before the next delimiter
+		if fmBytes[len(fmBytes)-1] != '\n' {
+			buffer.WriteString("\n")
+		}
+	}
+
+	// Write ending delimiter
+	buffer.WriteString("---\n")
+
+	// Write body if it's not empty
+	trimmedBody := strings.TrimSpace(body)
+	if trimmedBody != "" {
+		buffer.WriteString(trimmedBody)
+		buffer.WriteString("\n") // Ensure body ends with a newline
+	}
+
+	return buffer.Bytes(), nil
 }

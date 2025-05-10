@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	// "fmt"
 	"os"
 	"path/filepath"
@@ -188,6 +189,10 @@ func TestLoadConfig_InvalidCases_V42(t *testing.T) {
 }
 
 func TestFindAndLoadConfig(t *testing.T) {
+	originalAgenttConfig := os.Getenv("AGENTT_CONFIG")
+	os.Unsetenv("AGENTT_CONFIG")
+	defer os.Setenv("AGENTT_CONFIG", originalAgenttConfig)
+
 	originalWD, _ := os.Getwd()
 	defer func() {
 		if err := os.Chdir(originalWD); err != nil {
@@ -248,57 +253,98 @@ backends:
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a clean environment for each test case
-			contentToUse := validContent
-			if tc.expectLoadErr { // Use invalid content for the load error case
-				contentToUse = "backends: [{type: invalid}]" // Invalid: missing entityTypes
-			}
-			cleanup := createTestConfigDir(t, tc.configPath, contentToUse)
-			defer cleanup()
-
-			// Change into the setup directory
-			err := os.MkdirAll(tc.setupDir, 0755)
-			if err != nil {
-				t.Fatalf("Failed to create setup directory %s: %v", tc.setupDir, err)
-			}
-			err = os.Chdir(tc.setupDir)
-			if err != nil {
-				t.Fatalf("Failed to change directory to %s: %v", tc.setupDir, err)
+			// Create the directory to cd into, if it's not just the base temp dir
+			// This ensures os.Chdir doesn't fail for multi-level tc.setupDir
+			targetSetupDir := filepath.Join(originalWD, tc.setupDir)
+			if err := os.MkdirAll(targetSetupDir, 0755); err != nil {
+				t.Fatalf("Failed to create setup directory %s: %v", targetSetupDir, err)
 			}
 
-			cfg, err := FindAndLoadConfig()
+			// Create the config file itself using the helper
+			var cleanupFunc func()
+			configContentToUse := validContent // Default to valid content
+			if tc.name == "Found but invalid content" {
+				configContentToUse = "invalid yaml content: {{{{ " // Invalid content
+			}
+			// tc.configPath is relative to the temp test root (e.g., tmp_test_find_1)
+			// We need to join it with originalWD to get the true absolute path for creation
+			absConfigPathForCreation := filepath.Join(originalWD, tc.configPath)
+			cleanupFunc = createTestConfigDir(t, absConfigPathForCreation, configContentToUse)
+			defer cleanupFunc()
 
-			if tc.expectFound {
-				if err != nil && !tc.expectLoadErr {
-					t.Errorf("FindAndLoadConfig failed unexpectedly: %v", err)
-				}
-				if err == nil && tc.expectLoadErr {
-					t.Error("FindAndLoadConfig succeeded but expected a load error")
-				}
-				if cfg == nil && !tc.expectLoadErr {
-					t.Error("FindAndLoadConfig returned nil config unexpectedly")
-				}
-				if cfg != nil && !tc.expectLoadErr {
-					// Basic check that it loaded *something* resembling the config
-					if len(cfg.Backends) == 0 {
-						t.Error("Loaded config has no backends")
-					}
-				}
-			} else { // Expect Not Found
+			if err := os.Chdir(targetSetupDir); err != nil {
+				t.Fatalf("Failed to change directory to %s: %v", targetSetupDir, err)
+			}
+
+			cfg, loadedPath, err := FindAndLoadConfig("")
+
+			if tc.expectLoadErr {
 				if err == nil {
-					t.Error("FindAndLoadConfig succeeded unexpectedly, expected 'not found' error")
+					t.Errorf("Expected a load error for '%s', but got nil error", tc.name)
 				}
 				if cfg != nil {
-					t.Error("FindAndLoadConfig returned non-nil config unexpectedly")
+					t.Errorf("Expected config to be nil for '%s' due to load error, but got non-nil config", tc.name)
 				}
-				if err != nil && !strings.Contains(err.Error(), "not found") {
-					t.Errorf("FindAndLoadConfig expected 'not found' error, got: %v", err)
+				// Check that loadedPath points to the file we intended to load, even if invalid
+				absExpectedConfigPath, _ := filepath.Abs(filepath.Join(originalWD, tc.configPath))
+				absLoadedPath, errAbs := filepath.Abs(loadedPath)
+				if errAbs != nil {
+					t.Errorf("For '%s', failed to make loadedPath '%s' absolute: %v", tc.name, loadedPath, errAbs)
 				}
+				if absLoadedPath != absExpectedConfigPath {
+					t.Errorf("For '%s', expected absolute loadedPath to be '%s' even with load error, got '%s' (from relative '%s')", tc.name, absExpectedConfigPath, absLoadedPath, loadedPath)
+				}
+				// Optionally, check err content: e.g., if !strings.Contains(err.Error(), "parse") && !strings.Contains(err.Error(), "validation") etc.
+				return // Test case handled
 			}
 
-			// Change back to original directory immediately after test case
-			if err := os.Chdir(originalWD); err != nil {
-				t.Fatalf("Failed to change back to original WD in test cleanup: %v", err)
+			if !tc.expectFound {
+				if err == nil {
+					t.Errorf("Expected an error for '%s' (config not found), but got nil error", tc.name)
+				} else {
+					if !strings.Contains(err.Error(), "not found") {
+						t.Errorf("For '%s', expected error to contain 'not found', got: %v", tc.name, err)
+					}
+				}
+				if cfg != nil {
+					t.Errorf("Expected config to be nil for '%s' (config not found), but got non-nil config", tc.name)
+				}
+				if loadedPath != "" {
+					t.Errorf("Expected loadedPath to be empty for '%s' (config not found), but got '%s'", tc.name, loadedPath)
+				}
+				return // Test case handled
+			}
+
+			// Case: Config should be found and loaded successfully
+			if err != nil {
+				t.Fatalf("FindAndLoadConfig failed unexpectedly for '%s': %v", tc.name, err)
+			}
+			if cfg == nil {
+				t.Fatalf("Expected a non-nil config for '%s', but got nil", tc.name)
+			}
+			if loadedPath == "" {
+				t.Fatalf("Expected a non-empty loadedPath for '%s', but got empty string", tc.name)
+			}
+
+			// Compare paths after making loadedPath absolute
+			absLoadedPath, pathErr := filepath.Abs(loadedPath)
+			if pathErr != nil {
+				t.Fatalf("For '%s', failed to make loadedPath ('%s') absolute: %v", tc.name, loadedPath, pathErr)
+			}
+
+			absExpectedConfigPathForFoundFile, _ := filepath.Abs(filepath.Join(originalWD, tc.configPath))
+			if cfg.LoadedFromPath != absExpectedConfigPathForFoundFile {
+				t.Errorf("For '%s', cfg.LoadedFromPath (%s) does not match expected absolute config file path (%s)", tc.name, cfg.LoadedFromPath, absExpectedConfigPathForFoundFile)
+			}
+			// Also check that absLoadedPath (from FindAndLoadConfig direct return) matches the expected config file path.
+			// This is important because cfg.LoadedFromPath is set *inside* LoadConfig, while loadedPath is from FindAndLoadConfig.
+			if absLoadedPath != absExpectedConfigPathForFoundFile {
+				t.Errorf("For '%s', absLoadedPath from FindAndLoadConfig (%s) does not match expected absolute config file path (%s)", tc.name, absLoadedPath, absExpectedConfigPathForFoundFile)
+			}
+
+			// Check content (already excluding "Found but invalid content" as it returns early)
+			if len(cfg.EntityTypes) == 0 || cfg.EntityTypes[0].Name != "test" {
+				t.Errorf("For '%s', config content not as expected, got: %+v", tc.name, cfg)
 			}
 		})
 	}
@@ -393,95 +439,162 @@ func TestGetLocalFSSettings(t *testing.T) {
 
 // TestFindAndLoadConfig_Success tests finding and loading a valid config file.
 func TestFindAndLoadConfig_Success(t *testing.T) {
-	// Setup: Create a temporary config file in a place FindAndLoadConfig will find it
-	tempDir := t.TempDir()
-	configDir := filepath.Join(tempDir, ".agent", "service")
-	err := os.MkdirAll(configDir, 0755)
+	originalAgenttConfig := os.Getenv("AGENTT_CONFIG")
+	os.Unsetenv("AGENTT_CONFIG")
+	defer os.Setenv("AGENTT_CONFIG", originalAgenttConfig)
+
+	// Create a temporary config file
+	tempDir, err := os.MkdirTemp("", "testconfig")
 	if err != nil {
-		t.Fatalf("Failed to create temp config dir: %v", err)
+		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	configPath := filepath.Join(configDir, DefaultConfigFileName)
-	validYAML := `
+	defer os.RemoveAll(tempDir)
+
+	configDir := filepath.Join(tempDir, ConfigDirName)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("Failed to create .agent/service dir in temp: %v", err)
+	}
+	actualConfigPath := filepath.Join(configDir, DefaultConfigFileName)
+	content := []byte(`
+listenAddress: ":1234"
 entityTypes:
-  - name: behavior
-    requiredFields: [id, title]
-  - name: recipe
+  - name: test
     requiredFields: [id]
 backends:
   - type: localfs
-    rootDir: "."
-`
-	err = os.WriteFile(configPath, []byte(validYAML), 0644)
-	if err != nil {
+    name: default
+    settings:
+      rootDir: "."
+      entityLocations:
+        test: "*.test"
+`) // Ensure this content matches expectations below
+	if err := os.WriteFile(actualConfigPath, content, 0644); err != nil {
 		t.Fatalf("Failed to write temp config file: %v", err)
 	}
 
-	// Change to tempDir so FindAndLoadConfig searches correctly
-	originalWD, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Failed to get current working directory: %v", err)
-	}
-	err = os.Chdir(tempDir)
-	if err != nil {
-		t.Fatalf("Failed to change directory to tempDir: %v", err)
-	}
-	defer func() {
-		if err := os.Chdir(originalWD); err != nil {
-			t.Logf("Warning: failed to change back to original directory: %v", err)
-		}
-	}()
+	cfg, loadedPath, err := FindAndLoadConfig(actualConfigPath) // Pass the explicit path
 
-	// Test: Call FindAndLoadConfig
-	cfg, err := FindAndLoadConfig() // Use the correct function name
 	if err != nil {
-		t.Fatalf("FindAndLoadConfig failed unexpectedly: %v", err)
+		t.Fatalf("FindAndLoadConfig failed: %v", err)
 	}
-
-	// Assert: Check if the loaded config is correct
 	if cfg == nil {
-		t.Fatal("FindAndLoadConfig returned nil config without error")
+		t.Fatal("FindAndLoadConfig returned nil config")
 	}
-	if len(cfg.EntityTypes) != 2 {
-		t.Errorf("Expected 2 entity types, got %d", len(cfg.EntityTypes))
+	if loadedPath == "" {
+		t.Fatal("FindAndLoadConfig returned empty loadedFilePath")
 	}
-	if len(cfg.Backends) != 1 {
-		t.Errorf("Expected 1 backend, got %d", len(cfg.Backends))
+	absExpectedPath, _ := filepath.Abs(actualConfigPath)
+	if loadedPath != absExpectedPath {
+		t.Errorf("Expected loadedFilePath to be %s, got %s", absExpectedPath, loadedPath)
 	}
-	if cfg.LoadedFromPath == "" {
-		t.Error("Expected LoadedFromPath to be set")
+	if cfg.ListenAddress != ":1234" {
+		t.Errorf("Expected listenAddress :1234, got %s", cfg.ListenAddress)
 	}
 }
 
 // TestFindAndLoadConfig_NotFound tests the case where the config file is not found.
 func TestFindAndLoadConfig_NotFound(t *testing.T) {
-	// Setup: Ensure no config file exists in the search paths
-	tempDir := t.TempDir()
-	originalWD, err := os.Getwd()
+	originalAgenttConfig := os.Getenv("AGENTT_CONFIG")
+	os.Unsetenv("AGENTT_CONFIG")
+	defer os.Setenv("AGENTT_CONFIG", originalAgenttConfig)
+
+	// Create a temporary directory and change to it
+	// Ensure no config file exists in search paths
+	tempDir, err := os.MkdirTemp("", "testconfignotfound")
 	if err != nil {
-		t.Fatalf("Failed to get current working directory: %v", err)
+		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	err = os.Chdir(tempDir) // Change to a directory guaranteed not to have the config
-	if err != nil {
-		t.Fatalf("Failed to change directory to tempDir: %v", err)
-	}
+	defer os.RemoveAll(tempDir)
+
+	originalWD, _ := os.Getwd()
 	defer func() {
 		if err := os.Chdir(originalWD); err != nil {
-			t.Logf("Warning: failed to change back to original directory: %v", err)
+			t.Fatalf("Failed to restore original working directory: %v", err)
 		}
-	}()
+	}() // Restore original WD after test
 
-	// Test: Call FindAndLoadConfig
-	cfg, err := FindAndLoadConfig() // Use the correct function name
-
-	// Assert: Check for expected error
+	// Test with no flag (should not find any config)
+	_, _, err = FindAndLoadConfig("")
 	if err == nil {
-		t.Fatal("FindAndLoadConfig succeeded unexpectedly when config should not be found")
+		t.Fatal("FindAndLoadConfig succeeded when no config file should be found")
 	}
-	if cfg != nil {
-		t.Error("FindAndLoadConfig returned non-nil config on error")
+	if !strings.Contains(err.Error(), "configuration file not found") {
+		t.Errorf("Expected error to contain 'configuration file not found', got: %v", err)
 	}
-	// Check if the error indicates file not found (might be wrapped)
-	if !strings.Contains(err.Error(), "not found") {
-		t.Errorf("FindAndLoadConfig returned wrong error type: %v", err)
+
+	// Test with flag pointing to non-existent file
+	nonExistentPath := filepath.Join(tempDir, "non_existent_config.yaml")
+	_, _, err = FindAndLoadConfig(nonExistentPath)
+	if err == nil {
+		t.Fatalf("FindAndLoadConfig with flag for non-existent file succeeded")
+	}
+	// Error message for specific file not found should be different
+	if !strings.Contains(err.Error(), fmt.Sprintf("failed to load configuration from %s", nonExistentPath)) {
+		t.Errorf("Expected error for specific non-existent file, got: %v", err)
+	}
+}
+
+func TestFindAndLoadConfig_EnvVar(t *testing.T) {
+	// This test specifically tests AGENTT_CONFIG, so we don't unset it here.
+	// Instead, we set it to a specific test value and then restore.
+	originalAgenttConfig := os.Getenv("AGENTT_CONFIG")
+	// Defer restoration of original AGENTT_CONFIG
+	defer os.Setenv("AGENTT_CONFIG", originalAgenttConfig)
+
+	tempDir := t.TempDir()
+
+	envConfigFilePath := filepath.Join(tempDir, "env_config.yaml")
+	content := []byte(`
+listenAddress: ":7777"
+entityTypes: [{name: testenv, requiredFields: [id]}]
+backends: [{type: localfs, name: env_backend, settings: {rootDir: "."}}]
+`)
+	if err := os.WriteFile(envConfigFilePath, content, 0644); err != nil {
+		t.Fatalf("Failed to write env config file: %v", err)
+	}
+
+	// Set AGENTT_CONFIG environment variable to point to our test file
+	if err := os.Setenv("AGENTT_CONFIG", envConfigFilePath); err != nil {
+		t.Fatalf("Failed to set AGENTT_CONFIG: %v", err)
+	}
+
+	// Test 1: AGENTT_CONFIG is set, flag is empty
+	cfg, loadedPath, err := FindAndLoadConfig("")
+	if err != nil {
+		t.Fatalf("FindAndLoadConfig with env var failed: %v", err)
+	}
+	if cfg == nil {
+		t.Fatal("FindAndLoadConfig with env var returned nil config")
+	}
+	if loadedPath != envConfigFilePath {
+		t.Errorf("Expected loadedPath to be %s (from env var), got %s", envConfigFilePath, loadedPath)
+	}
+	if cfg.ListenAddress != ":7777" {
+		t.Errorf("Expected listenAddress :7777 from env var config, got %s", cfg.ListenAddress)
+	}
+
+	// Test 2: Flag overrides env var
+	flagConfigFilePath := filepath.Join(tempDir, "flag_override_config.yaml")
+	flagConfigContent := `
+listenAddress: ":8888"
+entityTypes: [{name: "flag_test", requiredFields: ["id"]}]
+backends: [{name: "flag_backend", type: "localfs", settings: {rootDir: "."}}]
+`
+	if err := os.WriteFile(flagConfigFilePath, []byte(flagConfigContent), 0644); err != nil {
+		t.Fatalf("Failed to write flag override config file: %v", err)
+	}
+
+	cfgOverride, loadedPathOverride, errOverride := FindAndLoadConfig(flagConfigFilePath)
+	if errOverride != nil {
+		t.Fatalf("FindAndLoadConfig with flag (overriding env) failed: %v", errOverride)
+	}
+	if cfgOverride == nil {
+		t.Fatal("FindAndLoadConfig with flag (overriding env) returned nil config")
+	}
+	if loadedPathOverride != flagConfigFilePath {
+		t.Errorf("Expected loadedPath to be %s (from flag), got %s", flagConfigFilePath, loadedPathOverride)
+	}
+	if cfgOverride.ListenAddress != ":8888" {
+		t.Errorf("Expected listenAddress :8888 from flag override, got %s", cfgOverride.ListenAddress)
 	}
 }

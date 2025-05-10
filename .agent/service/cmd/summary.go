@@ -18,24 +18,14 @@ var (
 // summaryCmd represents the summary command
 var summaryCmd = &cobra.Command{
 	Use:   "summary",
-	Short: "Displays a summary of all discovered guidance entities (behaviors, recipes)",
-	Long: `Scans the configured backend(s) for guidance entities and outputs a JSON
-array summarizing each valid entity found.
-
-Use the --filter flag to apply specific criteria based on entity attributes.
-Examples:
-  agentt summary --filter "tier:must"
-  agentt summary --filter "tag:scope:core -tag:domain:ai"
-  agentt summary --filter "type:recipe priority:*"
-
-The summary includes the entity ID, type, tier (if applicable), description, and tags.
-Duplicate entity IDs found across different backends will be noted with a warning.`,
+	Short: "Get a summary of all guidance entities",
+	Long:  `Retrieves a JSON array of summaries for all behaviors and recipes. Can be filtered.`, // Updated long desc
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Get verbosity level from root command's persistent flag
 		verbosity, _ := cmd.Root().PersistentFlags().GetCount("verbose")
 
 		// Get backend instance
-		backendInstance, _, err := GetBackendAndConfig(verbosity) // Use GetBackendAndConfig, ignore config
+		backendInstance, _, err := GetMultiBackendAndConfig(verbosity) // Config not directly needed here
 		if err != nil {
 			return fmt.Errorf("failed to get backend instance: %w", err)
 		}

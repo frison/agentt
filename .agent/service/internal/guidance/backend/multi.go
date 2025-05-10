@@ -103,7 +103,10 @@ func (mb *MultiBackend) GetDetails(ids []string) ([]Entity, error) {
 		mu.Lock()
 		for _, e := range entities {
 			if !foundIDs[e.ID] { // If we haven't already found details for this ID
-				allEntities = append(allEntities, e)
+				// Populate the OriginatingBackendIdentifier
+				entityToStore := e // Make a copy to avoid modifying the slice element directly if it's a pointer later
+				entityToStore.OriginatingBackendIdentifier = backendIdentifier
+				allEntities = append(allEntities, entityToStore)
 				foundIDs[e.ID] = true
 			}
 		}

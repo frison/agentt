@@ -40,7 +40,7 @@ without needing the HTTP server.
     ```
     Example:
     ```bash
-    agentt details -q --id bhv-safety-first --id rcp-git-commit-creation
+    agentt details -q --id safety-first --id git-commit-creation
     ```
     *Alternatively, if you used `--filter` in step 1 or want to filter directly,
     you can use `--filter` with `details` instead of specific IDs:*
@@ -59,3 +59,51 @@ without needing the HTTP server.
 
 This process (summary/filter first, then specific details) is designed
 to be efficient.
+
+## Creating New Guidance Entities:
+
+If the task involves creating a new behavior or recipe, the `agentt create`
+command is used.
+
+Command Structure:
+```bash
+agentt create <type> --id <entity-id> --title "<Entity Title>" [other_metadata_flags...] [--body-from-file <path> | or pipe body to stdin]
+```
+
+-   `<type>`: The type of entity to create (e.g., "behavior", "recipe"). This is a mandatory argument.
+-   `--id <entity-id>`: A unique identifier for the new entity (mandatory).
+-   `--title "<Entity Title>"`: The title for the entity.
+-   Other metadata flags include:
+    -   `--desc "<description>"`: Short description.
+    -   `--tier <tier>`: (e.g., "must", "should" - typically for behaviors).
+    -   `--tags "tag1,tag2"`: Comma-separated tags.
+    -   `--data "key=value"`: Arbitrary key-value metadata (can be repeated).
+-   Body content can be provided by:
+    -   Piping to `stdin` (standard method).
+    -   Using `--body-from-file <path_to_file>`.
+-   The `--force` flag can be used to overwrite an existing entity with the same ID.
+
+Example: Creating a new behavior by piping body content.
+```bash
+echo "This is the body of the new behavior." | agentt create behavior --id "new-bhv-1" --title "New Behavior One" --tier "must" --desc "A test behavior."
+```
+
+When tasked with creating a new entity, ensure all required metadata for the
+entity type is gathered and provided via the appropriate flags.
+
+## Updating Existing Guidance Entities:
+
+If the task involves modifying an existing behavior or recipe, the `agentt update`
+command is used. (Note: This command is planned but may have limited functionality
+or require specific backend support.)
+
+Command Structure (Conceptual):
+```bash
+agentt update <entity-id> [--title "<New Title>"] [--desc "<New Description>"] [--body-from-file <path> | or pipe new body to stdin] [other_flags...]
+```
+-   `<entity-id>`: The ID of the entity to update (mandatory argument).
+-   Flags are used to specify which parts of the entity to update (e.g., `--title`, `--desc`, `--tags`, `--tier`).
+-   Body content can be updated via `stdin` or `--body-from-file`.
+
+The `update` command allows for targeted changes to an entity's metadata or body.
+Ensure the correct `entity-id` is used and only the intended fields are modified.

@@ -241,7 +241,8 @@ func setupTestServerWithLocalFS(t *testing.T) (*server.Server, backend.GuidanceB
 	if err != nil {
 		t.Fatalf("Failed to get localfs settings: %v", err)
 	}
-	fsBackend, err := localfs.NewLocalFSBackend(backendSettings, testConfig.LoadedFromPath, testConfig.EntityTypes)
+	// Pass true for writable for this test setup
+	fsBackend, err := localfs.NewLocalFSBackend(backendSettings, testConfig.LoadedFromPath, testConfig.EntityTypes, true)
 	if err != nil {
 		t.Fatalf("Failed to create localfs backend: %v", err)
 	}

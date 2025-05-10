@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
-	"log"
 )
 
 var (
@@ -13,20 +14,15 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "agentt",
-	Short: "Agent Guidance Service and CLI (config: flag > env > defaults)",
-	Long: `Agentt provides an HTTP server for agent guidance discovery
-and a command-line interface for interacting with the same definitions.
-
-Configuration is loaded using the --config flag, the AGENTT_CONFIG environment
-variable, or by searching default paths (./config.yaml, ./.agent/service/config.yaml, etc.)
-relative to the current directory, in that order of precedence.`,
-	SilenceUsage:  true,
-	SilenceErrors: true,
+	Short: "Agentt is a CLI tool for managing agent guidance definitions.",
+	Long: `Agentt allows you to interact with and manage behaviors, recipes,
+and other guidance artifacts used by AI agents.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		_, _, err := GetBackendAndConfig(verbosity)
+		verbosity, _ := cmd.Flags().GetCount("verbose")
+
+		_, _, err := GetMultiBackendAndConfig(verbosity)
 		if err != nil {
-			log.Printf("Initialization failed: %v", err)
-			return err
+			return fmt.Errorf("failed to initialize backend: %w", err)
 		}
 		return nil
 	},

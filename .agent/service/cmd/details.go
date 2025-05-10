@@ -28,7 +28,7 @@ a --filter query.
 If using --filter, the command first finds summaries matching the filter across all
 backends, then retrieves details for those specific IDs.
 Examples:
-  agentt details --id bhv-code-style --id rcp-git-commit
+  agentt details --id code-style --id git-commit
   agentt details --filter "tier:must tag:scope:core"
 
 Details are fetched from all configured backend(s).
@@ -99,48 +99,74 @@ func runDetails(cmd *cobra.Command, args []string) error {
 	}
 
 	verbosity, _ := cmd.Root().PersistentFlags().GetCount("verbose")
-	backendInstance, _, err := GetBackendAndConfig(verbosity)
-	if err != nil {
-		return fmt.Errorf("failed to get backend instance: %w", err)
-	}
-	if backendInstance == nil {
-		return fmt.Errorf("internal error: backend instance is nil after initialization")
-	}
 
 	var idsToFetch []string
-	if len(entityIDs) > 0 {
+	var err error // Declare err here
+
+	// backendInstance will be fetched after determining if we even need it for filtering
+	var backendInstance backend.GuidanceBackend
+
+	if len(entityIDs) > 0 { // --id flags were used
 		idsToFetch = entityIDs
-	} else {
+	} else if filterQuery != "" { // --filter flag was used
+		// Need the backend to apply the filter against summaries
+		fetchedBackend, _, fetchErr := GetMultiBackendAndConfig(verbosity)
+		if fetchErr != nil {
+			return fmt.Errorf("failed to get backend instance for filtering: %w", fetchErr)
+		}
+		backendInstance = fetchedBackend // Assign to the broader scope variable
 		idsToFetch, err = getIDsFromFilter(backendInstance, filterQuery)
 		if err != nil {
-			return err
+			return err // Error from getIDsFromFilter
 		}
+	} else {
+		// This case should be caught by validateFlags, but as a safeguard:
+		return errors.New("no entity IDs or filter query provided")
 	}
 
 	if len(idsToFetch) == 0 {
+		// If --id was used but resulted in no IDs (e.g. empty slice due to some prior logic error, though unlikely here)
+		// or if filter yielded no IDs.
+		slog.Info("No entity IDs to fetch details for (either none specified, or filter yielded no results).")
 		return outputEmptyJSON()
+	}
+
+	// Ensure backendInstance is fetched if it wasn't already for filtering
+	if backendInstance == nil {
+		var fetchErr error
+		backendInstance, _, fetchErr = GetMultiBackendAndConfig(verbosity)
+		if fetchErr != nil {
+			return fmt.Errorf("failed to get backend instance: %w", fetchErr)
+		}
 	}
 
 	slog.Info("Fetching details from backend", "requested_ids_count", len(idsToFetch))
 	allEntities, err := backendInstance.GetDetails(idsToFetch)
+	// Do not return immediately on error from GetDetails; we might have partial results or want to log missing IDs.
 	if err != nil {
-		slog.Error("Error encountered while fetching details", "error", err)
+		slog.Error("Error encountered while fetching details from backend", "error", err)
+		// Depending on desired strictness, we could return err here.
+		// For now, proceed to check for missing IDs even if some error occurred during fetch,
+		// as some backends in a MultiBackend might succeed while others fail.
 	}
 
+	// Check for missing IDs only if --id flags were the source
 	if len(entityIDs) > 0 {
 		foundIDs := make(map[string]bool)
-		for _, entity := range allEntities {
+		for _, entity := range allEntities { // allEntities might be incomplete if GetDetails errored
 			foundIDs[entity.ID] = true
 		}
 
 		var missingIDs []string
-		for _, reqID := range idsToFetch {
+		// Iterate over the original entityIDs requested by flag, not potentially filtered idsToFetch
+		for _, reqID := range entityIDs {
 			if !foundIDs[reqID] {
 				missingIDs = append(missingIDs, reqID)
 			}
 		}
 		if len(missingIDs) > 0 {
 			slog.Warn("Some requested entity IDs were not found", "missing_ids", missingIDs)
+			// Potentially return an error or specific exit code if IDs are explicitly requested and not found
 		}
 	}
 

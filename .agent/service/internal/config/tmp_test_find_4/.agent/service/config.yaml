@@ -1,0 +1,10 @@
+
+entityTypes:
+  - name: test
+    requiredFields: [id]
+backends:
+  - type: localfs
+    settings:
+      rootDir: "."
+      entityLocations:
+        test: "*.test"

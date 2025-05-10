@@ -24,7 +24,8 @@ type EntityType struct {
 // Using a map for settings allows flexibility for different backend types.
 type BackendSpec struct {
 	Name     string                 `yaml:"name,omitempty"`
-	Type     string                 `yaml:"type"` // e.g., "localfs", "database"
+	Type     string                 `yaml:"type"`               // e.g., "localfs", "database"
+	Writable bool                   `yaml:"writable,omitempty"` // Whether this backend can be written to by the CLI
 	Settings map[string]interface{} `yaml:"settings"`
 }
 

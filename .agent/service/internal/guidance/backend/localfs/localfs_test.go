@@ -126,7 +126,7 @@ func TestNewLocalFSBackend_Validation(t *testing.T) {
 				t.Fatalf("Test setup error: Config file %s (abs: %s) does not exist in testdata. Please create it.", tc.configPath, absConfigPath)
 			}
 
-			_, err = NewLocalFSBackend(tc.settings, absConfigPath, entityTypes)
+			_, err = NewLocalFSBackend(tc.settings, absConfigPath, entityTypes, true)
 
 			if tc.expectErr {
 				if err == nil {
@@ -389,7 +389,7 @@ func TestLocalFSBackend_InitErrors(t *testing.T) {
 				t.Fatalf("Failed to create dummy config file: %v", err)
 			}
 
-			_, err := NewLocalFSBackend(tc.settings, dummyConfigPath, entityTypes) // Pass settings directly
+			_, err := NewLocalFSBackend(tc.settings, dummyConfigPath, entityTypes, true)
 			if tc.expectError != "" {
 				if err == nil {
 					t.Fatal("Expected an error, but got nil")
