@@ -1,0 +1,24 @@
+---
+title: Clarity Over Churn
+description: Prioritizes clarity and usability in code, documentation, and systems over avoiding rework.
+tags:
+    - process:evolution
+    - quality:clarity
+    - quality:usability
+    - scope:core
+    - scope:meta
+---
+# Clarity Over Churn
+
+## Core Statement
+Code, documentation, and system design must prioritize clarity and usability for all stakeholders (developers, users, AI agents) above the desire to avoid rework (churn). When a change demonstrably improves clarity or usability, it should be implemented even if it requires modifying existing artifacts.
+
+## Rationale
+A clear, intuitive, and easily understandable system is essential for effective development, collaboration, maintenance, and automation. The long-term benefits of clarity (reduced errors, faster onboarding, better interpretation, easier maintenance) outweigh the short-term costs of modification. Obscurity, ambiguity, or awkwardness maintained solely to avoid churn ultimately hinders overall effectiveness and increases long-term costs.
+
+## Applications
+- **Structural Refactoring:** Refactor code structure, directory layouts, naming conventions, or system architecture if a clearer, more logical alternative is identified.
+- **Content Refinement:** Rewrite documentation, comments, or user interfaces if their language is ambiguous, confusing, or difficult to interpret correctly.
+- **API/Interface Evolution:** Update APIs or interfaces for better clarity or usability, even if it requires updating callers (provide clear migration paths where feasible).
+- **Terminology:** Choose simpler, more explicit, or more accurate terminology based on clarity, even if it requires widespread updates.
+- **Review:** Regularly review code, documentation, and systems specifically looking for opportunities to enhance clarity and usability.

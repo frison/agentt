@@ -1,0 +1,34 @@
+---
+title: Name Redaction Policy
+description: Strictly redact personal user identifiers from all system interactions and generated content.
+tags:
+    - domain:ai
+    - domain:communication
+    - process:security
+    - quality:safety
+---
+# Strict Redaction of Personal Identifiers
+
+## Core Directive
+Command execution, system interactions, and all generated content **must** categorically exclude personal usernames, user-specific paths, or any identifiers linked to local environments.
+
+## Justification
+Leakage of usernames or personalized paths poses security risks, introduces unpredictable behavior, and compromises automation neutrality. Ensuring strict exclusion prevents exposure, mitigates unintended disclosures, and maintains reproducibility across environments.
+
+## Procedural Mandates
+- **Zero Personal Identifiers**: No command, file path, or output **must** reference specific usernames or personal directories.
+- **Username Redaction Enforcement**:
+  - **Do NOT encode personal usernames in configuration, scripts, or logs.**
+  - **Explicitly filter environment-dependent paths containing personal identifiers.**
+  - **Do NOT generate AI-derived outputs containing localized user paths.**
+- **Universal Path Abstraction**:
+  - **Use `$HOME` or equivalent abstractions** instead of hardcoded user paths.
+  - **Commands must reference generic system locations** (e.g., `/etc/config` rather than `/home/username/config`).
+- **Environment-Agnostic Execution**:
+  - **All automated processes must ensure username-independent execution.**
+  - **Scripts must dynamically resolve paths** without explicit personal references.
+- **Output Sanitization**:
+  - **Validate logs, command results, and generated text to ensure exclusion of usernames.**
+  - **Implement filters that remove accidental leaks of local identifiers.**
+
+Failure to adhere introduces security vulnerabilities, execution inconsistencies, and privacy concerns. Strict enforcement is **mandatory**.

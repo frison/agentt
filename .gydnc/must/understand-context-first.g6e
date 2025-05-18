@@ -1,0 +1,32 @@
+---
+title: Understand Context Before Changing Things
+description: Requires understanding the relevant context (code structure, build process, existing patterns) before making changes.
+tags:
+    - process:analysis
+    - quality:architecture:awareness
+    - quality:consistency
+    - quality:safety:regression_prevention
+    - scope:meta
+---
+# Contextual Awareness Before Modification
+
+## Core Statement
+
+Before modifying any component or system, you MUST first actively seek out and process relevant contextual information to understand its structure, dependencies, build process, and existing patterns.
+
+## Rationale
+
+Modifying code or systems without understanding the surrounding context is a primary cause of regressions, inconsistencies, unintended side effects, and architectural drift. Proactive context gathering minimizes these risks, ensures changes integrate correctly, and respects existing design decisions.
+
+## Applications
+
+- **Identify Structural Metadata:** Locate and review key structural definition files:
+    - Build files (`Makefile`, `pom.xml`, `package.json`, etc.)
+    - Module definitions (`go.mod`, `pyproject.toml`, etc.)
+    - Architecture documentation (`ARCHITECTURE.md`, design docs)
+    - Infrastructure definitions (Terraform, Dockerfiles)
+- **Explore Code Structure:** Use tools (`list_dir`, `tree`) or code browsing to understand the directory layout, package organization, and key file locations.
+- **Review Related Code:** Read adjacent code, calling functions, or implementations of related interfaces to understand existing patterns and conventions.
+- **Understand Build/Test Process:** Review the `Makefile` or build scripts to understand how the component is built, tested, and deployed. Run tests locally if possible.
+- **Check Existing Guidance:** Consult relevant `agentt` behaviors and recipes for specific constraints or procedures related to the component being modified.
+- **Ask When Unclear:** If context is missing or ambiguous after investigation, ask clarifying questions before proceeding with modifications.
