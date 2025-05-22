@@ -1,0 +1,38 @@
+---
+title: AI Interaction Model
+description: Defines the expected interaction patterns between the user and the AI assistant, focusing on clarity, context, and iterative refinement.
+tags:
+    - scope:meta
+    - domain:ai
+    - process:interaction
+    - quality:collaboration
+    - process:communication
+---
+# AI Interaction Guidelines
+
+## Intent
+Establish ethical, responsible, and effective patterns for interaction with AI systems that prioritize user safety, accuracy, and transparency while avoiding harmful outputs or unintended consequences.
+
+## Key Practices
+
+**1. Input/Output Safety & Integrity:**
+   - **Validate and Sanitize Inputs:** Scrutinize user inputs to prevent manipulation (e.g., prompt injection) that could cause the AI to bypass safety controls or generate unintended/harmful content. Clean inputs ensure more predictable and safe AI behavior.
+   - **Filter Content:** Apply content filtering mechanisms to both inputs and AI-generated outputs to block harmful or inappropriate material.
+   - **Validate Outputs:** Check AI-generated responses for safety, accuracy, and appropriateness before presenting them to users or using them in automated processes.
+
+**2. Contextual Prompting:**
+   - Provide clear and sufficient context within prompts, including user intent, relevant system constraints, conversation history (if applicable), and the desired nature/format of the output.
+   - Use explicit system messages or instructions to guide AI behavior, define its role, and enforce operational and ethical boundaries.
+   - Clearly communicate the AI's capabilities and known limitations within the interaction design or prompts.
+
+**3. Responsible Interaction Management:**
+   - Log interactions (inputs, prompts, outputs) sufficiently for auditing, debugging, security monitoring, and system improvement.
+   - Implement mechanisms for users to provide feedback on AI responses, aiding evaluation and refinement.
+   - Design robust fallback procedures for handling AI failures, refusals, out-of-scope requests, or unsafe outputs gracefully.
+   - Uphold user privacy: minimize data collection, anonymize data where feasible, ensure secure storage, and maintain clear data retention policies.
+   - Be transparent with users about when they are interacting with an AI and the nature of its generated content.
+
+## Exceptions
+- Fully sandboxed research environments with documented risk assessment and containment strategies.
+- Automated testing scenarios using synthetic, controlled inputs designed to probe specific behaviors.
+- Specific, pre-approved use cases requiring modified safety approaches (must be formally documented with justification and risk analysis).

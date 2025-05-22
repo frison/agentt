@@ -1,0 +1,67 @@
+---
+title: Generate Safe and Effective Shell Commands
+description: Construct shell commands that are clear, non-destructive, non-interactive, and achieve the intended task reliably.
+tags:
+    - domain:ai
+    - tech:shell
+    - process:generation
+    - quality:safety
+    - quality:effectiveness
+---
+# Shell Command Structure
+
+## Intent
+Establish consistent patterns for shell command execution that ensure safety, predictability, and proper context awareness in automated environments.
+
+## Rules
+- Always append `| cat` to these commands:
+  - `git log`
+  - `git diff`
+  - `git show`
+  - `less`
+  - `more`
+  - `head`
+  - `tail`
+  - `man`
+  - Any command that might use a pager
+
+- Set these environment variables for non-interactive operation:
+  ```bash
+  export DEBIAN_FRONTEND=noninteractive
+  export GIT_PAGER=cat
+  export PAGER=cat
+  export SYSTEMD_PAGER=cat
+  export LESSCHARSET=utf-8
+  ```
+
+- For directory context, always:
+  - Specify if paths are relative to project root
+  - Use `"$(git rev-parse --show-toplevel)"` to get project root
+  - Document directory assumptions explicitly
+  - Prefer paths relative to project root for consistency
+
+- For input redirection:
+  - Use `echo "response" | command` instead of interactive input
+  - Use heredocs for multi-line input: `command << EOF\ninput1\ninput2\nEOF`
+
+- For error handling:
+  - Check exit codes: `if [ $? -ne 0 ]; then echo "Command failed"; fi`
+  - Capture error messages: `command 2>&1`
+
+## Examples
+```bash
+# Good - explicit directory context and non-interactive
+cd "$(git rev-parse --show-toplevel)"  # Go to project root
+git log --no-pager -n 5 | cat
+cat .cursor/tmp/file.txt  # Path relative to project root
+
+# Bad - ambiguous context and potentially interactive
+cd some/path  # Where is this relative to?
+git log  # Might open pager
+less file.txt  # Definitely interactive
+```
+
+## Exceptions
+- Interactive shell sessions where human input is expected
+- Documentation demonstrating interactive features
+- Tests specifically verifying interactive behavior
