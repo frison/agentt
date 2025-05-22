@@ -8,8 +8,8 @@ categories:
   - knowledge-management
 provenance:
   repo: "https://github.com/frison/agentt"
-  commit: ""
-  prompt: ""
+  commit: "808ee58"
+  prompt: "808ee58"
   modifications: []
 ---
 
@@ -278,4 +278,4 @@ If you're managing AI guidance in any form, `gydnc` might be worth a look. Check
 
 ---
 
-*This article was originally created in commit [` `](https://github.com/frison/agentt/commit/ ).*
+*This article was originally created in commit [`808ee58`](https://github.com/frison/agentt/commit/808ee58).*
