@@ -1,5 +1,0 @@
-exit_code: 1 # Or whatever non-zero exit code is expected for this failure
-stderr:
-  - match_type: SUBSTRING
-    content: "active backend not initialized; run 'gydnc init' or check config"
-stdout: [] # Expect empty stdout as the command errors out before producing stdout

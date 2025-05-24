@@ -1,5 +1,0 @@
-entityTypes:
-  - name: "behavior"
-    requiredFields: ["id"]
-
-# backends: [] # Missing backends section

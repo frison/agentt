@@ -4,8 +4,6 @@ description: Provides standard procedures for creating and annotating Git commit
 tags:
     - tech:git
     - tech:version_control
-    - process:workflow
-    - repo:agentt
 ---
 # Recipe: Git Commit Creation
 

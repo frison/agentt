@@ -1,8 +1,0 @@
-# Go build artifacts
-agentt
-
-# Binaries for reflexes (if managed here eventually)
-bin/
-
-# For local testing
-test_guidance_output/

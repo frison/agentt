@@ -1,6 +1,18 @@
 ---
 title: gydnc Release Process Guide
-description: Complete workflow for releasing gydnc CLI from the gydnc/ directory with automated builds and professional release notes
+description: Complete workflow for releasing gydnc CLI from the root directory with automated builds and professional release notes
+tags:
+    - type:process
+    - scope:release
+    - repo:gydnc
+    - tech:git
+    - tech:github-actions
+    - target:maintainer
+    - quality:high
+---
+---
+title: gydnc Release Process Guide
+description: Complete workflow for releasing gydnc CLI from the root directory with automated builds and professional release notes
 tags:
     - type:process
     - scope:release
@@ -13,59 +25,57 @@ tags:
 
 # 🚀 gydnc Release Process Guide
 
-## ⚠️ CRITICAL: gydnc/ Directory Context
+## ⚠️ CRITICAL: Root Directory Context
 
-**ALL OPERATIONS MUST BE PERFORMED FROM THE gydnc/ DIRECTORY ROOT**
+**ALL OPERATIONS MUST BE PERFORMED FROM THE PROJECT ROOT DIRECTORY**
 
-This release process is specifically designed for the `gydnc/` directory within the repository. The GitHub Actions, file paths, and commands assume you are working within the gydnc project structure.
+This release process is specifically designed for the gydnc project located at the repository root. The GitHub Actions, file paths, and commands assume you are working within the root project structure.
 
 ```bash
 # ALWAYS ensure you are in the correct directory first
-cd /path/to/your/repo/gydnc/
-pwd  # Should show: .../gydnc
+cd /path/to/your/gydnc/repo/
+pwd  # Should show: .../gydnc (project root)
 ```
 
 ## 🎯 Overview
 
-This guidance covers the complete workflow for releasing gydnc CLI, from analyzing changes to triggering the GitHub Actions release pipeline. The process emphasizes security, transparency, and beautiful presentation while operating specifically within the `gydnc/` directory structure.
+This guidance covers the complete workflow for releasing gydnc CLI, from analyzing changes to triggering the GitHub Actions release pipeline. The process emphasizes security, transparency, and beautiful presentation while operating from the project root directory.
 
 ## 📋 Release Workflow
 
-### 1. Pre-Release Analysis (gydnc/ Context)
+### 1. Pre-Release Analysis (Root Directory Context)
 
-**Navigate to gydnc Directory**
+**Navigate to Project Root**
 ```bash
-# MANDATORY: Work from gydnc/ directory
-cd gydnc/
-pwd  # Verify you're in: .../gydnc
+# MANDATORY: Work from project root directory
+cd /path/to/your/gydnc/repo/
+pwd  # Verify you're in the project root
 ```
 
 **Discover Previous Release**
 ```bash
-# Find the latest release version in gydnc/releases/
+# Find the latest release version in releases/
 PREVIOUS_RELEASE=$(find releases/ -name "v*.md" | sort | tail -1 | basename | sed 's/\.md$//')
 echo "Previous gydnc release: $PREVIOUS_RELEASE"
 ```
 
-**Analyze Changes Since Last Release (gydnc/ Scope)**
+**Analyze Changes Since Last Release**
 ```bash
-# Find the commit that added the previous release file in gydnc/
-RELEASE_COMMIT=$(git log --format=%H -n 1 -- "gydnc/releases/${PREVIOUS_RELEASE}.md")
+# Find the commit that added the previous release file
+RELEASE_COMMIT=$(git log --format=%H -n 1 -- "releases/${PREVIOUS_RELEASE}.md")
 
-# Get commits since last release affecting ONLY gydnc/ directory
-git log --oneline ${RELEASE_COMMIT}..HEAD -- gydnc/
+# Get commits since last release
+git log --oneline ${RELEASE_COMMIT}..HEAD
 
-# Detailed analysis with commit details for gydnc/ changes
-git log --format="%h|%s|%an|%ad" --date=short ${RELEASE_COMMIT}..HEAD -- gydnc/
+# Detailed analysis with commit details
+git log --format="%h|%s|%an|%ad" --date=short ${RELEASE_COMMIT}..HEAD
 ```
 
-**Important**: Only changes within the `gydnc/` directory are relevant for gydnc releases. Changes to other parts of the repository should be ignored.
+### 2. Release Notes Generation
 
-### 2. Release Notes Generation (gydnc/ Focused)
+**Categorize Changes**
 
-**Categorize gydnc Changes**
-
-Analyze commit messages affecting `gydnc/` and categorize them:
+Analyze commit messages and categorize them:
 
 - **✨ Features**: `feat:`, `feature:`, `add:`, `new:`, `implement:`
 - **🐛 Bug Fixes**: `fix:`, `bug:`, `patch:`, `resolve:`, `correct:`
@@ -75,92 +85,89 @@ Analyze commit messages affecting `gydnc/` and categorize them:
 - **🧪 Tests**: `test:`, `tests:`, `testing:`, `spec:`, `coverage:`
 - **🏗️ Build & CI**: `build:`, `ci:`, `cd:`, `workflow:`, `action:`, `makefile`, `docker:`
 
-**Generate gydnc Statistics**
+**Generate Release Statistics**
 ```bash
-# Count commits and contributors for gydnc/ directory only
-COMMIT_COUNT=$(git rev-list --count ${RELEASE_COMMIT}..HEAD -- gydnc/)
-CONTRIBUTOR_COUNT=$(git log --format="%an" ${RELEASE_COMMIT}..HEAD -- gydnc/ | sort -u | wc -l)
+# Count commits and contributors
+COMMIT_COUNT=$(git rev-list --count ${RELEASE_COMMIT}..HEAD)
+CONTRIBUTOR_COUNT=$(git log --format="%an" ${RELEASE_COMMIT}..HEAD | sort -u | wc -l)
 
-echo "📊 gydnc Release Statistics:"
+echo "📊 Release Statistics:"
 echo "- $COMMIT_COUNT commits from $CONTRIBUTOR_COUNT contributor(s)"
 echo "- Released on $(date '+%B %d, %Y')"
-echo "- Scope: gydnc CLI tool changes only"
 ```
 
-### 3. Create Release File (gydnc/releases/)
+### 3. Create Release File (releases/)
 
-**CRITICAL PATH**: Create `gydnc/releases/vX.Y.Z.md` with:
+**CRITICAL PATH**: Create `releases/vX.Y.Z.md` with:
 
 ```bash
-# Create release file in the correct gydnc/releases/ directory
+# Create release file in the releases/ directory
 cat > releases/v1.2.3.md << 'RELEASE_EOF'
 # Release content here...
 RELEASE_EOF
 ```
 
 Include:
-- Header with version and gydnc-specific stats
-- Categorized changes with commit links (gydnc/ scope only)
+- Header with version and release-specific stats
+- Categorized changes with commit links
 - Download instructions for all platforms
 - Verification and quick start sections
 - Professional styling with emojis and tables
 
-### 4. Trigger gydnc Release
+### 4. Trigger Release
 
-1. **Commit the release file from gydnc/ context**:
+1. **Commit the release file**:
    ```bash
-   # From gydnc/ directory
    git add releases/v1.2.3.md
    git commit -m "gydnc: Release v1.2.3"
    git push origin main
    ```
 
 2. **GitHub Actions automatically**:
-   - Detects new file in `gydnc/releases/`
+   - Detects new file in `releases/`
    - Builds multi-platform gydnc binaries
-   - Creates GitHub release with gydnc artifacts
-   - Uses gydnc-specific build configuration
+   - Creates GitHub release with artifacts
+   - Uses project-specific build configuration
 
-## 🔍 Quality Standards (gydnc Specific)
+## 🔍 Quality Standards
 
-- **gydnc Context**: All content must be clearly about gydnc CLI
-- **Directory Awareness**: All paths relative to `gydnc/` directory
+- **Complete Context**: All content must be clearly about gydnc CLI
+- **Root Directory Awareness**: All paths relative to project root
 - **Beautiful formatting**: Use emojis, tables, and proper markdown
-- **Complete provenance**: Every gydnc commit linked with full SHA
+- **Complete provenance**: Every commit linked with full SHA
 - **Professional tone**: Engaging but informative language
-- **Security focus**: Emphasize gydnc binary verification and checksums
-- **User-friendly**: Clear gydnc installation and usage instructions
-- **Contributor recognition**: Acknowledge all gydnc contributors
+- **Security focus**: Emphasize binary verification and checksums
+- **User-friendly**: Clear installation and usage instructions
+- **Contributor recognition**: Acknowledge all contributors
 
-## 🎨 Styling Guidelines for gydnc Releases
+## 🎨 Styling Guidelines for Releases
 
 - Use descriptive emojis for visual appeal
 - Structure with clear headers emphasizing gydnc functionality
 - Include code blocks with proper syntax highlighting for gydnc commands
 - Provide direct download links for gydnc binaries
-- Add verification instructions for gydnc installations
-- Include gydnc quick start guides
+- Add verification instructions for installations
+- Include quick start guides
 
 ## ⚠️ Common Pitfalls to Avoid
 
-1. **Wrong Directory**: Not working from `gydnc/` directory
-2. **Mixed Scope**: Including non-gydnc changes in release notes
-3. **Wrong File Path**: Creating release files outside `gydnc/releases/`
-4. **Build Context**: GitHub Actions expect gydnc-specific structure
+1. **Wrong Directory**: Not working from project root directory
+2. **Wrong File Path**: Creating release files outside `releases/`
+3. **Build Context**: GitHub Actions expect root project structure
 
 ## 🔄 Verification Steps
 
-Before finalizing any gydnc release:
+Before finalizing any release:
 
 ```bash
-# Verify you're in gydnc/ directory
-pwd | grep -q "gydnc$" && echo "✅ Correct directory" || echo "❌ Wrong directory"
+# Verify you're in project root directory
+test -f go.mod && echo "✅ Correct directory (found go.mod)" || echo "❌ Wrong directory"
 
 # Verify release file is in correct location
 ls -la releases/v*.md | tail -1
 
-# Verify commits analyzed are gydnc-scoped
-git log --oneline HEAD~5..HEAD -- gydnc/
+# Verify recent commits
+git log --oneline HEAD~5..HEAD
 ```
 
-This process ensures every gydnc release is beautifully documented, properly verified, and presents a professional image while maintaining the highest security standards **specifically for the gydnc CLI tool**.
+This process ensures every gydnc release is beautifully documented, properly verified, and presents a professional image while maintaining the highest security standards **for the gydnc CLI tool**.

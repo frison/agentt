@@ -1,8 +1,0 @@
-# entityTypes: [] # Missing entityTypes section
-
-backends:
-  - type: localfs
-    settings:
-      rootDir: "."
-      entityLocations:
-        behavior: "*.bhv"

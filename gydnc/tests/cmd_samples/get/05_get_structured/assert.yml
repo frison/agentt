@@ -1,9 +1,0 @@
-stdout:
-  - match_type: JSON
-    content: |
-      {
-        "title": "Test Title",
-        "description": "Test Desc",
-        "tags": ["foo", "bar"],
-        "body": "Test Body\n"
-      }

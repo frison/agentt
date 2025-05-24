@@ -1,6 +1,0 @@
-exit_code: 0
-stdout:
-  - match_type: SUBSTRING
-    content: "v"
-stderr: []
-filesystem: []

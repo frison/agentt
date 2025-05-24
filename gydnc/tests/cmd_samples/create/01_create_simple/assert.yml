@@ -1,9 +1,0 @@
-exit_code: 0
-stdout:
-  - match_type: JSON
-    content: |
-      {
-        "title": "my-new-guidance",
-        "body": "# my-new-guidance\n\nGuidance content for 'my-new-guidance' goes here.\n"
-      }
-stderr: []
