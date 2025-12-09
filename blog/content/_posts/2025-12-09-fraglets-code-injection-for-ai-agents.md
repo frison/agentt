@@ -9,8 +9,8 @@ categories:
   - containers
 provenance:
   repo: "https://github.com/frison/agentt"
-  commit: "594fc6c3fe2220a0b0849e9c8ec2efdd1fb23b15"
-  prompt: "594fc6c3fe2220a0b0849e9c8ec2efdd1fb23b15"
+  commit: "a378a32b255eec436eb7ff99992012bb215a9029"
+  prompt: "a378a32b255eec436eb7ff99992012bb215a9029"
   modifications: []
 ---
 
@@ -237,4 +237,4 @@ Fair warning: this is active development. Sharp edges exist. But if you're think
 
 **Provenance:**
 - Repository: [https://github.com/frison/agentt](https://github.com/frison/agentt)
-- Commit: `594fc6c3fe2220a0b0849e9c8ec2efdd1fb23b15`
+- Commit: `a378a32b255eec436eb7ff99992012bb215a9029`
