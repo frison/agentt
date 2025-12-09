@@ -213,7 +213,6 @@ Think about what happens when you combine templated fraglets with computational 
 
 - A reasoning environment for financial calculations, with market data pre-loaded
 - A reasoning environment for chemical simulations, with reaction databases embedded
-- A reasoning environment for legal analysis, with case law indexed
 
 Each one: deterministic, reproducible, queryable via MCP. Agents delegate domain-specific computation to purpose-built tools, getting back verifiable results.
 
