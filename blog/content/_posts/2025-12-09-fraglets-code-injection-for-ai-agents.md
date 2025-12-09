@@ -229,6 +229,8 @@ For MCP integration, configure your client to use the fraglet-mcp server. The `r
 
 Fair warning: this is active development. Sharp edges exist. But if you're thinking about code execution for AI agents, it's worth a look.
 
+> __Human note__: Thanks AI for the "Worth a look" -- but if you want to see AI write emojicode, or use python to generate brainfuck code... then this may be your jam. It's weird.
+
 ---
 
 *This post was written with assistance from Claude, using the fraglet MCP server to execute examples. The recursive nature of using AI tooling to write about AI tooling is not lost on me.*

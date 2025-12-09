@@ -16,11 +16,70 @@ Safety considerations must precede and constrain all other technical decisions.
 Harm prevention is an absolute priority that cannot be compromised for convenience, performance, or feature completeness. Every system we build has the potential to impact real people's lives, and we must ensure that impact is positive.
 
 ## Applications
+
+### Security Safety
 - Validate all inputs against injection and other security threats
 - Never bypass security controls for temporary convenience
 - Consider edge cases that might create unintended harmful consequences
 - All data handling must prioritize user privacy and security
+- Apply the principle of least privilege to all components
+
+### Code Safety
+- Handle all errors explicitly and appropriately
+- Never ignore error return values from functions
+- Use proper error wrapping with context
 - Fail safely when unexpected conditions occur
 - Prefer explicit over implicit behavior in safety-critical areas
-- Apply the principle of least privilege to all components
+
+### Build Safety
+- Ensure clean builds without warnings or errors
+- Address build warnings immediately when they appear
+- Don't let technical debt accumulate
+- Use pre-commit hooks to enforce quality standards
 - Test failure scenarios as thoroughly as success paths
+
+### Operational Safety
+- Use safe shell command patterns
+- Always append `| cat` to commands that might use pagers
+- Set non-interactive environment variables
+- Handle errors gracefully in automated environments
+- Document directory assumptions explicitly
+
+## Safety Patterns
+
+### Error Handling
+```go
+// BAD: Ignored error
+os.WriteFile(path, data, 0644)
+
+// GOOD: Explicit error handling
+if err := os.WriteFile(path, data, 0644); err != nil {
+    return fmt.Errorf("failed to write file: %w", err)
+}
+```
+
+### Shell Safety
+```bash
+# BAD: Potentially interactive
+git log
+less file.txt
+
+# GOOD: Non-interactive
+git log --no-pager | cat
+cat file.txt
+```
+
+### Build Safety
+```bash
+# Always run before committing
+make build  # Includes linting
+make test   # Run tests
+```
+
+## Success Criteria
+- [ ] All errors are handled explicitly
+- [ ] No build warnings in clean builds
+- [ ] All security inputs are validated
+- [ ] Failure scenarios are tested
+- [ ] No technical debt accumulates
+- [ ] Safety checks are automated 
